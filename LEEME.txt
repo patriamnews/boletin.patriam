@@ -1,0 +1,72 @@
+«LO QUE HAY QUE SABER» · BOLETÍN DE PATRIAM
+=======================================
+
+Qué es cada archivo
+- index.html     → la web del boletín. La portada es el boletín de la semana y el menú
+                   (Editorial, Noticias, Historia, Análisis, Colaboraciones, Iniciativas)
+                   guarda todo lo publicado antes, con buscador.
+- editor.html    → el formulario para hacer cada boletín.
+- boletines.js   → donde se guardan todos los boletines (lo crea el editor al Publicar).
+- boletin.css / boletin.js → diseño y plantilla. No hace falta tocarlos.
+- legales.js     → aviso legal, privacidad, cookies y transparencia IA (los de la web).
+                   Lo que va entre [CORCHETES] está pendiente de completar.
+- banner-portada.jpg, logo.png, logo-claro.png, fuentes/ → imagen, logos y tipografía.
+- ejemplos/      → imágenes del boletín de ejemplo. Se pueden borrar después.
+- compartir.jpg  → la imagen que sale al compartir el enlace en WhatsApp y redes.
+- manifest.webmanifest, icono-192.png, icono-512.png → para que, añadido a la pantalla
+                   de inicio del móvil, se abra como una app, sin barra de direcciones.
+
+Cada semana
+1. Abre editor.html (o pulsa "Acceso editor" al pie del boletín) y entra con tu
+   correo y contraseña. La primera vez pide cambiar la contraseña provisional.
+   Abre editor.html y pulsa "+ Nuevo boletín". El número y la fecha se ponen solos.
+2. Rellena el formulario:
+   - Editorial: título, texto, imagen.
+   - Noticias: sección (Actualidad, Historia o Análisis), título, enlace, imagen
+     y el comentario de LODLC.
+   - Textos de colaboradores: autor, título, imagen y el texto, con botones para
+     subtítulos, citas, negrita, cursiva y enlaces. Cada texto tiene su propio
+     enlace con un botón "Copiar".
+   - Iniciativas y eventos: se copian solas las que aún no han pasado.
+   A la derecha se ve cómo queda.
+3. Pulsa "Publicar". Se descarga boletines.js.
+4. Sustituye el boletines.js de esta carpeta por el descargado y sube la carpeta.
+   El boletín nuevo pasa a la portada y el anterior queda guardado en sus secciones.
+
+Notas
+- Todos los enlaces se abren en una pestaña nueva: las secciones, los artículos y
+  las webs de fuera. El boletín siempre se queda abierto en su pestaña.
+- Contraseñas: al cambiarla, se guarda en ese ordenador. Para que valga en todos,
+  pulsa "Publicar" y sube el archivo, como con un boletín.
+- Si cierras el editor sin publicar, al volver te ofrece recuperar lo que tenías.
+- La dirección del navegador se queda siempre limpia aunque se cambie de sección.
+- La tarjeta de WhatsApp/redes apunta a https://patriam.netlify.app/boletin/. Si el
+  boletín va en otra dirección, hay que cambiarla en index.html (líneas og:url y og:image).
+- Las redes sociales, el nombre del boletín, el enlace de "Suscríbete" y los textos fijos se cambian en
+  "Ajustes del boletín", al final del editor.
+
+Usuarios y aprobación
+- Administradores (Carlos y patriam-merc): aprueban y publican, y gestionan usuarios.
+- Usuarios (Laura y los que se añadan): preparan el boletín y pulsan «Enviar a aprobación».
+  Se descarga boletines.js y se lo mandan a un administrador.
+- El administrador pulsa «Abrir boletín recibido», elige ese archivo, lo revisa y pulsa
+  «Aprobar y publicar». Se descarga el boletines.js definitivo, que es el que se sube a Netlify.
+- Un boletín pendiente no se ve en la web aunque se suba el archivo: solo salen los aprobados.
+
+SUSCRIPCIONES AL BOLETÍN (solo las ven los administradores)
+-----------------------------------------------------------
+- En el boletín hay un botón «Suscríbete» (en la portada y en el pie) que abre el formulario: nombre, correo, móvil (opcional) y aceptación de la privacidad.
+- Las personas apuntadas se guardan en Netlify, no en la web: nadie más puede verlas.
+- Para verlas: en el editor, entrar como administrador y pulsar «Suscriptores ↗» (o en Netlify: proyecto patriamboletin > Forms > suscripcion). Desde ahí se pueden descargar en CSV (Excel).
+- La primera vez, en Netlify: Project configuration > Forms > activar «Form detection» y volver a subir la carpeta. Después, en Forms > Form notifications > «Add notification» > Email, poner patriam-merc@outlook.es y otra con carlosrubioromo@yahoo.es, para recibir un aviso con cada nueva suscripción.
+- Para que Carlos pueda entrar a Netlify, invitarle al equipo (Team settings > Members).
+
+AL MOMENTO (envíos sueltos para WhatsApp)
+-----------------------------------------
+- En el editor, pestaña «Al momento · WhatsApp»: «+ Nuevo envío al momento». Título, enlace (noticia, post de Instagram o X, vídeo de YouTube…), y si se quiere resumen, imagen y comentario.
+- «Ver la imagen de WhatsApp» enseña la imagen cuadrada que saldrá al compartir (foto + banda granate con el título y el logo).
+- Administradores: «Publicar y sacar el enlace». La primera vez el editor pide la carpeta del boletín y guarda ahí los archivos (boletines.js y, dentro de la carpeta «a», la página y la imagen del envío). Después se sube la carpeta a Netlify y el enlace ya funciona: https://patriamboletin.netlify.app/a/titulo-del-envio
+  (Si el navegador no deja elegir carpeta, se descargan los archivos: boletines.js va en la carpeta principal y los otros dos dentro de la carpeta «a».)
+- Usuarios: «Enviar para aprobar» descarga boletines.js para mandarlo a un administrador.
+- Todos los envíos quedan en la web en «Al momento» (enlace en el pie).
+- Conviene usar el editor desde la web publicada (Acceso editor): abierto como archivo en el ordenador, el navegador no deja preparar la imagen.

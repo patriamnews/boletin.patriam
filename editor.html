@@ -1,0 +1,1124 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Editor · Lo que hay que saber</title>
+<link rel="icon" href="logo.png">
+<link rel="stylesheet" href="boletin.css">
+<style>
+  body { background: #efe8dc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.5; }
+  .ed-barra { position: sticky; top: 0; z-index: 50; background: var(--acento); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+  .ed-barra strong { margin-right: auto; letter-spacing: .06em; font-size: 15px; }
+  .ed-barra select, .ed-barra button { font: inherit; padding: 7px 12px; border-radius: 6px; border: 0; }
+  .ed-barra select { max-width: 280px; }
+  .ed-barra button { background: rgba(255,255,255,.95); color: var(--acento); font-weight: 600; cursor: pointer; }
+  .ed-barra .publicar { background: var(--gualda); color: #fff; font-weight: 700; padding: 8px 18px; }
+  .ed-cols { display: grid; grid-template-columns: minmax(380px, 520px) 1fr; }
+  .ed-form { padding: 18px; height: calc(100vh - 56px); overflow-y: auto; }
+  .ed-vista { height: calc(100vh - 56px); overflow-y: auto; background: var(--crema); border-left: 1px solid #d8ccb8; font-family: var(--serif); font-size: 17px; }
+  /* la vista previa se ve como en tablet */
+  .ed-vista .bol-cab-in { grid-template-columns: 220px 1fr; min-height: 360px; }
+  .ed-vista .bol-frase { font-size: .95rem; }
+  .ed-vista .bol-mancheta-nombre { font-size: 4.4rem; }
+  .ed-vista .bol-numero { top: auto; bottom: .8rem; right: .8rem; }
+  .ed-vista .bol-mancheta { padding: 1.4rem 1rem 0; } .ed-vista .bol-mancheta-nombre.largo { font-size: 2.8rem; }
+  .ed-vista .bol-menu { position: static; } .ed-vista .bol-buscar { display: none; }
+  .ed-vista .bol-menu a { padding: .8rem .7rem; font-size: .6rem; letter-spacing: .1em; gap: .4rem; }
+  .ed-vista .bol-fila1, .ed-vista .bol-fila2, .ed-vista .bol-fila3 { grid-template-columns: 1fr; }
+  .ed-vista .bol-destacados { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .ed-vista .bol-dest { grid-template-columns: 1fr; grid-template-rows: auto 110px; }
+  .ed-vista .bol-dest-img { order: 2; }
+  .ed-vista .bol-lado-fijo { position: static; }
+  .ed-vista .bol-marco { grid-template-columns: 280px minmax(0,1fr); gap: 1.2rem; }
+  .ed-vista .bol-lateral-in { position: static; height: auto; max-height: none; overflow: visible; }
+  .ed-vista .bol-firmas .bol-colab, .ed-vista .bol-noticias .bol-tarjeta { grid-template-columns: 1fr; }
+  .ed-vista .bol-noticias .bol-tarjeta { grid-template-columns: 40% 1fr; }
+  .ed-vista .bol-noticias .bol-foto { min-height: 210px; }
+  .ed-vista .bol-tarjeta { grid-template-columns: 180px 1fr; }
+
+  .paso { background: #fff; border: 1px solid #e0d5c3; border-radius: 10px; margin: 0 0 16px; overflow: hidden; }
+  .paso > h2 { display: flex; align-items: center; gap: 10px; margin: 0; padding: 12px 16px; font: 700 15px system-ui, sans-serif; color: var(--acento); background: #fbf7f0; border-bottom: 1px solid #eee3d2; }
+  .paso > h2 b { width: 26px; height: 26px; border-radius: 50%; background: var(--acento); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+  .paso > h2 small { margin-left: auto; font-weight: 400; color: #8a7f74; font-size: 12px; }
+  .paso-in { padding: 6px 16px 16px; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; color: #3b3335; }
+  label small { font-weight: 400; color: #8a7f74; }
+  input[type=text], input[type=url], input[type=date], input[type=email], input[type=password], textarea, select.campo {
+    width: 100%; font: inherit; padding: 8px 10px; border: 1px solid #d6cab7; border-radius: 6px; background: #fffdf9; color: #1d1719; }
+  input:focus, textarea:focus, select:focus { outline: 2px solid rgba(123,28,44,.25); border-color: var(--acento); }
+  textarea { min-height: 80px; resize: vertical; }
+  textarea.largo { min-height: 220px; }
+  .fila { display: flex; gap: 10px; } .fila > div { flex: 1; min-width: 0; }
+  .numero-auto { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f6efe3; border-radius: 6px; font-weight: 700; color: var(--acento); }
+  .numero-auto small { font-weight: 400; color: #8a7f74; }
+  .img-caja { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .img-caja input[type=text] { flex: 1; min-width: 140px; }
+  .img-mini { width: 54px; height: 40px; object-fit: cover; border-radius: 4px; border: 1px solid #ccc; display: none; }
+  .btn { font: inherit; font-size: 13px; padding: 7px 11px; border-radius: 6px; border: 1px solid #cbbfab; background: #f7f2ea; cursor: pointer; }
+  .btn:hover { background: #ede4d5; }
+  .btn-add { width: 100%; padding: 11px; font-weight: 700; border: 2px dashed var(--gualda); background: #fffdf9; color: var(--acento); margin-top: 4px; }
+  .btn-rojo { color: #a11; }
+  .item { border: 1px solid #eadfcd; border-radius: 8px; padding: 4px 12px 12px; margin-top: 12px; background: #fffdf9; }
+  .item-cab { display: flex; gap: 6px; align-items: center; padding-top: 8px; }
+  .item-cab span { margin-right: auto; font-weight: 700; color: var(--acento); }
+  .herramientas { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+  .herramientas button { font: 600 12px system-ui, sans-serif; padding: 5px 9px; border: 1px solid #d6cab7; background: #fff; border-radius: 5px; cursor: pointer; }
+  .herramientas button:hover { background: #f3ece1; }
+  .enlace-caja { display: flex; gap: 6px; align-items: center; margin-top: 10px; background: #f6efe3; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+  .enlace-caja code { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--acento); }
+  .nota { font-size: 12px; color: #8a7f74; margin: 6px 0 0; }
+  details.paso > summary { list-style: none; cursor: pointer; }
+  details.paso > summary::-webkit-details-marker { display: none; }
+  .aviso { display: none; background: #fff3cd; color: #5a4300; padding: 10px 16px; border-bottom: 1px solid #e6cf85; }
+  .aviso button { margin-left: 8px; }
+  .modal { position: fixed; inset: 0; z-index: 100; background: rgba(29,23,25,.55); display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal.abierto { display: flex; }
+  .modal-caja { background: #fff; border-radius: 12px; max-width: 520px; width: 100%; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  .modal-caja h3 { margin: 0 0 8px; color: var(--acento); font: 700 20px system-ui, sans-serif; }
+  .us-fila { display: flex; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid #eee3d2; flex-wrap: wrap; }
+  .us-fila b { flex: 1; min-width: 160px; }
+  .us-fila small { color: #8a7f74; display: block; font-weight: 400; }
+  .us-rol { font-size: 12px; background: #f6efe3; color: var(--acento); border-radius: 999px; padding: 2px 9px; font-weight: 600; }
+  .us-reset { display: flex; gap: 6px; width: 100%; }
+  .us-reset input { flex: 1; }
+  .modal-caja { max-height: 92vh; overflow-y: auto; }
+  .modal-caja ol { padding-left: 20px; } .modal-caja li { margin: 6px 0; }
+  .acceso { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 16px;
+    background: linear-gradient(160deg, #7b1c2c, #4a0f19); }
+  .acceso[hidden] { display: none; }
+  .acceso-caja { background: #fffdf9; border-radius: 14px; width: 100%; max-width: 400px; padding: 30px 28px 26px; box-shadow: 0 24px 70px rgba(0,0,0,.35); text-align: center; }
+  .acceso-caja img { width: 170px; margin: 0 auto 6px; }
+  .acceso-caja h1 { font: 700 13px system-ui, sans-serif; letter-spacing: .2em; text-transform: uppercase; color: var(--acento); margin: 6px 0 2px; }
+  .acceso-caja p { color: #6b6163; margin: 6px 0 14px; font-size: 14px; }
+  .acceso-caja form { text-align: left; }
+  .acceso-caja .entrar { width: 100%; margin-top: 16px; padding: 11px; border: 0; border-radius: 8px; background: var(--acento); color: #fff; font: 700 15px system-ui, sans-serif; cursor: pointer; }
+  .acceso-caja .entrar:hover { background: var(--acento-osc); }
+  .acceso-error { color: #a3261b; font-size: 13px; min-height: 18px; margin: 8px 0 0; }
+  .acceso-ok { color: #2f6b3a; }
+  .ver-clave { font-size: 12px; color: #6b6163; display: flex; align-items: center; gap: 6px; margin-top: 8px; font-weight: 400; }
+  @media (max-width: 900px) { .ed-cols { grid-template-columns: 1fr; } .ed-form, .ed-vista { height: auto; } }
+  .paso-bib { border-color: var(--gualda); }
+  .recomendar { display: flex; align-items: center; gap: 8px; margin-top: 10px; padding: 9px 11px; background: #fbf3dc; border: 1px solid #ecd9a8; border-radius: 6px; font-weight: 600; color: var(--acento); cursor: pointer; }
+  .recomendar input { width: 18px; height: 18px; accent-color: var(--acento); }
+  .pestanas-ed { position: sticky; top: -18px; z-index: 5; display: flex; gap: 4px; flex-wrap: wrap; margin: -18px -18px 16px; padding: 10px 18px 0; background: #efe8dc; border-bottom: 2px solid var(--acento); }
+  .pestanas-ed button { font: 600 14px system-ui, sans-serif; padding: 9px 14px; border: 1px solid #d6cab7; border-bottom: 0; border-radius: 8px 8px 0 0; background: #f7f2ea; color: #3b3335; cursor: pointer; }
+  .pestanas-ed button.activa { background: var(--acento); color: #fff; border-color: var(--acento); }
+  .arch-fila { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #eee3d2; }
+  .arch-fila:first-child { border-top: 0; }
+  #modalAyuda .modal-caja { max-width: 760px; font-size: 15px; line-height: 1.55; }
+  #modalAyuda h3 { margin-top: 0; }
+  #modalAyuda details { border: 1px solid #e4d9c7; border-radius: 8px; margin: 8px 0; background: #fffdf9; }
+  #modalAyuda summary { cursor: pointer; padding: 11px 14px; font-weight: 700; color: var(--acento); list-style: none; }
+  #modalAyuda summary::-webkit-details-marker { display: none; }
+  #modalAyuda summary::before { content: "▸ "; } #modalAyuda details[open] summary::before { content: "▾ "; }
+  #modalAyuda details > div { padding: 0 16px 12px; }
+  #modalAyuda ol, #modalAyuda ul { padding-left: 22px; margin: 6px 0; } #modalAyuda li { margin: 4px 0; }
+  #modalAyuda .solo-admin { display: inline-block; font-size: 11px; font-weight: 700; background: #fbf0d0; color: #8a6a10; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+  #modalAyuda .consejo { background: #f3f8ef; border: 1px solid #cfe0c3; border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
+  .am-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d6cab7; }
+  .am-acciones .btn-pub { background: var(--acento); color: #fff; border-color: var(--acento); font-weight: 700; }
+  .am-enlace { display: flex; gap: 6px; align-items: center; margin-top: 10px; padding: 8px 10px; background: #f3f8ef; border: 1px solid #cfe0c3; border-radius: 6px; font-size: 13px; }
+  .am-enlace code { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .am-prev { display: block; width: 220px; margin-top: 10px; border-radius: 6px; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
+  .am-estado { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #eee; color: #555; margin-left: 6px; }
+  .am-estado.aprobado { background: #e3f1da; color: #2f6b1f; } .am-estado.pendiente { background: #fbf0d0; color: #8a6a10; }
+  .arch-fila[hidden], .item[hidden] { display: none; }
+  .arch-fila div { flex: 1; min-width: 0; }
+  .arch-fila b { display: block; font-size: 14px; }
+  .arch-fila small { color: #8a7f74; }
+  #buscaSec { width: 100%; font: inherit; padding: 9px 12px; border: 1.5px solid #d6cab7; border-radius: 999px; background: #fffdf9; }
+  .estado-bol { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.18); color: #fff; }
+  .estado-bol.pendiente { background: #f0c75e; color: #4a3300; }
+  .estado-bol.aprobado { background: #cfe8c9; color: #1f4d1a; }
+</style>
+</head>
+<body>
+
+<div class="acceso" id="acceso">
+  <div class="acceso-caja">
+    <img src="logo.png" alt="PATRIAM">
+    <h1>Editor del boletín</h1>
+    <div id="pantallaEntrar">
+      <p>Entra con tu correo y tu contraseña.</p>
+      <form id="formEntrar" autocomplete="on">
+        <label for="accCorreo">Correo</label><input type="email" id="accCorreo" autocomplete="username" required>
+        <label for="accClave">Contraseña</label><input type="password" id="accClave" autocomplete="current-password" required>
+        <label class="ver-clave"><input type="checkbox" id="verClave"> Mostrar contraseña</label>
+        <button class="entrar" type="submit">Entrar</button>
+        <p class="acceso-error" id="errEntrar"></p>
+      </form>
+    </div>
+    <div id="pantallaCambiar" hidden>
+      <p id="txtCambiar">Es tu primer acceso. Elige una contraseña nueva para seguir.</p>
+      <form id="formCambiar">
+        <label for="claveNueva">Contraseña nueva <small>(mínimo 8 caracteres)</small></label><input type="password" id="claveNueva" autocomplete="new-password" required>
+        <label for="claveRepite">Repite la contraseña</label><input type="password" id="claveRepite" autocomplete="new-password" required>
+        <button class="entrar" type="submit">Guardar contraseña</button>
+        <p class="acceso-error" id="errCambiar"></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="ed-barra">
+  <strong>Editor · Lo que hay que saber</strong>
+  <select id="selBoletin" title="Elegir boletín"></select>
+  <button id="btnNuevo">+ Nuevo boletín</button>
+  <button id="btnBorrar">Eliminar</button>
+  <a href="index.html" target="_blank" rel="noopener" style="color:#fff;font-weight:600;text-decoration:none;padding:7px 6px">Ver boletín ↗</a>
+  <button id="btnCompleta" title="Ver el boletín tal como quedará en la web, antes de publicarlo">Vista previa</button>
+  <button id="btnMovil" title="Ver cómo quedará en un móvil">Vista móvil</button>
+  <button id="btnUsuarios" hidden>Usuarios</button>
+  <a id="btnSuscriptores" hidden href="https://app.netlify.com/sites/patriamboletin/forms" target="_blank" rel="noopener" title="Lista de personas apuntadas al boletín (solo administradores)" style="color:#fff;font-weight:600;text-decoration:none;padding:7px 6px">Suscriptores ↗</a>
+  <button id="btnAyuda" title="Cómo se usa el editor">? Instrucciones</button>
+  <button id="btnClave">Mi contraseña</button>
+  <button id="btnSalir">Salir</button>
+  <span id="estadoBol" class="estado-bol"></span>
+  <button id="btnCargar" hidden title="Abrir el archivo boletines.js que te han mandado para aprobar">Abrir boletín recibido</button>
+  <input type="file" id="archivoRecibido" accept=".js,text/javascript" hidden>
+  <button id="btnEnviar" class="publicar" hidden>Enviar a aprobación ✉</button>
+  <button id="btnPublicar" class="publicar" hidden>Aprobar y publicar ✓</button>
+</div>
+<div class="aviso" id="aviso">
+  Hay cambios guardados en este navegador que aún no se han publicado.
+  <button class="btn" id="btnRecuperar">Recuperarlos</button>
+  <button class="btn" id="btnDescartar">Descartarlos</button>
+</div>
+
+<div class="ed-cols">
+  <div class="ed-form">
+    <nav class="pestanas-ed" role="tablist">
+      <button class="activa" data-panel="boletin">Boletín de esta semana</button>
+      <button data-panel="seccion" data-sec="Historia">Historia</button>
+      <button data-panel="seccion" data-sec="Análisis">Análisis</button>
+      <button data-panel="seccion" data-sec="Actualidad">Noticias</button>
+      <button data-panel="momento">Al momento · WhatsApp</button>
+    </nav>
+    <div id="panelMomento" hidden>
+      <section class="paso paso-bib"><h2><b>⚡</b>Al momento <small>una noticia o un post suelto, con su propio enlace para WhatsApp</small></h2><div class="paso-in">
+        <p class="nota" style="margin-top:8px">Para compartir algo entre boletín y boletín: una noticia, un post de Instagram o de X, un vídeo… Cada uno tiene su <b>propio enlace</b>, y al mandarlo por WhatsApp sale con una imagen de PATRIAM con el título. Lo de Instagram, X y YouTube se ve dentro de nuestra web.</p>
+        <button class="btn btn-add" id="btnMomento">+ Nuevo envío al momento</button>
+        <div id="momento"></div>
+      </div></section>
+    </div>
+    <div id="panelSeccion" hidden>
+      <section class="paso paso-bib"><h2><b>★</b><span id="secTitulo">Historia</span> <small>se queda guardado aunque no salga en el boletín</small></h2><div class="paso-in">
+        <p class="nota" style="margin-top:8px">Aquí se añade y se cambia todo lo que hay en esta sección: podcasts, series, libros, vídeos… Marca <b>«Añadir al boletín de esta semana»</b> en lo que quieras sacar en el boletín; lo demás sigue guardado en la sección.</p>
+        <input type="search" id="buscaSec" placeholder="Buscar en esta sección…" style="margin:4px 0 10px">
+        <datalist id="temasLista"></datalist>
+        <button class="btn btn-add" id="btnBib">+ Añadir a <span class="secNombre">Historia</span></button>
+        <div id="biblioteca"></div>
+      </div></section>
+      <section class="paso"><h2><b>☰</b>Noticias de los boletines que están en <span class="secNombre">Historia</span></h2><div class="paso-in">
+        <p class="nota" style="margin-top:8px">Son las noticias que salieron en boletines anteriores y se guardaron en esta sección. Pulsa «Cambiar» para editarlas en su boletín.</p>
+        <div id="archivoSec"></div>
+      </div></section>
+    </div>
+    <div id="panelBoletin">
+
+    <section class="paso"><h2><b>1</b>Boletín de la semana</h2><div class="paso-in">
+      <div class="fila">
+        <div><label>Número</label><div class="numero-auto" id="numeroAuto">Nº —</div></div>
+        <div><label>Fecha</label><input type="date" id="fecha"></div>
+      </div>
+      <p class="nota">El número se pone solo al crear cada boletín nuevo.</p>
+    </div></section>
+
+    <section class="paso"><h2><b>2</b>Editorial <small>se archiva en Editorial</small></h2><div class="paso-in">
+      <label>Título</label><input type="text" id="editorial_titulo" placeholder="Una historia que sigue viva">
+      <label>Texto <small>(deja una línea en blanco entre párrafos)</small></label>
+      <div id="barraEditorial"><div class="herramientas">
+        <button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button>
+        <button type="button" data-f="a">Enlace</button><button type="button" data-f="h2">Subtítulo</button><button type="button" data-f="cita">Cita destacada</button><button type="button" data-f="li">Lista</button></div></div>
+      <textarea id="editorial_texto" class="largo"></textarea>
+      <label>Imagen</label>
+      <div class="img-caja" id="cajaEditorialImg">
+        <input type="text" placeholder="Elige un archivo o pega la dirección de una imagen">
+        <img class="img-mini"><input type="file" accept="image/*" hidden>
+        <button class="btn" data-accion="elegir">Elegir…</button><button class="btn" data-accion="quitar">Quitar</button>
+      </div>
+      <label>Firma</label><input type="text" id="editorial_firma">
+    </div></section>
+
+    <section class="paso"><h2><b>3</b>Noticias, podcasts y vídeos <small>cada una elige dónde se archiva</small></h2><div class="paso-in">
+      <div id="noticias"></div>
+      <button class="btn btn-add" id="btnNoticia">+ Añadir noticia</button>
+      <p class="nota">La primera noticia de cada sección sale destacada al lado de la editorial.</p>
+    </div></section>
+
+    <section class="paso"><h2><b>4</b>Textos de colaboradores <small>se archivan en Colaboraciones</small></h2><div class="paso-in">
+      <div id="colaboraciones"></div>
+      <button class="btn btn-add" id="btnColab">+ Añadir texto de colaborador</button>
+      <p class="nota">Cada texto tiene su propia página y su enlace, para ponerlo donde queráis.</p>
+    </div></section>
+
+    <section class="paso"><h2><b>5</b>Iniciativas y eventos <small>van al Calendario e Iniciativas</small></h2><div class="paso-in">
+      <div id="eventos"></div>
+      <button class="btn btn-add" id="btnEvento">+ Añadir iniciativa o evento</button>
+      <p class="nota">Al crear un boletín nuevo se copian solas las que aún no han pasado.</p>
+    </div></section>
+
+    <details class="paso"><summary><h2 style="margin:0"><b>⚙</b>Ajustes del boletín <small>se cambian pocas veces</small></h2></summary><div class="paso-in">
+      <label>Nombre del boletín <small>(lo grande de la cabecera)</small></label><input type="text" data-cfg="cabecera">
+      <label>Texto sobre el nombre</label><input type="text" data-cfg="subtitulo">
+      <label>Frase bajo el nombre</label><input type="text" data-cfg="claim">
+      <label>Lema</label><input type="text" data-cfg="lema">
+      <label>Frase bajo el logo</label><textarea data-cfg="frase" style="min-height:60px"></textarea>
+      <label>Línea bajo PATRIAM</label><input type="text" data-cfg="secciones">
+      <label>Nombre del editor</label><input type="text" data-cfg="editor">
+      <label>Quién puede comentar las noticias <small>(separados por comas)</small></label><input type="text" id="cfgComentaristas">
+      <label>Nota sobre los colaboradores</label><textarea data-cfg="notaColaboradores" style="min-height:60px"></textarea>
+      <label>Enlace del botón «Suscríbete»</label><input type="url" data-cfg="suscripcion">
+      <label>Texto de «Únete»</label><input type="text" data-cfg="uneteTexto">
+      <p class="nota" style="margin-top:14px"><b>PATRIAM en las redes</b>: pega el enlace al perfil. Solo salen las redes que tengan enlace.</p>
+      <div class="fila"><div><label>X</label><input type="url" data-cfg="x" placeholder="https://x.com/…"></div>
+        <div><label>Instagram</label><input type="url" data-cfg="instagram" placeholder="https://instagram.com/…"></div></div>
+      <div class="fila"><div><label>Facebook</label><input type="url" data-cfg="facebook" placeholder="https://facebook.com/…"></div>
+        <div><label>TikTok</label><input type="url" data-cfg="tiktok" placeholder="https://tiktok.com/@…"></div></div>
+      <div class="fila"><div><label>YouTube</label><input type="url" data-cfg="youtube" placeholder="https://youtube.com/@…"></div>
+        <div><label>Telegram</label><input type="url" data-cfg="telegram" placeholder="https://t.me/…"></div></div>
+      <label>Canal de WhatsApp</label><input type="url" data-cfg="whatsapp" placeholder="https://whatsapp.com/channel/…">
+      <label>Correo de contacto</label><input type="email" data-cfg="email">
+      <label>Dirección de la web de PATRIAM</label><input type="url" data-cfg="web">
+      <label>Dirección pública del boletín <small>(para los enlaces de los colaboradores)</small></label><input type="url" data-cfg="direccion" placeholder="https://…/boletin/">
+    </div></details>
+    </div>
+  </div>
+
+  <div class="ed-vista" id="vista"></div>
+</div>
+
+<div class="modal" id="modalUsuarios"><div class="modal-caja" style="max-width:620px">
+  <h3>Usuarios del editor</h3>
+  <p class="nota" style="margin:0 0 10px">Los cambios valen en este ordenador. Para que valgan en todos, pulsa <b>Publicar</b> y sube el archivo.</p>
+  <div id="listaUsuarios"></div>
+  <h4 style="margin:18px 0 4px;color:var(--acento);font:700 14px system-ui,sans-serif">Añadir usuario</h4>
+  <form id="formUsuario">
+    <div class="fila"><div><label for="nuCorreo">Correo</label><input type="email" id="nuCorreo" required></div>
+      <div><label for="nuClave">Contraseña provisional</label><input type="text" id="nuClave" required minlength="8"></div></div>
+    <label for="nuRol">Permisos</label>
+    <select class="campo" id="nuRol"><option value="editor">Usuario: prepara el boletín y lo envía a aprobación</option><option value="admin">Administrador: aprueba, publica y gestiona usuarios</option></select>
+    <p class="nota">Al entrar por primera vez tendrá que cambiar la contraseña provisional. Díselas tú por un canal privado.</p>
+    <button class="btn" type="submit" style="background:var(--acento);color:#fff;border-color:var(--acento);font-weight:700;margin-top:8px">Añadir usuario</button>
+    <p class="acceso-error" id="errUsuario"></p>
+  </form>
+  <div style="text-align:right;margin-top:10px"><button class="btn" type="button" onclick="document.getElementById('modalUsuarios').classList.remove('abierto')">Cerrar</button></div>
+</div></div>
+
+<div class="modal" id="modalEnviar"><div class="modal-caja">
+  <h3>Enviado a aprobación</h3>
+  <p>El boletín Nº <b id="numEnviado"></b> queda <b>pendiente de aprobación</b>. Se ha descargado el archivo <b>boletines.js</b>.</p>
+  <ol>
+    <li>Manda ese archivo a un administrador (Carlos o patriam-merc) por correo o WhatsApp.</li>
+    <li>El administrador lo abre en el editor con «Abrir boletín recibido», lo revisa y pulsa «Aprobar y publicar».</li>
+  </ol>
+  <p>Hasta que no lo apruebe un administrador, este boletín no se ve en la web, aunque se suba el archivo.</p>
+  <button class="btn" onclick="document.getElementById('modalEnviar').classList.remove('abierto')">Entendido</button>
+</div></div>
+
+<div class="modal" id="modalAyuda"><div class="modal-caja">
+  <h3>Instrucciones del editor</h3>
+  <p><b>Quién hace qué:</b> los <b>usuarios</b> preparan el boletín y lo envían para aprobar. Los <b>administradores</b> (Carlos y PATRIAM) lo revisan, lo aprueban y lo publican. Sin la aprobación de uno de los dos no se publica nada.</p>
+  <div class="consejo">Abre siempre el editor desde la web, con el enlace <b>«Acceso editor»</b> del pie del boletín. Lo que escribes se guarda solo en este navegador mientras trabajas; <b>no sale en la web hasta que se publica</b>. A la derecha ves cómo va quedando; «Vista previa» lo enseña tal como quedará en la web y «Vista móvil», como se verá en el teléfono.</div>
+
+  <details open><summary>1. Empezar el boletín de la semana</summary><div><ol>
+    <li>Pulsa <b>«+ Nuevo boletín»</b>. El número se pone solo; revisa la fecha.</li>
+    <li><b>Editorial:</b> título, texto, imagen y firma. Para negritas, cursivas o enlaces, selecciona el texto y pulsa el botón. Un párrafo nuevo es una línea en blanco.</li>
+    <li>Cuando se publique el boletín nuevo, el anterior pasa solo a sus secciones (Editorial, Noticias, Historia, Análisis…).</li>
+  </ol></div></details>
+
+  <details><summary>2. Añadir noticias, podcasts y vídeos</summary><div><ol>
+    <li>Pulsa <b>«+ Añadir noticia»</b>.</li>
+    <li><b>¿Dónde se archiva?</b> Noticias (actualidad), Historia o Análisis. <b>Tipo:</b> noticia, podcast o vídeo.</li>
+    <li><b>Título</b> y <b>Tema</b> (sirve para agruparlas dentro de la sección; escribe uno que ya exista para que vayan juntas).</li>
+    <li><b>Enlace</b> a la noticia. Si es de YouTube, el vídeo se verá dentro de nuestra web.</li>
+    <li><b>Medio</b> y su <b>logo</b>: el logo se recuerda y sale solo la próxima vez que pongas el mismo medio.</li>
+    <li><b>Resumen</b>: dos o tres frases con lo esencial.</li>
+    <li><b>Imagen</b>: «Elegir…» para subirla, o pega la dirección de una imagen. En YouTube, si no pones ninguna, se usa la del vídeo.</li>
+    <li><b>¿Quién comenta?</b> y el <b>comentario</b>.</li>
+    <li>Con las flechas ↑ ↓ cambias el orden; con ✕ la borras.</li>
+  </ol></div></details>
+
+  <details><summary>3. Textos de colaboradores, eventos y recomendados</summary><div><ul>
+    <li><b>Colaboradores:</b> «+ Añadir texto de colaborador». Autor (pueden ser siglas), una línea debajo (por ejemplo «Mujer, 49 años»), título, entradilla y texto. Cada texto tiene su propio enlace para compartirlo.</li>
+    <li><b>Iniciativas y eventos:</b> «+ Añadir iniciativa o evento»: tipo, fecha, hora, lugar, descripción y enlace. Van al calendario; los que ya han pasado se quitan solos del boletín nuevo.</li>
+    <li><b>Recomendados</b> (podcast, libro, serie…): en las pestañas <b>Historia</b> o <b>Análisis</b>, marca <b>«Añadir al boletín de esta semana»</b>. Salen abajo, como «Podcast recomendado esta semana», «Libro recomendado esta semana»…</li>
+  </ul></div></details>
+
+  <details><summary>4. Pestañas Historia, Análisis y Noticias (la biblioteca)</summary><div><ul>
+    <li>Aquí se guarda todo lo que queremos tener siempre en la web: podcasts, series, libros, vídeos, documentales… aunque no salgan en el boletín.</li>
+    <li><b>«+ Añadir a…»</b> crea una ficha. Las series pueden llevar capítulos (cada uno con su enlace). El <b>tema</b> sirve para agrupar.</li>
+    <li>Abajo están las noticias que salieron en boletines anteriores; «Cambiar» te lleva a editarlas.</li>
+  </ul></div></details>
+
+  <details><summary>5. Enviar el boletín para aprobar (usuarios)</summary><div><ol>
+    <li>Míralo antes con <b>«Vista previa»</b> y <b>«Vista móvil»</b>. Cuando esté listo, pulsa <b>«Enviar para aprobar»</b>. Se descarga un archivo llamado <b>boletines.js</b>.</li>
+    <li>Mándaselo a Carlos o a PATRIAM (por correo o WhatsApp).</li>
+    <li>Si después cambias algo, vuelve a enviarlo.</li>
+  </ol></div></details>
+
+  <details><summary>6. Aprobar y publicar <span class="solo-admin">administradores</span></summary><div><ol>
+    <li>Si te lo ha mandado otra persona: <b>«Abrir boletín recibido»</b> y elige el boletines.js que te han enviado.</li>
+    <li>Revísalo antes de publicar: <b>«Vista previa»</b> abre el boletín completo tal como quedará en la web (con una banda que pone «todavía no está publicado») y <b>«Vista móvil»</b> lo enseña en tamaño de teléfono. Corrige lo que haga falta.</li>
+    <li>Pulsa <b>«Aprobar y publicar»</b>. Se descarga el boletines.js definitivo.</li>
+    <li>Súbelo a <b>GitHub</b>: entra en el repositorio <b>patriam-boletin</b> → <b>Add file</b> → <b>Upload files</b> → arrastra boletines.js → <b>Commit changes</b>.</li>
+    <li>En un minuto está en la web. Compruébalo abriendo el boletín.</li>
+  </ol></div></details>
+
+  <details><summary>7. «Al momento»: una noticia o un post suelto para WhatsApp</summary><div><ol>
+    <li>Pestaña <b>«Al momento · WhatsApp»</b> → <b>«+ Nuevo envío al momento»</b>.</li>
+    <li><b>Título</b> (es lo que se lee en WhatsApp) y <b>enlace</b>: una noticia, un post de Instagram o de X, un vídeo de YouTube… Los de Instagram, X y YouTube se ven dentro de nuestra web.</li>
+    <li>Si quieres: medio, resumen, imagen y comentario. Si no pones imagen, se usa la de PATRIAM (o la del vídeo).</li>
+    <li><b>«Ver la imagen de WhatsApp»</b> te enseña la imagen que saldrá al compartirlo.</li>
+    <li><b>Usuarios:</b> «Enviar para aprobar» y mandad el boletines.js a un administrador, como el boletín.</li>
+    <li><b>Administradores:</b> «Publicar y sacar el enlace». Se guardan (o se descargan) tres archivos: <b>boletines.js</b> y, para la carpeta <b>a</b>, una página <b>.html</b> y una imagen <b>.jpg</b> con el nombre del envío.</li>
+    <li>Súbelos a GitHub: boletines.js en la página principal del repositorio, y los otros dos dentro de la carpeta <b>a</b> (entra en ella y Add file → Upload files). Si la carpeta <b>a</b> aún no existe, arrastra la carpeta entera la primera vez.</li>
+    <li><b>Espera un minuto</b> a que se publique y luego pulsa <b>«Mandar por WhatsApp»</b> o copia el enlace. Si se pega antes de que esté publicado, WhatsApp no enseña la imagen.</li>
+  </ol></div></details>
+
+  <details><summary>8. Suscriptores, usuarios y contraseñas <span class="solo-admin">administradores</span></summary><div><ul>
+    <li><b>Suscriptores ↗</b>: abre la lista de personas apuntadas al boletín (solo la ven los administradores). Se puede descargar en Excel.</li>
+    <li><b>Usuarios</b>: dar de alta o quitar personas del editor. Los nuevos entran con la contraseña provisional y la cambian la primera vez. Los cambios de usuarios se publican con el siguiente boletines.js.</li>
+    <li><b>Mi contraseña</b>: cada uno puede cambiar la suya cuando quiera.</li>
+  </ul></div></details>
+
+  <p style="text-align:right;margin-bottom:0"><button class="btn btn-pub" onclick="this.closest('.modal').classList.remove('abierto')">Entendido</button></p>
+</div></div>
+<div class="modal" id="modalMomento"><div class="modal-caja">
+  <h3>Enlace listo</h3>
+  <p>Este es el enlace para compartir:</p>
+  <div class="am-enlace"><code id="amEnlace"></code><button class="btn" id="amCopiar">Copiar</button></div>
+  <div id="amPasos"></div>
+  <p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-pub" id="amWhatsapp" target="_blank" rel="noopener" style="background:#25d366;color:#fff;border-color:#25d366;text-decoration:none">Mandar por WhatsApp</a>
+  <button class="btn" onclick="this.closest('.modal').classList.remove('abierto')">Cerrar</button></p>
+</div></div>
+<div class="modal" id="modal"><div class="modal-caja">
+  <h3>Boletín aprobado</h3>
+  <p>Has aprobado el boletín Nº <b id="numAprobado"></b>. Se ha descargado el archivo <b>boletines.js</b>. Para que salga en la web:</p>
+  <ol>
+    <li>Pon el archivo descargado en la carpeta del boletín, sustituyendo al anterior.</li>
+    <li>Sube la carpeta a Netlify como siempre.</li>
+  </ol>
+  <p id="avisoClave" hidden><b>Incluye también los cambios de usuarios y contraseñas</b>: hasta que no subas este archivo, en otros ordenadores siguen como antes.</p>
+  <p>El boletín nuevo pasará a la portada y el anterior quedará guardado en sus secciones (Editorial, Noticias, Historia, Análisis…).</p>
+  <button class="btn" onclick="document.getElementById('modal').classList.remove('abierto')">Entendido</button>
+</div></div>
+
+<script src="boletines.js"></script>
+<script src="boletin.js"></script>
+<script>
+const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
+let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
+let actual = null;
+const CLAVE = "patriam_boletin_borrador_v2";
+const $ = id => document.getElementById(id);
+
+
+/* ---------- acceso ---------- */
+function sha256(texto) {
+  const b = new TextEncoder().encode(texto), K = [], H = [];
+  const primo = n => { for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+  for (let n = 2, c = 0; c < 64; n++) if (primo(n)) { if (c < 8) H[c] = (Math.pow(n, 1 / 2) * 2 ** 32) | 0; K[c++] = (Math.pow(n, 1 / 3) * 2 ** 32) | 0; }
+  const l = b.length, m = new Uint8Array(((l + 9 + 63) >> 6) << 6); m.set(b); m[l] = 0x80;
+  const dv = new DataView(m.buffer); dv.setUint32(m.length - 4, l * 8); dv.setUint32(m.length - 8, Math.floor(l / 2 ** 29));
+  const r = (x, n) => (x >>> n) | (x << (32 - n)), w = new Array(64);
+  for (let o = 0; o < m.length; o += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(o + i * 4);
+    for (let i = 16; i < 64; i++) { const s0 = r(w[i-15], 7) ^ r(w[i-15], 18) ^ (w[i-15] >>> 3), s1 = r(w[i-2], 17) ^ r(w[i-2], 19) ^ (w[i-2] >>> 10); w[i] = (w[i-16] + s0 + w[i-7] + s1) | 0; }
+    let [a, bb, c, d, e, f, g, h] = H;
+    for (let i = 0; i < 64; i++) {
+      const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) | 0;
+      const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & bb) ^ (a & c) ^ (bb & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = bb; bb = a; a = (t1 + t2) | 0;
+    }
+    [a, bb, c, d, e, f, g, h].forEach((v, i) => H[i] = (H[i] + v) | 0);
+  }
+  return H.map(v => (v >>> 0).toString(16).padStart(8, "0")).join("");
+}
+const SAL = "patriam-boletin|";
+const huellaCorreo = c => sha256(SAL + c.trim().toLowerCase());
+const huellaClave = (c, k) => sha256(SAL + c.trim().toLowerCase() + "|" + k);
+let usuario = null, correoActual = "", claveCambiada = false;
+function usuarios() { return CFG.usuarios || []; }
+
+function mostrarAcceso(pantalla) {
+  $("acceso").hidden = false;
+  $("pantallaEntrar").hidden = pantalla !== "entrar";
+  $("pantallaCambiar").hidden = pantalla !== "cambiar";
+  setTimeout(() => (pantalla === "entrar" ? $("accCorreo") : $("claveNueva")).focus(), 50);
+}
+function entrar(u, correo) {
+  usuario = u; correoActual = correo;
+  try { sessionStorage.setItem("patriam_editor_sesion", JSON.stringify({ id: u.id, correo })); } catch (e) {}
+  if (u.cambiar) { $("txtCambiar").textContent = "Es tu primer acceso. Elige una contraseña nueva para seguir."; mostrarAcceso("cambiar"); }
+  else $("acceso").hidden = true;
+  trasEntrar();
+}
+$("verClave").onchange = e => $("accClave").type = e.target.checked ? "text" : "password";
+$("formEntrar").onsubmit = e => {
+  e.preventDefault();
+  const correo = $("accCorreo").value, clave = $("accClave").value;
+  const u = usuarios().find(x => x.id === huellaCorreo(correo));
+  if (!u || u.clave !== huellaClave(correo, clave)) { $("errEntrar").textContent = "El correo o la contraseña no son correctos."; return; }
+  $("errEntrar").textContent = ""; $("accClave").value = "";
+  entrar(u, correo);
+};
+$("formCambiar").onsubmit = e => {
+  e.preventDefault();
+  const a = $("claveNueva").value, b = $("claveRepite").value;
+  if (a.length < 8) { $("errCambiar").textContent = "Usa al menos 8 caracteres."; return; }
+  if (a !== b) { $("errCambiar").textContent = "Las dos contraseñas no coinciden."; return; }
+  if (huellaClave(correoActual, a) === usuario.clave) { $("errCambiar").textContent = "Tiene que ser distinta de la anterior."; return; }
+  usuario.clave = huellaClave(correoActual, a); usuario.cambiar = false; claveCambiada = true;
+  $("claveNueva").value = $("claveRepite").value = ""; $("errCambiar").textContent = "";
+  guardarBorrador();
+  $("acceso").hidden = true;
+  $("aviso").style.display = "block";
+  $("aviso").innerHTML = "Contraseña cambiada. Pulsa <b>Publicar</b> y sube el archivo para que también valga en otros ordenadores.";
+};
+
+/* ---------- gestión de usuarios (solo administradores) ---------- */
+function esAdmin() { return usuario && usuario.rol === "admin"; }
+function enmascarar(c) { c = c.trim().toLowerCase(); const [u, d] = c.split("@"); return (u || "").slice(0, 3) + "…@" + (d || ""); }
+function pintarUsuarios() {
+  const lista = $("listaUsuarios"); lista.innerHTML = "";
+  usuarios().forEach((u, i) => {
+    const yo = u === usuario;
+    const f = document.createElement("div"); f.className = "us-fila";
+    f.innerHTML = "<b>" + esc(u.nombre || "Usuario") + (yo ? " (tú)" : "") + "<small>" + (u.cambiar ? "Pendiente de cambiar la contraseña provisional" : "Contraseña propia") + "</small></b>" +
+      '<span class="us-rol">' + (u.rol === "admin" ? "Administra" : "Edita") + "</span>" +
+      (yo ? "" : '<button class="btn" data-r>Restablecer contraseña</button><button class="btn btn-rojo" data-b>Dar de baja</button>');
+    if (!yo) {
+      f.querySelector("[data-b]").onclick = () => {
+        if (usuarios().filter(x => x.rol === "admin").length === 1 && u.rol === "admin") { alert("Tiene que quedar al menos un administrador."); return; }
+        if (!confirm("¿Dar de baja a " + (u.nombre || "este usuario") + "?")) return;
+        CFG.usuarios.splice(i, 1); claveCambiada = true; guardarBorrador(); pintarUsuarios();
+      };
+      f.querySelector("[data-r]").onclick = () => {
+        if (f.querySelector(".us-reset")) return;
+        const r = document.createElement("div"); r.className = "us-reset";
+        r.innerHTML = '<input type="text" placeholder="Correo de este usuario"><input type="text" placeholder="Contraseña provisional"><button class="btn">Guardar</button>';
+        r.querySelector("button").onclick = () => {
+          const [c, k] = [...r.querySelectorAll("input")].map(x => x.value.trim());
+          if (huellaCorreo(c) !== u.id) { alert("Ese correo no corresponde a este usuario."); return; }
+          if (k.length < 8) { alert("La contraseña provisional necesita al menos 8 caracteres."); return; }
+          u.clave = huellaClave(c, k); u.cambiar = true; claveCambiada = true; guardarBorrador(); pintarUsuarios();
+        };
+        f.appendChild(r);
+      };
+    }
+    lista.appendChild(f);
+  });
+}
+$("btnUsuarios").onclick = () => { pintarUsuarios(); $("modalUsuarios").classList.add("abierto"); };
+$("formUsuario").onsubmit = e => {
+  e.preventDefault();
+  const c = $("nuCorreo").value.trim(), k = $("nuClave").value.trim();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)) { $("errUsuario").textContent = "Escribe un correo válido."; return; }
+  if (k.length < 8) { $("errUsuario").textContent = "La contraseña provisional necesita al menos 8 caracteres."; return; }
+  if (usuarios().some(u => u.id === huellaCorreo(c))) { $("errUsuario").textContent = "Ese correo ya tiene acceso."; return; }
+  CFG.usuarios = usuarios();
+  CFG.usuarios.push({ id: huellaCorreo(c), clave: huellaClave(c, k), cambiar: true, rol: $("nuRol").value, nombre: enmascarar(c) });
+  claveCambiada = true; guardarBorrador();
+  $("nuCorreo").value = $("nuClave").value = ""; $("errUsuario").textContent = "";
+  pintarUsuarios();
+};
+
+$("btnClave").onclick = () => { $("txtCambiar").textContent = "Elige tu contraseña nueva."; mostrarAcceso("cambiar"); };
+$("btnSalir").onclick = () => { try { sessionStorage.removeItem("patriam_editor_sesion"); } catch (e) {} usuario = null; $("accCorreo").value = ""; mostrarAcceso("entrar"); };
+
+/* ---------- utilidades ---------- */
+function hoy() { return new Date().toISOString().slice(0, 10); }
+function nuevoId(p) { return (p || "b") + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
+function guardarBorrador() { try { localStorage.setItem(CLAVE, JSON.stringify({ datos, CFG })); } catch (e) {} }
+function direccionPublica() {
+  let d = (CFG.direccion || "").trim();
+  if (!d) d = location.href.replace(/[#?].*$/, "").replace(/editor\.html$/, "");
+  return d.replace(/index\.html$/, "");
+}
+function leerImagen(file) {
+  return new Promise((ok, mal) => {
+    const lector = new FileReader();
+    lector.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const r = Math.min(1, 1400 / img.width), c = document.createElement("canvas");
+        c.width = Math.round(img.width * r); c.height = Math.round(img.height * r);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        ok(c.toDataURL("image/jpeg", 0.82));
+      };
+      img.onerror = mal; img.src = lector.result;
+    };
+    lector.onerror = mal; lector.readAsDataURL(file);
+  });
+}
+function miniatura(caja, src) {
+  const m = caja.querySelector(".img-mini");
+  if (src) { m.src = src; m.style.display = "block"; } else { m.removeAttribute("src"); m.style.display = "none"; }
+}
+function cajaImagen(caja, leer, fijar) {
+  const archivo = caja.querySelector("input[type=file]"), texto = caja.querySelector("input[type=text]");
+  const v = leer() || "";
+  texto.value = v.startsWith("data:") ? "(imagen subida)" : v;
+  miniatura(caja, v);
+  texto.oninput = () => { if (texto.value === "(imagen subida)") return; fijar(texto.value); miniatura(caja, texto.value); cambio(); };
+  caja.querySelector('[data-accion="elegir"]').onclick = () => archivo.click();
+  caja.querySelector('[data-accion="quitar"]').onclick = () => { fijar(""); texto.value = ""; miniatura(caja, ""); cambio(); };
+  archivo.onchange = async () => {
+    if (!archivo.files[0]) return;
+    try { const d = await leerImagen(archivo.files[0]); fijar(d); texto.value = "(imagen subida)"; miniatura(caja, d); cambio(); }
+    catch (e) { alert("No se ha podido leer la imagen."); }
+    archivo.value = "";
+  };
+}
+const HTML_IMG = '<div class="img-caja"><input type="text" placeholder="Elige un archivo o pega la dirección de una imagen"><img class="img-mini"><input type="file" accept="image/*" hidden>' +
+                 '<button class="btn" data-accion="elegir">Elegir…</button><button class="btn" data-accion="quitar">Quitar</button></div>';
+
+/* ---------- lista genérica (noticias, colaboraciones, eventos) ---------- */
+function pintarLista(cont, arr, titulo, plantilla, alPintar) {
+  cont.innerHTML = "";
+  arr.forEach((obj, i) => {
+    const f = document.createElement("div");
+    f.className = "item";
+    f.innerHTML = '<div class="item-cab"><span>' + titulo(obj, i) + '</span><button class="btn" data-mover="-1" title="Subir">↑</button>' +
+                  '<button class="btn" data-mover="1" title="Bajar">↓</button><button class="btn btn-rojo" data-borrar title="Eliminar">✕</button></div>' + plantilla;
+    f.querySelectorAll("[data-k]").forEach(inp => {
+      const k = inp.dataset.k;
+      inp.value = obj[k] || (inp.tagName === "SELECT" ? inp.options[0].value : "");
+      inp.addEventListener("input", () => { obj[k] = inp.value; f.querySelector(".item-cab span").textContent = titulo(obj, i); cambio(); });
+    });
+    const ci = f.querySelector(".img-caja:not(.caja-logo)");
+    if (ci) cajaImagen(ci, () => obj.imagen, v => obj.imagen = v);
+    f.querySelector("[data-borrar]").onclick = () => { if (confirm("¿Eliminar?")) { arr.splice(i, 1); pintarTodo(); cambio(); } };
+    f.querySelectorAll("[data-mover]").forEach(btn => btn.onclick = () => {
+      const j = i + Number(btn.dataset.mover);
+      if (j < 0 || j >= arr.length) return;
+      [arr[i], arr[j]] = [arr[j], arr[i]]; pintarTodo(); cambio();
+    });
+    if (alPintar) alPintar(f, obj);
+    cont.appendChild(f);
+  });
+}
+
+function pintarNoticias() {
+  const quien = (CFG.comentaristas && CFG.comentaristas.length ? CFG.comentaristas : [CFG.editor || "LODLC"]).map(x => "<option>" + esc(x) + "</option>").join("");
+  const BAR = '<div class="herramientas"><button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button><button type="button" data-f="a">Enlace</button></div>';
+  pintarLista($("noticias"), actual.noticias = actual.noticias || [], (n, i) => "Noticia " + (i + 1) + " · se archiva en " + ({ Actualidad: "Noticias", Historia: "Historia", "Análisis": "Análisis" }[n.seccion || "Actualidad"] || "Noticias") + (n.formato && n.formato !== "Noticia" ? " · " + n.formato : ""),
+    '<div class="fila"><div><label>¿Dónde se archiva?</label><select class="campo" data-k="seccion"><option value="Actualidad">Noticias (actualidad)</option><option value="Historia">Historia</option><option value="Análisis">Análisis</option></select></div>' +
+    '<div><label>Tipo</label><select class="campo" data-k="formato"><option>Noticia</option><option>Podcast</option><option>Vídeo</option></select></div></div>' +
+    '<label>Título</label><input type="text" data-k="titular">' +
+    '<label>Tema <small>(para agrupar dentro de la sección)</small></label><input type="text" data-k="tema" list="temasLista">' +
+    '<label>Enlace <small>(si es de YouTube, el vídeo se verá dentro de nuestra web)</small></label><input type="url" data-k="url" placeholder="https://…">' +
+    '<label>Medio</label><input type="text" data-k="medio" placeholder="ABC, Libertad Digital…">' +
+    '<label>Logo del medio <small>(se guarda y sale solo la próxima vez que pongas el mismo medio)</small></label>' +
+    '<div class="img-caja caja-logo"><input type="text" placeholder="Elige el logo o pega su dirección"><img class="img-mini" style="object-fit:contain;background:#fff"><input type="file" accept="image/*" hidden>' +
+    '<button class="btn" data-accion="elegir">Elegir…</button><button class="btn" data-accion="quitar">Quitar</button></div>' +
+    '<label>Resumen <small>(2 o 3 frases con lo esencial)</small></label>' + BAR + '<textarea data-k="resumen" style="min-height:70px"></textarea>' +
+    '<label>Imagen <small>(si es de YouTube y no pones ninguna, se usa la del vídeo)</small></label>' + HTML_IMG.replace('class="img-caja"', 'class="img-caja caja-foto"') +
+    '<label>¿Quién comenta?</label><select class="campo" data-k="comenta">' + quien + '</select>' +
+    '<label>Comentario</label>' + BAR + '<textarea data-k="comentario"></textarea>',
+    (f, n) => {
+      f.querySelectorAll(".herramientas").forEach(bar => { const ta = bar.nextElementSibling; bar.querySelectorAll("[data-f]").forEach(b => b.onclick = () => darFormato(ta, b.dataset.f, null)); });
+      const clave = () => String(n.medio || "").trim().toLowerCase();
+      const caja = f.querySelector(".caja-logo");
+      cajaImagen(caja, () => n.logoMedio || (CFG.logos || {})[clave()] || "", v => { n.logoMedio = v; if (clave()) { CFG.logos = CFG.logos || {}; if (v) CFG.logos[clave()] = v; else delete CFG.logos[clave()]; } });
+      f.querySelector('[data-k="medio"]').addEventListener("change", () => { const l = (CFG.logos || {})[clave()]; if (l && !n.logoMedio) { cajaImagen(caja, () => l, v => { n.logoMedio = v; if (clave()) CFG.logos[clave()] = v; }); cambio(); } });
+    });
+}
+
+
+function pintarBiblioteca() {
+  CFG.biblioteca = CFG.biblioteca || [];
+  const quien = (CFG.comentaristas && CFG.comentaristas.length ? CFG.comentaristas : [CFG.editor || "LODLC"]).map(x => "<option>" + esc(x) + "</option>").join("");
+  const tipos = ["Podcast", "Serie de podcast", "Vídeo", "Documental", "Libro", "Artículo"].map(x => "<option>" + x + "</option>").join("");
+  const BAR = '<div class="herramientas"><button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button><button type="button" data-f="a">Enlace</button></div>';
+  pintarLista($("biblioteca"), CFG.biblioteca, (x, i) => (x.tipo || "Recurso") + " · " + (x.titulo || "sin título") + " · en " + (x.seccion || "Historia") + ((actual.recomendados || []).includes(x.id) ? " · ★ esta semana" : ""),
+    '<label class="recomendar"><input type="checkbox" class="chk-rec"> Añadir al boletín de esta semana (Nº ' + String(actual.numero).padStart(2, "0") + ')</label>' +
+    '<div class="fila"><div><label>¿Dónde se guarda?</label><select class="campo" data-k="seccion"><option>Historia</option><option>Análisis</option><option value="Actualidad">Noticias (actualidad)</option></select></div>' +
+    '<div><label>Tipo</label><select class="campo" data-k="tipo">' + tipos + '</select></div></div>' +
+    '<label>Título</label><input type="text" data-k="titulo">' +
+    '<label>Tema <small>(para agrupar: «Segunda República y Guerra Civil», «Reconquista»…)</small></label><input type="text" data-k="tema" list="temasLista">' +
+    '<label>Autor o medio</label><input type="text" data-k="medio" placeholder="Libertad Digital, José Carlos Gracia, autor del libro…">' +
+    '<label>Enlace <small>(si es de YouTube se ve dentro de nuestra web; si es un libro, a la tienda o la editorial)</small></label><input type="url" data-k="url" placeholder="https://…">' +
+    '<label>Imagen <small>(portada del libro; en vídeos de YouTube se usa la del vídeo)</small></label>' + HTML_IMG +
+    '<label>Descripción</label>' + BAR + '<textarea data-k="descripcion" style="min-height:70px"></textarea>' +
+    '<label>¿Quién comenta?</label><select class="campo" data-k="comenta">' + quien + '</select>' +
+    '<label>Comentario</label>' + BAR + '<textarea data-k="comentario"></textarea>' +
+    '<label>Capítulos <small>(solo para series: uno por línea → año o número | título | enlace)</small></label>' +
+    '<textarea class="caps" style="min-height:90px;font-family:ui-monospace,monospace;font-size:12px" placeholder="1930 | El primer golpe de Estado republicano | https://www.youtube.com/watch?v=…"></textarea>',
+    (f, x) => {
+      f.dataset.seccion = x.seccion || "Historia";
+      f.dataset.texto = [x.titulo, x.medio, x.tema, x.descripcion].join(" ").toLowerCase();
+      if (!x.id) x.id = nuevoId("r");
+      if (!x.alta) x.alta = hoy();
+      f.querySelectorAll(".herramientas").forEach(bar => { const ta = bar.nextElementSibling; bar.querySelectorAll("[data-f]").forEach(b => b.onclick = () => darFormato(ta, b.dataset.f, null)); });
+      const chk = f.querySelector(".chk-rec");
+      chk.checked = (actual.recomendados || []).includes(x.id);
+      chk.onchange = () => {
+        actual.recomendados = (actual.recomendados || []).filter(id => id !== x.id);
+        if (chk.checked) actual.recomendados.push(x.id);
+        f.querySelector(".item-cab span").textContent = (x.tipo || "Recurso") + " · " + (x.titulo || "sin título") + " · en " + (x.seccion || "Historia") + (chk.checked ? " · ★ esta semana" : "");
+        cambio();
+      };
+      const caps = f.querySelector(".caps");
+      caps.value = (x.capitulos || []).map(c => [c.etiqueta || "", c.titulo || "", c.url || ""].join(" | ")).join("\n");
+      caps.addEventListener("input", () => {
+        x.capitulos = caps.value.split("\n").map(l => l.split("|").map(t => t.trim())).filter(p => p.some(Boolean)).map(([etiqueta, titulo, url]) => {
+          const c = { etiqueta: etiqueta || "", titulo: titulo || "", url: url || "" };
+          if (url && !/youtu/.test(url)) c.donde = /spotify/.test(url) ? "Spotify" : /ivoox/.test(url) ? "iVoox" : /esradio/.test(url) ? "esRadio" : /apple/.test(url) ? "Apple Podcasts" : "su web";
+          return c;
+        });
+        cambio();
+      });
+    });
+}
+
+function pintarColaboraciones() {
+  pintarLista($("colaboraciones"), actual.colaboraciones = actual.colaboraciones || [], (c, i) => "Texto " + (i + 1) + (c.autor ? " · " + c.autor : ""),
+    '<div class="fila"><div><label>Autor</label><input type="text" data-k="autor"></div><div><label>Cargo o profesión</label><input type="text" data-k="cargo"></div></div>' +
+    '<label>Título</label><input type="text" data-k="titulo">' +
+    '<label>Entradilla <small>(una frase que resuma el texto)</small></label><input type="text" data-k="entradilla">' +
+    "<label>Imagen</label>" + HTML_IMG +
+    '<label>Texto</label><div class="herramientas">' +
+      '<button type="button" data-f="h2">Subtítulo</button><button type="button" data-f="cita">Cita destacada</button>' +
+      '<button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button>' +
+      '<button type="button" data-f="a">Enlace</button><button type="button" data-f="li">Lista</button></div>' +
+    '<textarea data-k="texto" class="largo" placeholder="Escribe o pega aquí el texto. Deja una línea en blanco entre párrafos."></textarea>' +
+    '<label>Sobre el autor <small>(opcional)</small></label><textarea data-k="bio" style="min-height:60px"></textarea>' +
+    '<div class="enlace-caja">Enlace: <code></code><button type="button" class="btn" data-copiar>Copiar</button></div>',
+    (f, c) => {
+      if (!c.id) c.id = nuevoId("c");
+      const enlace = () => direccionPublica() + "#/colaboracion/" + encodeURIComponent(c.id);
+      f.querySelector(".enlace-caja code").textContent = enlace();
+      f.querySelector("[data-copiar]").onclick = e => {
+        const t = enlace();
+        (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => { e.target.textContent = "¡Copiado!"; setTimeout(() => e.target.textContent = "Copiar", 1500); })
+          .catch(() => prompt("Copia el enlace:", t));
+      };
+      const ta = f.querySelector('[data-k="texto"]');
+      f.querySelectorAll("[data-f]").forEach(b => b.onclick = () => darFormato(ta, b.dataset.f, c));
+    });
+}
+
+function darFormato(ta, tipo, obj) {
+  const ini = ta.selectionStart, fin = ta.selectionEnd, sel = ta.value.slice(ini, fin);
+  let nuevo;
+  if (tipo === "b") nuevo = "**" + (sel || "texto en negrita") + "**";
+  else if (tipo === "i") nuevo = "*" + (sel || "texto en cursiva") + "*";
+  else if (tipo === "a") { const u = prompt("Dirección del enlace (https://…)"); if (!u) return; nuevo = "[" + (sel || "texto del enlace") + "](" + u + ")"; }
+  else if (tipo === "h2") nuevo = "\n\n## " + (sel || "Subtítulo") + "\n\n";
+  else if (tipo === "cita") nuevo = "\n\n> " + (sel || "Cita destacada") + "\n\n";
+  else if (tipo === "li") nuevo = "\n\n" + (sel ? sel.split(/\n/).map(l => "- " + l).join("\n") : "- Primer punto\n- Segundo punto") + "\n\n";
+  ta.value = ta.value.slice(0, ini) + nuevo + ta.value.slice(fin);
+  ta.value = ta.value.replace(/\n{3,}/g, "\n\n");
+  if (obj) obj.texto = ta.value;
+  ta.dispatchEvent(new Event("input")); ta.focus();
+}
+
+function pintarEventos() {
+  pintarLista($("eventos"), actual.eventos = actual.eventos || [], (e, i) => (i + 1) + ". " + (e.tipo || "Evento") + (e.titulo ? " · " + e.titulo : ""),
+    '<div class="fila"><div><label>Tipo</label><select class="campo" data-k="tipo"><option>Evento</option><option>Iniciativa</option><option>Campaña</option><option>Conferencia</option><option>Acto</option></select></div>' +
+    '<div><label>Fecha <small>(si la hay)</small></label><input type="date" data-k="fecha"></div><div><label>Hora</label><input type="text" data-k="hora" placeholder="19:00"></div></div>' +
+    '<label>Título</label><input type="text" data-k="titulo"><label>Lugar</label><input type="text" data-k="lugar">' +
+    '<label>Descripción breve</label><textarea data-k="descripcion" style="min-height:60px"></textarea>' +
+    '<label>Enlace para más información <small>(opcional)</small></label><input type="url" data-k="url" placeholder="https://…">');
+}
+
+/* ---------- formulario ---------- */
+function pintarTodo() { if (typeof pintarMomento === "function" && $("momento")) pintarMomento(); pintarNoticias(); pintarColaboraciones(); pintarEventos(); pintarBiblioteca(); if (typeof filtrarEditorSec === "function" && $("buscaSec")) filtrarEditorSec(); actualizarVista(); }
+function cargarFormulario() {
+  const b = actual;
+  if (typeof pintarEstado === "function") pintarEstado();
+  $("numeroAuto").innerHTML = "Nº " + String(b.numero).padStart(2, "0") + " <small>automático</small>";
+  $("fecha").value = b.fecha || "";
+  b.editorial = b.editorial || {};
+  $("editorial_titulo").value = b.editorial.titulo || "";
+  $("editorial_texto").value = b.editorial.texto || "";
+  $("editorial_firma").value = b.editorial.firma || CFG.editor || "LODLC";
+  cajaImagen($("cajaEditorialImg"), () => actual.editorial.imagen, v => actual.editorial.imagen = v);
+  pintarTodo();
+}
+function pintarSelector() {
+  const sel = $("selBoletin"); sel.innerHTML = "";
+  ordenar(datos).forEach(b => {
+    const o = document.createElement("option");
+    o.value = b.id; o.textContent = "Nº " + String(b.numero).padStart(2, "0") + " · " + (b.fecha || "") + ((b.editorial || {}).titulo ? " — " + b.editorial.titulo : "");
+    sel.appendChild(o);
+  });
+  if (actual) sel.value = actual.id;
+}
+function cambio() {
+  if (actual && usuario && !esAdmin() && actual.estado === "aprobado") { actual.estado = "borrador"; delete actual.aprobadoPor; pintarEstado(); }
+  guardarBorrador(); actualizarVista();
+}
+function actualizarVista() {
+  $("vista").innerHTML = renderBoletin(actual, CFG, datos);
+  $("vista").querySelectorAll('a[href^="#"]').forEach(a => a.addEventListener("click", e => e.preventDefault()));
+}
+
+document.querySelectorAll("#barraEditorial [data-f]").forEach(b => b.onclick = () => darFormato($("editorial_texto"), b.dataset.f, null));
+[["fecha", v => actual.fecha = v], ["editorial_titulo", v => actual.editorial.titulo = v],
+ ["editorial_texto", v => actual.editorial.texto = v], ["editorial_firma", v => actual.editorial.firma = v]].forEach(([id, fn]) => {
+  $(id).addEventListener("input", e => { fn(e.target.value); if (id === "fecha" || id === "editorial_titulo") pintarSelector(); cambio(); });
+});
+document.querySelectorAll("[data-cfg]").forEach(inp => {
+  inp.value = CFG[inp.dataset.cfg] || "";
+  inp.addEventListener("input", () => { CFG[inp.dataset.cfg] = inp.value; if (inp.dataset.cfg === "direccion" || inp.dataset.cfg === "editor") pintarTodo(); cambio(); });
+});
+
+$("cfgComentaristas").value = (CFG.comentaristas || []).join(", ");
+$("cfgComentaristas").addEventListener("change", e => { CFG.comentaristas = e.target.value.split(",").map(x => x.trim()).filter(Boolean); pintarNoticias(); cambio(); });
+
+/* ---------- botones ---------- */
+$("selBoletin").onchange = e => { actual = datos.find(b => b.id === e.target.value); cargarFormulario(); };
+$("btnNuevo").onclick = () => {
+  const max = datos.reduce((m, b) => Math.max(m, Number(b.numero) || 0), 0);
+  const ult = ordenar(datos)[0];
+  actual = { id: nuevoId("b"), numero: max + 1, fecha: hoy(), titulo: "", portada: "",
+    editorial: { titulo: "", texto: "", firma: CFG.editor || "LODLC", imagen: "" },
+    noticias: [{ seccion: "Actualidad", formato: "Noticia", titular: "", medio: "", url: "", imagen: "", resumen: "", comenta: "", comentario: "" }],
+    colaboraciones: [], recomendados: [], estado: "borrador",
+    eventos: ult ? JSON.parse(JSON.stringify((ult.eventos || []).filter(e => !e.fecha || e.fecha >= hoy()))) : [] };
+  datos.push(actual); pintarSelector(); cargarFormulario(); guardarBorrador();
+};
+$("btnBorrar").onclick = () => {
+  if (!actual || !confirm("¿Eliminar el boletín Nº " + actual.numero + "? (Desaparecerá de la web al publicar)")) return;
+  datos = datos.filter(b => b !== actual);
+  if (!datos.length) { $("btnNuevo").click(); return; }
+  actual = ordenar(datos)[0]; pintarSelector(); cargarFormulario(); guardarBorrador();
+};
+$("btnNoticia").onclick = () => { actual.noticias.push({ seccion: "Actualidad", formato: "Noticia", titular: "", medio: "", url: "", imagen: "", resumen: "", comenta: "", comentario: "" }); pintarNoticias(); cambio(); $("noticias").lastElementChild.scrollIntoView({ behavior: "smooth" }); };
+$("btnColab").onclick = () => { actual.colaboraciones.push({ id: nuevoId("c"), autor: "", cargo: "", titulo: "", entradilla: "", imagen: "", texto: "", bio: "" }); pintarColaboraciones(); cambio(); $("colaboraciones").lastElementChild.scrollIntoView({ behavior: "smooth" }); };
+let seccionActual = "Historia";
+const NOMBRE_SEC = { Historia: "Historia", "Análisis": "Análisis", Actualidad: "Noticias" };
+function verPanel(panel, sec) {
+  document.querySelectorAll(".pestanas-ed button").forEach(b => b.classList.toggle("activa", b.dataset.panel === panel && (panel !== "seccion" || b.dataset.sec === sec)));
+  $("panelBoletin").hidden = panel !== "boletin";
+  $("panelMomento").hidden = panel !== "momento";
+  if (panel === "momento") pintarMomento();
+  $("panelSeccion").hidden = panel !== "seccion";
+  if (panel === "seccion") {
+    seccionActual = sec;
+    $("secTitulo").textContent = NOMBRE_SEC[sec];
+    document.querySelectorAll(".secNombre").forEach(e => e.textContent = NOMBRE_SEC[sec]);
+    pintarBiblioteca(); pintarArchivo(); filtrarEditorSec();
+  }
+  document.querySelector(".ed-form").scrollTop = 0;
+}
+function filtrarEditorSec() {
+  const q = ($("buscaSec").value || "").trim().toLowerCase();
+  [...$("biblioteca").children].forEach(f => f.hidden = f.dataset.seccion !== seccionActual || (q && !f.dataset.texto.includes(q) && !f.querySelector(".item-cab span").textContent.toLowerCase().includes(q)));
+  [...$("archivoSec").children].forEach(f => { if (f.classList.contains("arch-fila")) f.hidden = !!q && !f.textContent.toLowerCase().includes(q); });
+  const temas = new Set();
+  (CFG.biblioteca || []).forEach(x => x.tema && temas.add(x.tema)); datos.forEach(b => (b.noticias || []).forEach(n => n.tema && temas.add(n.tema)));
+  $("temasLista").innerHTML = [...temas].map(t => '<option value="' + esc(t) + '">').join("");
+}
+function pintarArchivo() {
+  const cont = $("archivoSec"); cont.innerHTML = "";
+  let n = 0;
+  ordenar(datos).forEach(b => (b.noticias || []).forEach((no, k) => {
+    if ((no.seccion || "Actualidad") !== seccionActual || !(no.titular || no.url)) return;
+    n++;
+    const f = document.createElement("div"); f.className = "arch-fila";
+    f.innerHTML = "<div><b>" + esc(no.titular || no.url) + "</b><small>Boletín Nº " + String(b.numero).padStart(2, "0") + " · " + esc(b.fecha || "") + (no.formato && no.formato !== "Noticia" ? " · " + esc(no.formato) : "") + '</small></div><button class="btn">Cambiar</button>';
+    f.querySelector("button").onclick = () => {
+      actual = b; pintarSelector(); cargarFormulario(); verPanel("boletin");
+      setTimeout(() => { const it = $("noticias").children[k]; if (it) { it.scrollIntoView({ behavior: "smooth", block: "start" }); it.style.outline = "3px solid var(--gualda)"; setTimeout(() => it.style.outline = "", 2500); } }, 60);
+    };
+    cont.appendChild(f);
+  }));
+  if (!n) cont.innerHTML = '<p class="nota">Todavía no hay noticias de boletines en esta sección.</p>';
+}
+document.querySelectorAll(".pestanas-ed button").forEach(b => b.onclick = () => verPanel(b.dataset.panel, b.dataset.sec));
+$("buscaSec").addEventListener("input", filtrarEditorSec);
+
+$("btnBib").onclick = () => { CFG.biblioteca = CFG.biblioteca || []; CFG.biblioteca.unshift({ id: nuevoId("r"), seccion: seccionActual, tipo: "Podcast", titulo: "", medio: "", url: "", imagen: "", descripcion: "", comenta: "", comentario: "", capitulos: [], alta: hoy() }); pintarBiblioteca(); filtrarEditorSec(); cambio(); $("biblioteca").firstElementChild.scrollIntoView({ behavior: "smooth" }); };
+$("btnEvento").onclick = () => { actual.eventos.push({ tipo: "Evento", fecha: "", hora: "", titulo: "", lugar: "", descripcion: "", url: "" }); pintarEventos(); cambio(); $("eventos").lastElementChild.scrollIntoView({ behavior: "smooth" }); };
+function abrirVista(movil) {
+  const w = movil ? window.open("", "vistaMovil", "width=400,height=820") : window.open("", "_blank");
+  if (!w) { alert("El navegador ha bloqueado la ventana. Permite las ventanas emergentes para esta página."); return; }
+  const base = location.href.replace(/[^/]*$/, "");
+  w.document.open();
+  w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="' + base + '">' +
+    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css">' +
+    '<style>.vp-aviso{position:sticky;top:0;z-index:999;background:#a8873a;color:#fff;font:600 13px system-ui,sans-serif;text-align:center;padding:6px 10px;letter-spacing:.04em}</style></head><body>' +
+    '<div class="vp-aviso">VISTA PREVIA · Boletín Nº ' + String(actual.numero).padStart(2, "0") + ' · todavía no está publicado</div>' + renderBoletin(actual, CFG, datos) +
+    '<script>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a&&a.getAttribute("href")&&a.getAttribute("href").charAt(0)==="#"){e.preventDefault();}});<\/script></body></html>');
+  w.document.close();
+}
+$("btnCompleta").onclick = () => abrirVista(false);
+$("btnMovil").onclick = () => abrirVista(true);
+
+/* ---------- aprobación: los usuarios envían, los administradores aprueban y publican ---------- */
+function textoArchivo() {
+  return "/* Este archivo lo genera el editor (editor.html). No hace falta editarlo a mano. */\n" +
+    "window.PATRIAM_CONFIG = " + JSON.stringify(CFG, null, 2) + ";\nwindow.BOLETINES = " + JSON.stringify(datos, null, 2) + ";\n";
+}
+function descargar() {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([textoArchivo()], { type: "text/javascript" }));
+  a.download = "boletines.js"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  try { localStorage.removeItem(CLAVE); } catch (e) {}
+  $("aviso").style.display = "none";
+}
+function pintarEstado() {
+  const e = $("estadoBol"); if (!actual) { e.textContent = ""; return; }
+  const est = actual.estado || "borrador";
+  e.className = "estado-bol " + est;
+  e.textContent = est === "aprobado" ? "Aprobado" + (actual.aprobadoPor ? " por " + actual.aprobadoPor : "") :
+                  est === "pendiente" ? "Pendiente de aprobación" : "Borrador";
+}
+function trasEntrar() {
+  const adm = esAdmin();
+  $("btnUsuarios").hidden = !adm;
+  $("btnSuscriptores").hidden = !adm;
+  $("btnCargar").hidden = !adm;
+  $("btnPublicar").hidden = !adm;
+  $("btnEnviar").hidden = adm;
+  pintarEstado();
+  ayudaPrimeraVez();
+}
+$("btnEnviar").onclick = () => {
+  if (!(actual.editorial || {}).titulo && !confirm("Falta el título de la editorial. ¿Enviar de todas formas?")) return;
+  actual.estado = "pendiente"; delete actual.aprobadoPor; delete actual.aprobadoEl;
+  actual.enviadoPor = usuario.nombre || ""; actual.enviadoEl = hoy();
+  pintarEstado(); descargar();
+  $("numEnviado").textContent = String(actual.numero).padStart(2, "0");
+  $("modalEnviar").classList.add("abierto");
+};
+$("btnCargar").onclick = () => $("archivoRecibido").click();
+$("archivoRecibido").onchange = async () => {
+  const f = $("archivoRecibido").files[0]; if (!f) return;
+  try {
+    const t = await f.text();
+    const cfgTxt = t.slice(t.indexOf("window.PATRIAM_CONFIG = ") + 24, t.indexOf(";\nwindow.BOLETINES"));
+    const bolTxt = t.slice(t.indexOf("window.BOLETINES = ") + 19, t.lastIndexOf("];") + 1);
+    const nuevoCfg = JSON.parse(cfgTxt), nuevos = JSON.parse(bolTxt);
+    Object.keys(CFG).forEach(k => delete CFG[k]); Object.assign(CFG, nuevoCfg);
+    datos = nuevos;
+    actual = datos.find(b => b.estado === "pendiente") || ordenar(datos)[0];
+    pintarSelector(); cargarFormulario();
+    document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");
+    guardarBorrador();
+    alert(datos.some(b => b.estado === "pendiente") ? "Boletín recibido. Revísalo y pulsa «Aprobar y publicar»." : "Archivo abierto. No hay boletines pendientes de aprobar.");
+  } catch (e) { alert("No se ha podido leer el archivo. Tiene que ser el boletines.js que descarga el editor."); }
+  $("archivoRecibido").value = "";
+};
+$("btnPublicar").onclick = () => {
+  if (!esAdmin()) return;
+  const vacios = [];
+  if (!(actual.editorial || {}).titulo) vacios.push("el título de la editorial");
+  if (!(actual.noticias || []).some(n => n.titular)) vacios.push("alguna noticia");
+  if (vacios.length && !confirm("Falta " + vacios.join(" y ") + ". ¿Aprobar de todas formas?")) return;
+  if (!confirm("¿Apruebas el boletín Nº " + String(actual.numero).padStart(2, "0") + " para que se publique?")) return;
+  actual.estado = "aprobado"; actual.aprobadoPor = usuario.nombre || ""; actual.aprobadoEl = hoy();
+  pintarEstado(); descargar();
+  $("numAprobado").textContent = String(actual.numero).padStart(2, "0");
+  $("avisoClave").hidden = !claveCambiada;
+  $("modal").classList.add("abierto");
+};
+
+/* ---------- Al momento: envíos sueltos con su propio enlace para WhatsApp ---------- */
+const NOMBRE_ESTADO = { aprobado: "Publicado", pendiente: "Pendiente de aprobar", borrador: "Borrador" };
+function slugDe(t) {
+  const base = sinAcentos(t || "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 45).replace(/-[^-]*$/, "") || "al-momento";
+  const usados = new Set((CFG.alMomento || []).map(x => x.slug).filter(Boolean));
+  let s = base, n = 2; while (usados.has(s)) s = base + "-" + n++;
+  return s;
+}
+function baseWeb() { const d = direccionPublica(); return d.endsWith("/") ? d : d + "/"; }
+function enlaceMomento(x) { return baseWeb() + "a/" + x.slug; }
+function pintarMomento() {
+  CFG.alMomento = CFG.alMomento || [];
+  const quien = (CFG.comentaristas && CFG.comentaristas.length ? CFG.comentaristas : [CFG.editor || "LODLC"]).map(x => "<option>" + esc(x) + "</option>").join("");
+  const BAR = '<div class="herramientas"><button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button><button type="button" data-f="a">Enlace</button></div>';
+  pintarLista($("momento"), CFG.alMomento, x => (x.titulo || "Sin título") + " · " + (NOMBRE_ESTADO[x.estado] || "Borrador"),
+    '<label>Título <small>(es lo que se lee en WhatsApp)</small></label><input type="text" data-k="titulo">' +
+    '<label>Enlace <small>(noticia, post de Instagram o de X, vídeo de YouTube…)</small></label><input type="url" data-k="url" placeholder="https://…">' +
+    '<label>Medio <small>(opcional)</small></label><input type="text" data-k="medio" placeholder="ABC, Instagram de…">' +
+    '<label>Resumen <small>(opcional)</small></label>' + BAR + '<textarea data-k="resumen" style="min-height:70px"></textarea>' +
+    '<label>Imagen <small>(opcional: si no pones ninguna, se usa la de PATRIAM o la del vídeo)</small></label>' + HTML_IMG +
+    '<label>¿Quién comenta?</label><select class="campo" data-k="comenta">' + quien + '</select>' +
+    '<label>Comentario <small>(opcional)</small></label>' + BAR + '<textarea data-k="comentario"></textarea>' +
+    '<div class="am-acciones"><button class="btn" data-am="prev">Ver la imagen de WhatsApp</button><button class="btn btn-pub" data-am="pub"></button></div>',
+    (f, x) => {
+      f.querySelectorAll(".herramientas").forEach(bar => { const ta = bar.nextElementSibling; bar.querySelectorAll("[data-f]").forEach(b => b.onclick = () => darFormato(ta, b.dataset.f, null)); });
+      f.addEventListener("input", () => { if (!esAdmin() && x.estado === "aprobado") x.estado = "borrador"; });
+      const cab = f.querySelector(".item-cab span");
+      cab.insertAdjacentHTML("afterend", '<span class="am-estado ' + esc(x.estado || "borrador") + '">' + (NOMBRE_ESTADO[x.estado] || "Borrador") + "</span>");
+      const pub = f.querySelector('[data-am="pub"]');
+      pub.textContent = esAdmin() ? (x.estado === "aprobado" ? "Volver a publicar" : "Publicar y sacar el enlace") : "Enviar para aprobar";
+      pub.onclick = () => esAdmin() ? publicarMomento(x) : enviarMomento(x);
+      f.querySelector('[data-am="prev"]').onclick = async () => {
+        const blob = await imagenCompartir(x);
+        f.querySelectorAll(".am-prev, .am-aviso").forEach(e => e.remove());
+        if (blob) f.querySelector(".am-acciones").insertAdjacentHTML("afterend", '<img class="am-prev" src="' + URL.createObjectURL(blob) + '" alt="">');
+        else f.querySelector(".am-acciones").insertAdjacentHTML("afterend", '<p class="nota am-aviso">La imagen se prepara cuando el editor está abierto desde la web (Acceso editor). Si la imagen es de otra web, descárgala y súbela con «Elegir…».</p>');
+      };
+      if (x.estado === "aprobado" && x.slug) {
+        f.insertAdjacentHTML("beforeend", '<div class="am-enlace">Enlace: <code>' + esc(enlaceMomento(x)) + '</code><button class="btn" data-am="copiar">Copiar</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent((x.titulo || "") + "\n" + enlaceMomento(x)) + '">WhatsApp</a></div>');
+        f.querySelector('[data-am="copiar"]').onclick = e => copiar(enlaceMomento(x), e.target);
+      }
+    });
+}
+function copiar(t, boton) {
+  const ok = () => { if (boton) { const o = boton.textContent; boton.textContent = "¡Copiado!"; setTimeout(() => boton.textContent = o, 1500); } };
+  if (navigator.clipboard) navigator.clipboard.writeText(t).then(ok, () => prompt("Copia el enlace:", t)); else prompt("Copia el enlace:", t);
+}
+$("btnMomento").onclick = () => {
+  CFG.alMomento = CFG.alMomento || [];
+  CFG.alMomento.unshift({ id: nuevoId("m"), slug: "", fecha: hoy(), titulo: "", url: "", medio: "", resumen: "", imagen: "", comenta: "", comentario: "", estado: "borrador" });
+  pintarMomento(); cambio(); $("momento").firstElementChild.scrollIntoView({ behavior: "smooth" });
+};
+
+function cargarImg(src) {
+  return new Promise((ok, mal) => {
+    const i = new Image();
+    if (/^https?:/i.test(src) && !src.startsWith(location.origin)) i.crossOrigin = "anonymous";
+    i.onload = () => ok(i); i.onerror = mal; i.src = src;
+  });
+}
+let fuenteLista = null;
+function cargarFuente() {
+  if (!fuenteLista) fuenteLista = Promise.all([["700", "spectral-latin-700-normal"], ["600", "spectral-latin-600-normal"]].map(([w, f]) =>
+    new FontFace("Spectral", "url(fuentes/" + f + ".woff2)", { weight: w }).load().then(ff => document.fonts.add(ff)).catch(() => {})));
+  return fuenteLista;
+}
+function lineas(g, texto, ancho, max) {
+  const pal = String(texto || "").split(/\s+/).filter(Boolean), res = [];
+  let l = "";
+  pal.forEach(p => { const t = l ? l + " " + p : p; if (g.measureText(t).width > ancho && l) { res.push(l); l = p; } else l = t; });
+  if (l) res.push(l);
+  if (res.length > max) { res.length = max; let u = res[max - 1]; while (u && g.measureText(u + "…").width > ancho) u = u.replace(/\s*\S+$/, ""); res[max - 1] = u + "…"; }
+  return res;
+}
+// Imagen cuadrada de 800 × 800 (WhatsApp la recorta en cuadrado): foto arriba, banda granate con el logo y el título
+async function imagenCompartir(x) {
+  try {
+    await cargarFuente();
+    const W = 800, H = 800, FH = 470, c = document.createElement("canvas"); c.width = W; c.height = H;
+    const g = c.getContext("2d");
+    g.fillStyle = "#7b1c2c"; g.fillRect(0, 0, W, H);
+    const yt = idYoutube(x.url);
+    let foto = null;
+    for (const src of [x.imagen, yt ? "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg" : "", CFG.banner || "banner-portada.jpg"].filter(Boolean)) {
+      try { foto = await cargarImg(src); break; } catch (e) {}
+    }
+    if (foto) {
+      const r = Math.max(W / foto.width, FH / foto.height), w = foto.width * r, h = foto.height * r;
+      g.drawImage(foto, (W - w) / 2, (FH - h) / 2, w, h);
+      const gr = g.createLinearGradient(0, FH - 120, 0, FH); gr.addColorStop(0, "rgba(123,28,44,0)"); gr.addColorStop(1, "rgba(123,28,44,.55)");
+      g.fillStyle = gr; g.fillRect(0, FH - 120, W, 120);
+    }
+    g.fillStyle = "#a8873a"; g.fillRect(0, FH, W, 6);
+    try { const logo = await cargarImg(CFG.logoClaro || "logo-claro.png"); const lh = 74, lw = logo.width * lh / logo.height; g.drawImage(logo, W - lw - 36, H - lh - 30, lw, lh); } catch (e) {}
+    g.fillStyle = "#d9bd7a"; g.font = "600 20px Spectral, Georgia, serif";
+    if ("letterSpacing" in g) g.letterSpacing = "4px";
+    g.fillText(((CFG.cabecera || "Lo que hay que saber") + " · al momento").toUpperCase(), 40, FH + 52);
+    if ("letterSpacing" in g) g.letterSpacing = "0px";
+    g.fillStyle = "#fff"; g.font = "700 40px Spectral, Georgia, serif";
+    let tam = 40, ls = lineas(g, x.titulo || "PATRIAM", W - 80, 3);
+    if (ls.length === 3) { tam = 34; g.font = "700 34px Spectral, Georgia, serif"; ls = lineas(g, x.titulo, W - 80, 3); }
+    ls.forEach((l, i) => g.fillText(l, 40, FH + 106 + i * (tam + 8)));
+    // WhatsApp no enseña imágenes que pesen mucho (más de unos 300 KB): se baja la calidad hasta quedar por debajo de 250 KB
+    let blob = null;
+    for (const q of [0.86, 0.78, 0.7, 0.6, 0.5]) { blob = await new Promise(ok => c.toBlob(ok, "image/jpeg", q)); if (blob && blob.size < 250000) break; }
+    return blob;
+  } catch (e) { return null; }   // p. ej. editor abierto como archivo local: el navegador no deja exportar la imagen
+}
+function htmlCompartir(x, imgURL) {
+  const t = esc(x.titulo || "PATRIAM"), d = esc(recortar(textoPlano(x.resumen || x.comentario || "Lo que hay que saber, con criterio. PATRIAM."), 190));
+  const destino = "../#/al/" + encodeURIComponent(x.id);
+  return '<!doctype html>\n<html lang="es"><head><meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + t + ' · PATRIAM</title>\n' +
+    '<meta name="description" content="' + d + '">\n<meta property="og:type" content="article">\n<meta property="og:site_name" content="' + esc((CFG.cabecera || "Lo que hay que saber") + " · PATRIAM") + '">\n' +
+    '<meta property="og:title" content="' + t + '">\n<meta property="og:description" content="' + d + '">\n<meta property="og:url" content="' + esc(enlaceMomento(x)) + '">\n' +
+    '<meta property="og:image" content="' + esc(imgURL) + '">\n<meta property="og:image:secure_url" content="' + esc(imgURL) + '">\n<meta property="og:image:type" content="image/jpeg">\n<meta property="og:image:alt" content="' + t + '">\n' + (/compartir\.jpg|\/a\//.test(imgURL) ? '<meta property="og:image:width" content="800">\n<meta property="og:image:height" content="800">\n' : "") +
+    '<meta name="twitter:card" content="summary_large_image">\n<link rel="icon" href="../icono-192.png">\n' +
+    '<script>location.replace("' + destino + '");<\/script>\n</head><body style="font-family:Georgia,serif;text-align:center;padding:3rem">\n<p><a href="' + destino + '">' + t + '</a></p>\n</body></html>\n';
+}
+let carpeta = null;
+async function guardarArchivos(lista) {
+  if (window.showDirectoryPicker) {
+    try {
+      if (!carpeta) {
+        alert("Elige la carpeta del boletín (la que subes a Netlify, donde está index.html). El editor guardará ahí los archivos.");
+        carpeta = await window.showDirectoryPicker({ id: "patriam-boletin", mode: "readwrite" });
+        try { await carpeta.getFileHandle("index.html"); } catch (e) { carpeta = null; alert("Esa carpeta no es la del boletín (no tiene index.html). Vuelve a intentarlo."); return false; }
+      }
+      for (const [ruta, blob] of lista) {
+        const partes = ruta.split("/"); let dir = carpeta;
+        for (const p of partes.slice(0, -1)) dir = await dir.getDirectoryHandle(p, { create: true });
+        const fh = await dir.getFileHandle(partes[partes.length - 1], { create: true }), w = await fh.createWritable();
+        await w.write(blob); await w.close();
+      }
+      return "carpeta";
+    } catch (e) { if (e && e.name === "AbortError") return false; carpeta = null; }
+  }
+  lista.forEach(([ruta, blob], i) => setTimeout(() => {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = ruta.split("/").pop(); a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, i * 400));
+  return "descargas";
+}
+async function publicarMomento(x) {
+  if (!esAdmin()) return;
+  if (!x.titulo) { alert("Pon un título: es lo que se verá en WhatsApp."); return; }
+  if (!x.slug) x.slug = slugDe(x.titulo);
+  if (!x.fecha) x.fecha = hoy();
+  x.estado = "aprobado"; x.aprobadoPor = usuario.nombre || ""; x.aprobadoEl = hoy();
+  const blob = await imagenCompartir(x);
+  const imgURL = blob ? baseWeb() + "a/" + x.slug + ".jpg?v=" + Date.now().toString(36)
+               : (/^https?:/i.test(x.imagen || "") ? x.imagen : baseWeb() + "compartir.jpg?v=2");
+  const archivos = [["boletines.js", new Blob([textoArchivo()], { type: "text/javascript" })], ["a/" + x.slug + ".html", new Blob([htmlCompartir(x, imgURL)], { type: "text/html" })]];
+  if (blob) archivos.push(["a/" + x.slug + ".jpg", blob]);
+  const como = await guardarArchivos(archivos);
+  if (!como) { pintarMomento(); return; }
+  try { localStorage.removeItem(CLAVE); } catch (e) {}
+  $("aviso").style.display = "none";
+  pintarMomento();
+  const url = enlaceMomento(x);
+  $("amEnlace").textContent = url;
+  $("amCopiar").onclick = e => copiar(url, e.target);
+  $("amWhatsapp").href = "https://wa.me/?text=" + encodeURIComponent(x.titulo + "\n" + url);
+  $("amPasos").innerHTML = como === "carpeta"
+    ? "<p>Los archivos ya están guardados en la carpeta del boletín. <b>Sube la carpeta a Netlify</b> como siempre y el enlace funcionará (antes de subirla, el enlace todavía no existe).</p>"
+    : "<p>Se han descargado " + archivos.length + " archivos. Para que el enlace funcione:</p><ol><li>Pon <b>boletines.js</b> en la carpeta del boletín, sustituyendo al anterior.</li><li>Pon <b>" + esc(x.slug) + ".html</b>" + (blob ? " y <b>" + esc(x.slug) + ".jpg</b>" : "") + " dentro de la carpeta <b>a</b> (créala si no existe).</li><li>Sube la carpeta a Netlify.</li></ol>";
+  $("modalMomento").classList.add("abierto");
+}
+function enviarMomento(x) {
+  if (!x.titulo) { alert("Pon un título: es lo que se verá en WhatsApp."); return; }
+  x.estado = "pendiente"; x.enviadoPor = usuario.nombre || ""; x.enviadoEl = hoy();
+  descargar(); pintarMomento();
+  alert("Se ha descargado boletines.js. Mándaselo a Carlos o a PATRIAM: lo abren con «Abrir boletín recibido», lo revisan en «Al momento» y lo publican.");
+}
+
+/* ---------- instrucciones ---------- */
+$("btnAyuda").onclick = () => $("modalAyuda").classList.add("abierto");
+$("modalAyuda").addEventListener("click", e => { if (e.target.id === "modalAyuda") e.target.classList.remove("abierto"); });
+function ayudaPrimeraVez() { try { if (!localStorage.getItem("patriam_ayuda_vista")) { localStorage.setItem("patriam_ayuda_vista", "1"); $("modalAyuda").classList.add("abierto"); } } catch (e) {} }
+
+/* ---------- arranque ---------- */
+function arrancar() { if (!datos.length) { $("btnNuevo").click(); return; } actual = ordenar(datos)[0]; pintarSelector(); cargarFormulario(); }
+let borrador = null;
+try { borrador = localStorage.getItem(CLAVE); } catch (e) {}
+// Si en este ordenador ya se cambió una contraseña y aún no se ha publicado, vale la nueva
+try { const g = borrador && JSON.parse(borrador); if (g && g.CFG && g.CFG.usuarios) CFG.usuarios = g.CFG.usuarios; } catch (e) {}
+(function () {
+  let ses = null;
+  try { ses = JSON.parse(sessionStorage.getItem("patriam_editor_sesion") || "null"); } catch (e) {}
+  const u = ses && usuarios().find(x => x.id === ses.id);
+  if (u && !u.cambiar) { usuario = u; correoActual = ses.correo; $("acceso").hidden = true; trasEntrar(); }
+  else mostrarAcceso("entrar");
+})();
+if (borrador && JSON.parse(borrador).datos && JSON.stringify(JSON.parse(borrador).datos) !== JSON.stringify(datos)) {
+  $("aviso").style.display = "block";
+  $("btnRecuperar").onclick = () => { const g = JSON.parse(borrador); datos = g.datos; Object.assign(CFG, g.CFG || {}); document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || ""); $("aviso").style.display = "none"; arrancar(); };
+  $("btnDescartar").onclick = () => { try { localStorage.removeItem(CLAVE); } catch (e) {} $("aviso").style.display = "none"; };
+}
+arrancar();
+</script>
+</body>
+</html>
