@@ -362,6 +362,9 @@ function centroInicio(b, cfg, todos) {
     h += '<section class="bol-recomendados"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(titulo) + '</h2><a href="#/' + sec.ruta + '">Ver más en ' + esc(sec.nombre || g.xs[0].seccion) + " " + icono("flecha") + "</a></div>" +
          '<div class="bib-lista">' + g.xs.map(x => tarjetaBib(x, cfg, true)).join("") + "</div></section>";
   });
+  const dir = typeof location !== "undefined" && /^https?:$/.test(location.protocol) ? location.origin + "/" : (cfg.direccion || "");
+  const txt = (cfg.cabecera || "Lo que hay que saber") + " · " + (cfg.claim || "con criterio") + "\nBoletín de PATRIAM nº " + dosCifras(b.numero) + "\n" + dir;
+  h += barraCompartir("¿Te ha gustado? Compártelo", txt.replace(/\n[^\n]*$/, ""), dir);
   h += bloqueRedes(cfg);
   h += '<div class="bol-unete"><span class="bol-unete-ico">' + icono("correo") + "</span>" +
        '<div><b>' + esc(cfg.uneteTitulo || "Únete a PATRIAM") + "</b><p>" + esc(cfg.uneteTexto || "Recibe cada semana nuestro boletín y forma parte del cambio.") + "</p></div>" +
@@ -662,6 +665,12 @@ function enviarSuscripcion(f) {
   return false;
 }
 
+function barraCompartir(rotulo, texto, url) {
+  return '<div class="bol-compartir"><span>' + esc(rotulo) + '</span>' +
+    '<a class="bol-btn bol-wa" href="https://wa.me/?text=' + encodeURIComponent(texto + "\n" + url) + '" target="_blank" rel="noopener">' + icono("whatsapp") + " WhatsApp</a>" +
+    '<a class="bol-btn bol-xr" href="https://x.com/intent/post?text=' + encodeURIComponent(texto) + "&url=" + encodeURIComponent(url) + '" target="_blank" rel="noopener">' + icono("x") + " X</a>" +
+    '<button type="button" class="bol-btn bol-mas" hidden onclick="navigator.share({ title: document.title, text: this.dataset.t, url: this.dataset.u }).catch(function(){})" data-t="' + esc(texto) + '" data-u="' + esc(url) + '">' + icono("instagram") + " Instagram y más</button></div>";
+}
 /* ---------- «Al momento»: envíos sueltos para WhatsApp (una noticia, un post de Instagram o X…) ---------- */
 function alMomento(cfg) { return ((cfg && cfg.alMomento) || []).filter(x => x.estado === "aprobado").sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || ""))); }
 function idInstagram(u) { const m = String(u || "").match(/instagram\.com\/(?:[\w.]+\/)?(p|reel|tv)\/([\w-]+)/i); return m ? m[1] + "/" + m[2] : ""; }
@@ -687,6 +696,7 @@ function paginaAlMomento(cfg, id) {
   if (url && !emb) h += '<p><a class="bol-btn" href="' + esc(url) + '" target="_blank" rel="noopener">Leer en ' + esc(medio || "la fuente") + " " + icono("flecha") + "</a></p>";
   else if (url) h += '<p class="am-fuente"><a href="' + esc(url) + '" target="_blank" rel="noopener">Ver en ' + esc(medio) + " ↗</a></p>";
   h += bloqueComentario(x, cfg);
+  h += barraCompartir("Compártelo", x.titulo || "", (typeof location !== "undefined" && /^https?:$/.test(location.protocol) ? location.origin + "/" : (cfg.direccion || "").replace(/\/?$/, "/")) + "a/" + (x.slug || ""));
   h += '<div class="bol-unete am-unete"><div><b>Lo que hay que saber</b><p>Cada semana, el boletín de PATRIAM con criterio.</p></div><a class="bol-btn" href="#/">Ver el boletín ' + icono("flecha") + '</a><a class="bol-btn claro" href="#/suscribirse">Suscríbete</a></div>';
   return h + "</article>";
 }
@@ -700,6 +710,105 @@ function paginaAlMomentoLista(cfg) {
       "<div><small>" + esc(fechaLarga(x.fecha)) + (x.medio || redDe(x.url) ? " · " + esc(x.medio || redDe(x.url)) : "") + "</small><b>" + esc(x.titulo || "") + "</b>" + (x.resumen ? "<p>" + esc(recortar(textoPlano(x.resumen), 160)) + "</p>" : "") + "</div></a>";
   }).join("") + "</div>";
   return h + "</div>";
+}
+
+/* ---------- versión para correo electrónico (newsletter) ----------
+   Los programas de correo (Gmail, Outlook…) no admiten la web tal cual: ni estilos externos, ni vídeos, ni columnas fijas.
+   Esta es la misma información en formato de correo: tablas, estilos en línea e imágenes con dirección completa. */
+function renderCorreo(b, cfg, opciones) {
+  cfg = cfg || {}; opciones = opciones || {};
+  const base = String(opciones.base || cfg.direccion || "").replace(/\/?$/, "/");
+  const baja = opciones.baja || "mailto:movimientopatriam@gmail.com?subject=BAJA%20bolet%C3%ADn";
+  const G = "#7b1c2c", O = "#a8873a", T = "#1d1719", F = "Georgia, 'Times New Roman', serif";
+  const abs = u => { u = String(u || "").trim(); if (!u || /^data:/i.test(u)) return ""; if (/^https?:/i.test(u)) return u; return /^[\w\-./]+$/.test(u) ? base + u.replace(/^\.?\//, "") : ""; };
+  const ir = r => base + r;
+  const txt = t => esc(textoPlano(t || ""));
+  const etiqueta = t => '<p style="margin:0 0 8px;font:600 11px/1.4 ' + F + ';letter-spacing:3px;text-transform:uppercase;color:' + G + '">' + t + "</p>";
+  const boton = (href, t) => '<a href="' + esc(href) + '" style="display:inline-block;background:' + G + ';color:#fff;text-decoration:none;font:600 12px ' + F + ';letter-spacing:2px;text-transform:uppercase;padding:11px 22px;border-radius:999px">' + t + " &rarr;</a>";
+  const bloque = (cont, fondo) => '<tr><td style="padding:26px 32px;background:' + (fondo || "#ffffff") + '">' + cont + "</td></tr>";
+  const sep = '<tr><td style="padding:0 32px;background:#ffffff"><div style="border-top:1px solid #e4d9c7"></div></td></tr>';
+  const titulo = (t, tam) => '<h2 style="margin:0 0 10px;font:700 ' + (tam || 22) + "px/1.25 " + F + ";color:" + T + '">' + esc(t) + "</h2>";
+  const parr = t => '<p style="margin:0 0 12px;font:400 16px/1.6 ' + F + ";color:" + T + '">' + t + "</p>";
+  const img = (src, alt) => src ? '<img src="' + esc(src) + '" alt="' + esc(alt || "") + '" width="536" style="display:block;width:100%;max-width:536px;height:auto;border:0;border-radius:4px;margin:0 0 16px">' : "";
+  const num = dosCifras(b.numero), ed = b.editorial || {};
+  let h = '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="x-apple-disable-message-reformatting">' +
+    "<title>" + esc((cfg.cabecera || "Lo que hay que saber") + " · nº " + num) + "</title></head>" +
+    '<body style="margin:0;padding:0;background:#f4ede2">' +
+    '<div style="display:none;max-height:0;overflow:hidden">' + esc(ed.titulo || "") + " · " + esc(recortar(textoPlano(primerParrafo(ed.texto)), 120)) + "</div>" +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4ede2"><tr><td align="center" style="padding:20px 10px">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-top:5px solid ' + G + '">';
+  // ver en el navegador
+  h += '<tr><td style="padding:8px 32px;background:#f4ede2;text-align:right;font:400 12px ' + F + ';color:#6b5f58">¿No se ve bien? <a href="' + esc(base) + '" style="color:' + G + '">Ábrelo en la web</a></td></tr>';
+  // cabecera
+  h += '<tr><td style="padding:24px 32px 14px;text-align:center;background:#faf6ef"><a href="' + esc(base) + '"><img src="' + esc(abs(cfg.logo || "logo.png")) + '" alt="PATRIAM" width="170" style="display:inline-block;width:170px;height:auto;border:0"></a>' +
+       '<p style="margin:8px 0 0;font:600 10px ' + F + ';letter-spacing:3px;color:' + T + '">' + esc(cfg.lema || "Dios · Patria · Justicia · Familia").toUpperCase() + "</p></td></tr>";
+  h += '<tr><td style="padding:0"><a href="' + esc(base) + '"><img src="' + esc(abs(cfg.banner || "banner-portada.jpg")) + '" alt="" width="600" style="display:block;width:100%;height:auto;border:0"></a></td></tr>';
+  h += '<tr><td style="padding:22px 32px 20px;text-align:center;background:' + G + '">' +
+       '<p style="margin:0;font:600 11px ' + F + ';letter-spacing:4px;color:#d9bd7a">' + esc((cfg.subtitulo || "Boletín de noticias").toUpperCase()) + "</p>" +
+       '<p style="margin:6px 0 0;font:700 30px/1.15 ' + F + ';letter-spacing:1px;color:#ffffff">' + esc((cfg.cabecera || "Lo que hay que saber").toUpperCase()) + "</p>" +
+       '<p style="margin:4px 0 0;font:italic 400 20px ' + F + ';color:#d9bd7a">' + esc(cfg.claim || "con criterio") + "</p>" +
+       '<p style="margin:12px 0 0;font:600 12px ' + F + ';letter-spacing:2px;color:#ffffff">Nº ' + num + " · " + esc(fechaLarga(b.fecha).toUpperCase()) + "</p></td></tr>";
+  // editorial
+  if (ed.titulo) {
+    const ps = String(ed.texto || "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
+    h += bloque(etiqueta("Editorial") + titulo(ed.titulo, 26) + img(abs(ed.imagen), ed.titulo) + ps.slice(0, 2).map(x => parr(esc(textoPlano(x)))).join("") +
+      (ed.firma ? '<p style="margin:0 0 16px;font:italic 400 15px ' + F + ";color:" + G + '">' + esc(ed.firma) + "</p>" : "") +
+      boton(ir("#/editorial/" + encodeURIComponent(b.id)), "Leer la editorial"));
+  }
+  // firma invitada
+  (b.colaboraciones || []).filter(c => c.titulo).forEach(c => {
+    h += sep + bloque(etiqueta("Firma invitada") + titulo(c.titulo) + img(abs(c.imagen), c.titulo) +
+      parr(esc(c.entradilla || recortar(textoPlano(primerParrafo(c.texto)), 200))) +
+      '<p style="margin:0 0 14px;font:600 14px ' + F + ";color:" + T + '">' + esc(c.autor || "") + (c.cargo ? ' <span style="font-weight:400;color:#6b5f58">· ' + esc(c.cargo) + "</span>" : "") + "</p>" +
+      boton(ir(enlaceColaboracion(c)), "Leer el texto"));
+  });
+  // noticias
+  const ns = (b.noticias || []).filter(n => n.titular || n.url);
+  if (ns.length) {
+    h += '<tr><td style="padding:26px 32px 0;background:#ffffff">' + etiqueta("Las noticias de la semana") + "</td></tr>";
+    ns.forEach((n, i) => {
+      const yt = idYoutube(n.url), foto = abs(n.imagen) || (yt ? "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg" : "");
+      const sec = seccionDe(n), k = (b.noticias || []).indexOf(n);
+      h += bloque((i ? '<div style="border-top:1px solid #e4d9c7;margin:-26px 0 22px"></div>' : "") +
+        img(foto, n.titular) +
+        '<p style="margin:0 0 6px;font:600 11px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + O + '">' + esc(sec ? sec.nombre : "Actualidad") + (n.formato && n.formato !== "Noticia" ? " · " + esc(n.formato) : "") + (n.medio ? ' <span style="color:#6b5f58">· ' + esc(n.medio) + "</span>" : "") + "</p>" +
+        titulo(n.titular || n.url, 20) + (n.resumen ? parr(txt(n.resumen)) : "") +
+        (n.comentario ? '<div style="margin:4px 0 16px;padding:12px 16px;background:#faf6ef;border-left:3px solid ' + G + '"><p style="margin:0 0 4px;font:600 11px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + G + '">' + esc(autorComentario(n, cfg)) + " opina</p>" +
+          '<p style="margin:0;font:italic 400 15px/1.55 ' + F + ";color:" + T + '">' + txt(n.comentario) + "</p></div>" : "") +
+        boton(ir("#/leer/" + encodeURIComponent(b.id) + "/" + k), yt ? "Ver el vídeo" : n.formato === "Podcast" ? "Escuchar" : "Leer la noticia"));
+    });
+  }
+  // recomendados
+  (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean).forEach(x => {
+    const tipo = /podcast/i.test(x.tipo || "") ? "Podcast" : (x.tipo || "Recomendado"), yt = idYoutube(x.url) || idYoutube(((x.capitulos || [])[0] || {}).url);
+    const foto = abs(x.imagen) || (yt ? "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg" : "");
+    h += bloque(etiqueta(esc(tipo) + " recomendado esta semana") + img(foto, x.titulo) + titulo(x.titulo) +
+      (x.medio ? '<p style="margin:0 0 8px;font:600 12px ' + F + ';letter-spacing:1px;color:#6b5f58">' + esc(x.medio) + "</p>" : "") +
+      (x.descripcion ? parr(txt(x.descripcion)) : "") +
+      (x.comentario ? '<p style="margin:0 0 14px;font:italic 400 15px ' + F + ";color:" + G + '">«' + txt(x.comentario) + "» — " + esc(autorComentario(x, cfg)) + "</p>" : "") +
+      boton(ir("#/ver/" + encodeURIComponent(x.id)), (x.capitulos || []).length ? "Ver los capítulos" : "Ver"), "#fbf6ea");
+  });
+  // agenda
+  const ev = todosEventos([b]).proximos;
+  if (ev.length) h += bloque(etiqueta("Agenda e iniciativas") + ev.map(e => {
+    const d = e.fecha ? new Date(e.fecha + "T12:00:00") : null;
+    return '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 14px"><tr>' +
+      '<td width="62" valign="top" style="width:62px"><div style="background:' + G + ';color:#fff;text-align:center;border-radius:4px;padding:6px 0;font:700 20px/1 ' + F + '">' + (d ? d.getDate() : "★") +
+      '<div style="font:600 10px ' + F + ';letter-spacing:1px;margin-top:3px">' + (d ? d.toLocaleDateString("es-ES", { month: "short" }).replace(".", "").toUpperCase() : esc(e.tipo || "")) + "</div></div></td>" +
+      '<td valign="top" style="padding-left:14px"><p style="margin:0;font:700 16px ' + F + ";color:" + T + '">' + (urlSegura(e.url) ? '<a href="' + esc(e.url) + '" style="color:' + T + '">' + esc(e.titulo) + "</a>" : esc(e.titulo)) + "</p>" +
+      '<p style="margin:2px 0 0;font:400 14px/1.5 ' + F + ';color:#5b4f49">' + [e.hora, e.lugar].filter(Boolean).map(esc).join(" · ") + (e.descripcion ? "<br>" + esc(e.descripcion) : "") + "</p></td></tr></table>";
+  }).join(""), "#faf6ef");
+  // llamada final
+  h += bloque('<div style="text-align:center"><p style="margin:0 0 14px;font:italic 400 18px ' + F + ";color:" + G + '">Todo el boletín, con vídeos, podcasts y la biblioteca, en la web</p>' + boton(base, "Ver el boletín completo") + "</div>");
+  // pie
+  const redes = REDES.filter(r => urlSegura(cfg[r[0]])).map(([k, n]) => '<a href="' + esc(cfg[k]) + '" style="color:#d9bd7a;text-decoration:none;margin:0 8px">' + n + "</a>").join("");
+  h += '<tr><td style="padding:26px 32px;background:' + T + ';text-align:center">' +
+    '<img src="' + esc(abs(cfg.logoClaro || "logo-claro.png")) + '" alt="PATRIAM" width="130" style="display:inline-block;width:130px;height:auto;border:0">' +
+    (redes ? '<p style="margin:14px 0 0;font:600 13px ' + F + '">' + redes + "</p>" : "") +
+    '<p style="margin:16px 0 0;font:400 12px/1.6 ' + F + ';color:#bfb3aa">Recibes este correo porque te suscribiste al boletín de la Asociación PATRIAM.<br>' +
+    '<a href="' + esc(baja) + '" style="color:#d9bd7a">Darme de baja</a> · <a href="' + esc(ir("#/legal/privacidad")) + '" style="color:#d9bd7a">Privacidad</a></p>' +
+    '<p style="margin:10px 0 0;font:400 11px ' + F + ';color:#8a7f78">Asociación PATRIAM · C/ Tórtola, 21, 47012 Valladolid</p></td></tr>';
+  return h + "</table></td></tr></table></body></html>";
 }
 
 /* ---------- la web completa (index.html) ---------- */

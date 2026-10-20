@@ -658,3 +658,15 @@ mark.pendiente { background: #fbe9b6; color: #6b4a00; padding: 0 .2em; border-ra
 .am-fila b { display: block; font-size: 1.15rem; line-height: 1.25; margin: .2rem 0; }
 .am-fila p { margin: 0; color: #5b4f49; font-size: .95rem; }
 @media (max-width: 700px) { .am-fila img, .am-sin-img { width: 90px; } .am-ig iframe { height: 640px; } }
+
+/* ---------- compartir por WhatsApp ---------- */
+.bol-compartir { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 2rem 0 0; padding: 1rem; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
+.bol-compartir span { font-size: .8rem; letter-spacing: .2em; text-transform: uppercase; color: var(--acento); font-weight: 600; }
+.bol-btn.bol-wa { background: #25d366; border-color: #25d366; color: #fff; }
+.bol-btn.bol-wa:hover { background: #1da851; border-color: #1da851; }
+.bol-btn.bol-wa .ico { width: 20px; height: 20px; }
+.bol-btn.bol-xr { background: #000; border-color: #000; color: #fff; }
+.bol-btn.bol-xr:hover { background: #333; border-color: #333; }
+.bol-btn.bol-mas { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); border-color: #dc2743; color: #fff; font-family: var(--serif); cursor: pointer; }
+.bol-btn.bol-mas[hidden] { display: none; }
+.bol-btn.bol-xr .ico, .bol-btn.bol-mas .ico { width: 18px; height: 18px; }

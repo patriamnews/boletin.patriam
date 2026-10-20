@@ -116,6 +116,10 @@
   #modalAyuda details > div { padding: 0 16px 12px; }
   #modalAyuda ol, #modalAyuda ul { padding-left: 22px; margin: 6px 0; } #modalAyuda li { margin: 4px 0; }
   #modalAyuda .solo-admin { display: inline-block; font-size: 11px; font-weight: 700; background: #fbf0d0; color: #8a6a10; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+  .permisos { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 8px 0; }
+  .permisos th, .permisos td { border-bottom: 1px solid #eee3d2; padding: 6px 8px; text-align: left; }
+  .permisos th { background: #f7f2ea; color: var(--acento); font-weight: 700; }
+  .permisos td:nth-child(2), .permisos td:nth-child(3), .permisos th:nth-child(2), .permisos th:nth-child(3) { text-align: center; width: 92px; }
   #modalAyuda .consejo { background: #f3f8ef; border: 1px solid #cfe0c3; border-radius: 8px; padding: 10px 14px; margin: 10px 0; }
   .am-acciones { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #d6cab7; }
   .am-acciones .btn-pub { background: var(--acento); color: #fff; border-color: var(--acento); font-weight: 700; }
@@ -132,6 +136,8 @@
   .estado-bol { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.18); color: #fff; }
   .estado-bol.pendiente { background: #f0c75e; color: #4a3300; }
   .estado-bol.aprobado { background: #cfe8c9; color: #1f4d1a; }
+  .guardado { font-size: 12px; color: rgba(255,255,255,.85); }
+  .guardado.mal { color: #ffd2d2; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -170,21 +176,21 @@
   <a href="index.html" target="_blank" rel="noopener" style="color:#fff;font-weight:600;text-decoration:none;padding:7px 6px">Ver boletín ↗</a>
   <button id="btnCompleta" title="Ver el boletín tal como quedará en la web, antes de publicarlo">Vista previa</button>
   <button id="btnMovil" title="Ver cómo quedará en un móvil">Vista móvil</button>
+  <button id="btnCorreo" title="Ver cómo quedará el boletín enviado por correo electrónico">Vista correo</button>
+  <button id="btnWhatsapp" title="Mandar el último boletín publicado por WhatsApp" style="background:#25d366;color:#fff;border-color:#25d366">WhatsApp</button>
+  <button id="btnX" title="Publicar el último boletín en X (Twitter)" style="background:#000;color:#fff;border-color:#000">X</button>
+  <button id="btnInstagram" title="Preparar la imagen y el texto para Instagram" style="background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);color:#fff;border-color:#dc2743">Instagram</button>
   <button id="btnUsuarios" hidden>Usuarios</button>
   <a id="btnSuscriptores" hidden href="https://app.netlify.com/sites/patriamboletin/forms" target="_blank" rel="noopener" title="Lista de personas apuntadas al boletín (solo administradores)" style="color:#fff;font-weight:600;text-decoration:none;padding:7px 6px">Suscriptores ↗</a>
   <button id="btnAyuda" title="Cómo se usa el editor">? Instrucciones</button>
   <button id="btnClave">Mi contraseña</button>
   <button id="btnSalir">Salir</button>
   <span id="estadoBol" class="estado-bol"></span>
-  <button id="btnCargar" hidden title="Abrir el archivo boletines.js que te han mandado para aprobar">Abrir boletín recibido</button>
-  <input type="file" id="archivoRecibido" accept=".js,text/javascript" hidden>
+  <span id="guardado" class="guardado" title="Todo lo que escribes se guarda solo en la web"></span>
   <button id="btnEnviar" class="publicar" hidden>Enviar a aprobación ✉</button>
   <button id="btnPublicar" class="publicar" hidden>Aprobar y publicar ✓</button>
 </div>
 <div class="aviso" id="aviso">
-  Hay cambios guardados en este navegador que aún no se han publicado.
-  <button class="btn" id="btnRecuperar">Recuperarlos</button>
-  <button class="btn" id="btnDescartar">Descartarlos</button>
 </div>
 
 <div class="ed-cols">
@@ -292,7 +298,22 @@
 
 <div class="modal" id="modalUsuarios"><div class="modal-caja" style="max-width:620px">
   <h3>Usuarios del editor</h3>
-  <p class="nota" style="margin:0 0 10px">Los cambios valen en este ordenador. Para que valgan en todos, pulsa <b>Publicar</b> y sube el archivo.</p>
+  <p class="nota" style="margin:0 0 10px">Los cambios valen al momento, en cualquier ordenador o móvil. Las contraseñas se guardan cifradas: nadie puede verlas.</p>
+  <details style="margin:0 0 12px"><summary style="cursor:pointer;font-weight:700;color:var(--acento)">Qué puede hacer cada uno</summary>
+  <table class="permisos">
+    <tr><th></th><th>Usuario</th><th>Administrador</th></tr>
+    <tr><td>Preparar el boletín (editorial, noticias, colaboradores, eventos, recomendados)</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Añadir y cambiar la biblioteca (Historia, Análisis, Noticias)</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Preparar envíos de «Al momento»</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Vista previa (web, móvil y correo)</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Enviar a aprobación</td><td>✔</td><td>—</td></tr>
+    <tr><td><b>Aprobar y publicar</b> en la web</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Ver lo pendiente de aprobar al entrar</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Ver los suscriptores</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Dar de alta y de baja usuarios, restablecer contraseñas</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Cambiar su propia contraseña</td><td>✔</td><td>✔</td></tr>
+  </table>
+  </details>
   <div id="listaUsuarios"></div>
   <h4 style="margin:18px 0 4px;color:var(--acento);font:700 14px system-ui,sans-serif">Añadir usuario</h4>
   <form id="formUsuario">
@@ -309,19 +330,33 @@
 
 <div class="modal" id="modalEnviar"><div class="modal-caja">
   <h3>Enviado a aprobación</h3>
-  <p>El boletín Nº <b id="numEnviado"></b> queda <b>pendiente de aprobación</b>. Se ha descargado el archivo <b>boletines.js</b>.</p>
-  <ol>
-    <li>Manda ese archivo a un administrador (Carlos o patriam-merc) por correo o WhatsApp.</li>
-    <li>El administrador lo abre en el editor con «Abrir boletín recibido», lo revisa y pulsa «Aprobar y publicar».</li>
-  </ol>
-  <p>Hasta que no lo apruebe un administrador, este boletín no se ve en la web, aunque se suba el archivo.</p>
+  <p>El boletín Nº <b id="numEnviado"></b> queda <b>pendiente de aprobación</b>.</p>
+  <p>Carlos y PATRIAM lo verán marcado como pendiente cuando entren al editor. No hay que mandar nada más.</p>
+  <p>Hasta que lo apruebe un administrador, no sale en la web. Si cambias algo, se guarda solo.</p>
   <button class="btn" onclick="document.getElementById('modalEnviar').classList.remove('abierto')">Entendido</button>
 </div></div>
 
 <div class="modal" id="modalAyuda"><div class="modal-caja">
   <h3>Instrucciones del editor</h3>
   <p><b>Quién hace qué:</b> los <b>usuarios</b> preparan el boletín y lo envían para aprobar. Los <b>administradores</b> (Carlos y PATRIAM) lo revisan, lo aprueban y lo publican. Sin la aprobación de uno de los dos no se publica nada.</p>
-  <div class="consejo">Abre siempre el editor desde la web, con el enlace <b>«Acceso editor»</b> del pie del boletín. Lo que escribes se guarda solo en este navegador mientras trabajas; <b>no sale en la web hasta que se publica</b>. A la derecha ves cómo va quedando; «Vista previa» lo enseña tal como quedará en la web y «Vista móvil», como se verá en el teléfono.</div>
+  <div class="consejo">Abre siempre el editor desde la web, con el enlace <b>«Acceso editor»</b> del pie del boletín. Todo lo que escribes <b>se guarda solo en la web</b> (arriba verás «Guardado ✓») y lo ven todos los del editor, desde cualquier ordenador o móvil. <b>No sale en la web pública hasta que un administrador lo publica.</b> No hay que descargar ni subir nada. A la derecha ves cómo va quedando; «Vista previa» lo enseña tal como quedará en la web y «Vista móvil», como se verá en el teléfono.</div>
+
+  <details><summary>Quién puede hacer qué (permisos)</summary><div>
+  <table class="permisos">
+    <tr><th></th><th>Usuario</th><th>Administrador</th></tr>
+    <tr><td>Preparar el boletín (editorial, noticias, colaboradores, eventos, recomendados)</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Añadir y cambiar la biblioteca (Historia, Análisis, Noticias)</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Preparar envíos de «Al momento»</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Vista previa (web, móvil y correo)</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Enviar a aprobación</td><td>✔</td><td>—</td></tr>
+    <tr><td><b>Aprobar y publicar</b> en la web</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Ver lo pendiente de aprobar al entrar</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Ver los suscriptores</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Dar de alta y de baja usuarios, restablecer contraseñas</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Cambiar su propia contraseña</td><td>✔</td><td>✔</td></tr>
+  </table>
+  <p>Si un usuario cambia algo que ya estaba publicado, vuelve a quedar como borrador y en la web no cambia hasta que un administrador lo apruebe. Las contraseñas se guardan cifradas y nadie puede verlas, ni los administradores: si alguien la olvida, un administrador le pone una provisional nueva desde «Usuarios».</p>
+  </div></details>
 
   <details open><summary>1. Empezar el boletín de la semana</summary><div><ol>
     <li>Pulsa <b>«+ Nuevo boletín»</b>. El número se pone solo; revisa la fecha.</li>
@@ -354,17 +389,25 @@
   </ul></div></details>
 
   <details><summary>5. Enviar el boletín para aprobar (usuarios)</summary><div><ol>
-    <li>Míralo antes con <b>«Vista previa»</b> y <b>«Vista móvil»</b>. Cuando esté listo, pulsa <b>«Enviar para aprobar»</b>. Se descarga un archivo llamado <b>boletines.js</b>.</li>
-    <li>Mándaselo a Carlos o a PATRIAM (por correo o WhatsApp).</li>
-    <li>Si después cambias algo, vuelve a enviarlo.</li>
+    <li>Míralo antes con <b>«Vista previa»</b>, <b>«Vista móvil»</b> y <b>«Vista correo»</b>.</li>
+    <li>Cuando esté listo, pulsa <b>«Enviar a aprobación»</b>. Queda marcado como <b>pendiente</b>.</li>
+    <li>Carlos y PATRIAM lo verán al entrar al editor, con un aviso arriba. No hay que mandarles nada.</li>
   </ol></div></details>
 
   <details><summary>6. Aprobar y publicar <span class="solo-admin">administradores</span></summary><div><ol>
-    <li>Si te lo ha mandado otra persona: <b>«Abrir boletín recibido»</b> y elige el boletines.js que te han enviado.</li>
-    <li>Revísalo antes de publicar: <b>«Vista previa»</b> abre el boletín completo tal como quedará en la web (con una banda que pone «todavía no está publicado») y <b>«Vista móvil»</b> lo enseña en tamaño de teléfono. Corrige lo que haga falta.</li>
-    <li>Pulsa <b>«Aprobar y publicar»</b>. Se descarga el boletines.js definitivo.</li>
-    <li>Súbelo a <b>GitHub</b>: entra en el repositorio <b>patriam-boletin</b> → <b>Add file</b> → <b>Upload files</b> → arrastra boletines.js → <b>Commit changes</b>.</li>
-    <li>En un minuto está en la web. Compruébalo abriendo el boletín.</li>
+    <li>Al entrar, si hay algo pendiente, sale un aviso arriba y se abre ese boletín.</li>
+    <li>Revísalo antes de publicar: <b>«Vista previa»</b> abre el boletín completo tal como quedará en la web (con una banda que pone «todavía no está publicado»), <b>«Vista móvil»</b> lo enseña en tamaño de teléfono y <b>«Vista correo»</b>, como llegará por email. Corrige lo que haga falta.</li>
+    <li>Pulsa <b>«Aprobar y publicar»</b>. <b>En ese momento ya está en la web.</b> El anterior pasa solo a sus secciones.</li>
+    <li>Desde la misma ventana puedes compartirlo por WhatsApp, X o Instagram.</li>
+  </ol></div></details>
+
+  <details><summary>Compartir el boletín: WhatsApp, X e Instagram</summary><div><ol>
+    <li>Cuando el boletín ya esté publicado, pulsa el botón verde <b>«WhatsApp»</b> de la barra de arriba (o «Mandar por WhatsApp» al aprobarlo).</li>
+    <li>Se abre WhatsApp con el mensaje ya escrito: el nombre del boletín, el número, el título de la editorial y el enlace.</li>
+    <li>Elige el grupo, la lista de difusión o el canal y envíalo. Sale con la imagen de la cabecera.</li>
+    <li><b>X (Twitter):</b> el botón negro <b>«X»</b> abre X con el texto y el enlace ya puestos; solo hay que pulsar «Publicar». Sale con la imagen de la cabecera.</li>
+    <li><b>Instagram:</b> Instagram no deja publicar desde un enlace. El botón <b>«Instagram»</b> prepara una imagen cuadrada con el título y copia el texto. En el móvil se abre el menú de compartir: elige Instagram. En el ordenador se descarga la imagen: súbela a Instagram y pega el texto. Los enlaces en el texto de Instagram no se pueden pulsar: pon el enlace del boletín en la bio, o en una historia usa el sticker «Enlace».</li>
+    <li>No lo compartas antes de que esté publicado: WhatsApp y X guardarían la vista sin el boletín nuevo.</li>
   </ol></div></details>
 
   <details><summary>7. «Al momento»: una noticia o un post suelto para WhatsApp</summary><div><ol>
@@ -372,16 +415,15 @@
     <li><b>Título</b> (es lo que se lee en WhatsApp) y <b>enlace</b>: una noticia, un post de Instagram o de X, un vídeo de YouTube… Los de Instagram, X y YouTube se ven dentro de nuestra web.</li>
     <li>Si quieres: medio, resumen, imagen y comentario. Si no pones imagen, se usa la de PATRIAM (o la del vídeo).</li>
     <li><b>«Ver la imagen de WhatsApp»</b> te enseña la imagen que saldrá al compartirlo.</li>
-    <li><b>Usuarios:</b> «Enviar para aprobar» y mandad el boletines.js a un administrador, como el boletín.</li>
-    <li><b>Administradores:</b> «Publicar y sacar el enlace». Se guardan (o se descargan) tres archivos: <b>boletines.js</b> y, para la carpeta <b>a</b>, una página <b>.html</b> y una imagen <b>.jpg</b> con el nombre del envío.</li>
-    <li>Súbelos a GitHub: boletines.js en la página principal del repositorio, y los otros dos dentro de la carpeta <b>a</b> (entra en ella y Add file → Upload files). Si la carpeta <b>a</b> aún no existe, arrastra la carpeta entera la primera vez.</li>
-    <li><b>Espera un minuto</b> a que se publique y luego pulsa <b>«Mandar por WhatsApp»</b> o copia el enlace. Si se pega antes de que esté publicado, WhatsApp no enseña la imagen.</li>
+    <li><b>Usuarios:</b> «Enviar para aprobar». Carlos o PATRIAM lo verán pendiente al entrar.</li>
+    <li><b>Administradores:</b> «Publicar y sacar el enlace». Se publica al momento y sale una ventana con el enlace y los botones de <b>WhatsApp</b>, <b>X</b> e <b>Instagram</b>. Sale con su propia imagen y el título.</li>
+    <li>Los ya publicados tienen debajo su enlace y los botones para volver a compartirlos cuando quieras.</li>
   </ol></div></details>
 
   <details><summary>8. Suscriptores, usuarios y contraseñas <span class="solo-admin">administradores</span></summary><div><ul>
     <li><b>Suscriptores ↗</b>: abre la lista de personas apuntadas al boletín (solo la ven los administradores). Se puede descargar en Excel.</li>
-    <li><b>Usuarios</b>: dar de alta o quitar personas del editor. Los nuevos entran con la contraseña provisional y la cambian la primera vez. Los cambios de usuarios se publican con el siguiente boletines.js.</li>
-    <li><b>Mi contraseña</b>: cada uno puede cambiar la suya cuando quiera.</li>
+    <li><b>Usuarios</b>: dar de alta o quitar personas del editor. Los nuevos entran con la contraseña provisional y la cambian la primera vez. Los cambios valen al momento.</li>
+    <li><b>Mi contraseña</b>: cada uno puede cambiar la suya cuando quiera. Las contraseñas se guardan cifradas en la web y nadie puede verlas.</li>
   </ul></div></details>
 
   <p style="text-align:right;margin-bottom:0"><button class="btn btn-pub" onclick="this.closest('.modal').classList.remove('abierto')">Entendido</button></p>
@@ -391,19 +433,16 @@
   <p>Este es el enlace para compartir:</p>
   <div class="am-enlace"><code id="amEnlace"></code><button class="btn" id="amCopiar">Copiar</button></div>
   <div id="amPasos"></div>
-  <p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-pub" id="amWhatsapp" target="_blank" rel="noopener" style="background:#25d366;color:#fff;border-color:#25d366;text-decoration:none">Mandar por WhatsApp</a>
+  <p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-pub" id="amWhatsapp" target="_blank" rel="noopener" style="background:#25d366;color:#fff;border-color:#25d366;text-decoration:none">WhatsApp</a><button class="btn" id="amX" style="background:#000;color:#fff;border-color:#000;font-weight:700">X</button><button class="btn" id="amInstagram" style="background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);color:#fff;border-color:#dc2743;font-weight:700">Instagram</button>
   <button class="btn" onclick="this.closest('.modal').classList.remove('abierto')">Cerrar</button></p>
 </div></div>
 <div class="modal" id="modal"><div class="modal-caja">
-  <h3>Boletín aprobado</h3>
-  <p>Has aprobado el boletín Nº <b id="numAprobado"></b>. Se ha descargado el archivo <b>boletines.js</b>. Para que salga en la web:</p>
-  <ol>
-    <li>Pon el archivo descargado en la carpeta del boletín, sustituyendo al anterior.</li>
-    <li>Sube la carpeta a Netlify como siempre.</li>
-  </ol>
-  <p id="avisoClave" hidden><b>Incluye también los cambios de usuarios y contraseñas</b>: hasta que no subas este archivo, en otros ordenadores siguen como antes.</p>
-  <p>El boletín nuevo pasará a la portada y el anterior quedará guardado en sus secciones (Editorial, Noticias, Historia, Análisis…).</p>
-  <button class="btn" onclick="document.getElementById('modal').classList.remove('abierto')">Entendido</button>
+  <h3>Boletín publicado</h3>
+  <p>Has aprobado el boletín Nº <b id="numAprobado"></b> y <b>ya está en la web</b>. Si tienes la web abierta, recárgala para verlo.</p>
+  <p>El boletín anterior queda guardado en sus secciones (Editorial, Noticias, Historia, Análisis…).</p>
+  <p>Ahora puedes compartirlo:</p>
+  <p style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn" id="bolWhatsapp" target="_blank" rel="noopener" style="background:#25d366;color:#fff;border-color:#25d366;text-decoration:none;font-weight:700">WhatsApp</a><button class="btn" id="bolX" style="background:#000;color:#fff;border-color:#000;font-weight:700">X</button><button class="btn" id="bolInstagram" style="background:linear-gradient(45deg,#f09433,#dc2743,#bc1888);color:#fff;border-color:#dc2743;font-weight:700">Instagram</button>
+  <button class="btn" onclick="document.getElementById('modal').classList.remove('abierto')">Entendido</button></p>
 </div></div>
 
 <script src="boletines.js"></script>
@@ -412,7 +451,8 @@
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
 let actual = null;
-const CLAVE = "patriam_boletin_borrador_v2";
+const CLAVE = "patriam_boletin_copia_v3";            // copia de seguridad en este navegador
+const CLAVE_ANTIGUA = "patriam_boletin_borrador_v2";  // lo que guardaba el editor antiguo
 const $ = id => document.getElementById(id);
 
 
@@ -440,100 +480,228 @@ function sha256(texto) {
 const SAL = "patriam-boletin|";
 const huellaCorreo = c => sha256(SAL + c.trim().toLowerCase());
 const huellaClave = (c, k) => sha256(SAL + c.trim().toLowerCase() + "|" + k);
-let usuario = null, correoActual = "", claveCambiada = false;
-function usuarios() { return CFG.usuarios || []; }
+let usuario = null, correoActual = "", TOKEN = "", version = 0;
+const SES = "patriam_editor_sesion_v3";
+const EN_WEB = /^https?:$/.test(location.protocol);
 
+/* Todo se guarda en la web (Netlify): estas son las llamadas al servidor */
+async function api(ruta, cuerpo) {
+  const r = await fetch("/api/" + ruta, {
+    method: cuerpo ? "POST" : "GET",
+    headers: { "content-type": "application/json", ...(TOKEN ? { authorization: "Bearer " + TOKEN } : {}) },
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined
+  });
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  if (r.status === 401 && ruta !== "entrar") caducada();
+  return { ...j, ok: r.ok, estado: r.status };
+}
+function caducada() {
+  TOKEN = ""; usuario = null;
+  try { sessionStorage.removeItem(SES); } catch (e) {}
+  $("errEntrar").textContent = "La sesión ha caducado. Vuelve a entrar.";
+  mostrarAcceso("entrar");
+}
 function mostrarAcceso(pantalla) {
   $("acceso").hidden = false;
   $("pantallaEntrar").hidden = pantalla !== "entrar";
   $("pantallaCambiar").hidden = pantalla !== "cambiar";
   setTimeout(() => (pantalla === "entrar" ? $("accCorreo") : $("claveNueva")).focus(), 50);
 }
-function entrar(u, correo) {
-  usuario = u; correoActual = correo;
-  try { sessionStorage.setItem("patriam_editor_sesion", JSON.stringify({ id: u.id, correo })); } catch (e) {}
+async function entrar(u, correo, token) {
+  usuario = u; correoActual = correo; TOKEN = token;
+  try { sessionStorage.setItem(SES, JSON.stringify({ token, correo })); } catch (e) {}
   if (u.cambiar) { $("txtCambiar").textContent = "Es tu primer acceso. Elige una contraseña nueva para seguir."; mostrarAcceso("cambiar"); }
   else $("acceso").hidden = true;
+  await cargarDatos();
   trasEntrar();
 }
+async function cargarDatos() {
+  estadoGuardado("Cargando…");
+  const r = await api("borrador");
+  if (!r.ok) { estadoGuardado("No se han podido cargar los datos", true); return; }
+  aplicarDatos(r);
+  const pend = ordenar(datos).find(b => b.estado === "pendiente");
+  actual = (esAdmin() && pend) || ordenar(datos)[0] || null;
+  if (!actual) { $("btnNuevo").click(); } else { pintarSelector(); cargarFormulario(); }
+  avisoPendientes();
+  estadoGuardado("Guardado ✓");
+  rescatarAntiguo();
+}
+// Cambios que alguien hizo con el editor antiguo y se quedaron solo en este navegador: se ofrecen para pasarlos a la web
+function rescatarAntiguo() {
+  let g = null;
+  try { g = JSON.parse(localStorage.getItem(CLAVE_ANTIGUA) || "null"); } catch (e) {}
+  if (!g || !Array.isArray(g.datos)) return;
+  const viejo = JSON.stringify(g.datos), cfgViejo = JSON.parse(JSON.stringify(g.CFG || {}));
+  delete cfgViejo.usuarios;
+  if (viejo === JSON.stringify(datos)) { try { localStorage.removeItem(CLAVE_ANTIGUA); } catch (e) {} return; }
+  const av = $("aviso");
+  av.innerHTML = "<b>En este navegador hay cambios hechos con el editor antiguo que no llegaron a publicarse.</b> " +
+    '<button class="btn" id="btnRescatar">Pasarlos a la web</button> <button class="btn" id="btnOlvidar">Descartarlos</button>';
+  av.style.display = "block";
+  $("btnRescatar").onclick = () => {
+    if (!confirm("Se cargarán los boletines y la biblioteca que había en este navegador, en lugar de lo que hay ahora en el editor. ¿Seguir?")) return;
+    datos = g.datos;
+    Object.keys(cfgViejo).forEach(k => { CFG[k] = cfgViejo[k]; });
+    try { localStorage.removeItem(CLAVE_ANTIGUA); } catch (e) {}
+    av.style.display = "none";
+    document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");
+    actual = ordenar(datos)[0]; pintarSelector(); cargarFormulario(); guardarBorrador();
+    alert("Hecho. Se han pasado a la web. Revísalos; para que se vean en la web pública, un administrador tiene que pulsar «Aprobar y publicar».");
+  };
+  $("btnOlvidar").onclick = () => { if (!confirm("¿Descartar esos cambios antiguos de este navegador?")) return; try { localStorage.removeItem(CLAVE_ANTIGUA); } catch (e) {} avisoPendientes(); };
+}
+function aplicarDatos(r) {
+  Object.keys(CFG).forEach(k => delete CFG[k]);
+  Object.assign(CFG, r.cfg || {});
+  datos = r.boletines || [];
+  version = r.version || 0;
+  document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");
+  if ($("cfgComentaristas")) $("cfgComentaristas").value = (CFG.comentaristas || []).join(", ");
+}
+function avisoPendientes() {
+  const av = $("aviso");
+  const pb = datos.filter(b => b.estado === "pendiente"), pm = (CFG.alMomento || []).filter(x => x.estado === "pendiente");
+  if (!esAdmin() || (!pb.length && !pm.length)) { av.style.display = "none"; return; }
+  av.innerHTML = "<b>Pendiente de aprobar:</b> " + [
+    ...pb.map(b => "boletín Nº " + String(b.numero).padStart(2, "0") + (b.enviadoPor ? " (enviado por " + esc(b.enviadoPor) + ")" : "")),
+    ...pm.map(x => "«" + esc(x.titulo || "envío al momento") + "» en Al momento")
+  ].join(" · ") + ". Revísalo con «Vista previa» y pulsa «Aprobar y publicar».";
+  av.style.display = "block";
+}
 $("verClave").onchange = e => $("accClave").type = e.target.checked ? "text" : "password";
-$("formEntrar").onsubmit = e => {
+$("formEntrar").onsubmit = async e => {
   e.preventDefault();
-  const correo = $("accCorreo").value, clave = $("accClave").value;
-  const u = usuarios().find(x => x.id === huellaCorreo(correo));
-  if (!u || u.clave !== huellaClave(correo, clave)) { $("errEntrar").textContent = "El correo o la contraseña no son correctos."; return; }
+  if (!EN_WEB) { $("errEntrar").textContent = "El editor funciona desde la web publicada (enlace «Acceso editor»)."; return; }
+  const correo = $("accCorreo").value.trim(), clave = $("accClave").value;
+  $("errEntrar").textContent = "Entrando…";
+  let r;
+  try { r = await api("entrar", { id: huellaCorreo(correo), clave: huellaClave(correo, clave) }); }
+  catch (er) { r = { error: "No hay conexión. Inténtalo de nuevo." }; }
+  if (!r.ok) { $("errEntrar").textContent = r.error || "No se ha podido entrar."; return; }
   $("errEntrar").textContent = ""; $("accClave").value = "";
-  entrar(u, correo);
+  entrar(r.usuario, correo, r.token);
 };
-$("formCambiar").onsubmit = e => {
+$("formCambiar").onsubmit = async e => {
   e.preventDefault();
   const a = $("claveNueva").value, b = $("claveRepite").value;
   if (a.length < 8) { $("errCambiar").textContent = "Usa al menos 8 caracteres."; return; }
   if (a !== b) { $("errCambiar").textContent = "Las dos contraseñas no coinciden."; return; }
-  if (huellaClave(correoActual, a) === usuario.clave) { $("errCambiar").textContent = "Tiene que ser distinta de la anterior."; return; }
-  usuario.clave = huellaClave(correoActual, a); usuario.cambiar = false; claveCambiada = true;
+  if (!correoActual) { $("errCambiar").textContent = "Sal y vuelve a entrar para cambiar la contraseña."; return; }
+  const r = await api("clave", { nueva: huellaClave(correoActual, a) });
+  if (!r.ok) { $("errCambiar").textContent = r.error || "No se ha podido cambiar."; return; }
+  usuario.cambiar = false;
   $("claveNueva").value = $("claveRepite").value = ""; $("errCambiar").textContent = "";
-  guardarBorrador();
   $("acceso").hidden = true;
-  $("aviso").style.display = "block";
-  $("aviso").innerHTML = "Contraseña cambiada. Pulsa <b>Publicar</b> y sube el archivo para que también valga en otros ordenadores.";
+  alert("Contraseña cambiada. Ya vale en cualquier ordenador o móvil.");
 };
 
-/* ---------- gestión de usuarios (solo administradores) ---------- */
+/* ---------- gestión de usuarios (solo administradores; se guarda en la web, cifrado) ---------- */
 function esAdmin() { return usuario && usuario.rol === "admin"; }
 function enmascarar(c) { c = c.trim().toLowerCase(); const [u, d] = c.split("@"); return (u || "").slice(0, 3) + "…@" + (d || ""); }
-function pintarUsuarios() {
-  const lista = $("listaUsuarios"); lista.innerHTML = "";
-  usuarios().forEach((u, i) => {
-    const yo = u === usuario;
+async function pintarUsuarios() {
+  const lista = $("listaUsuarios"); lista.innerHTML = '<p class="nota">Cargando…</p>';
+  const r = await api("usuarios");
+  if (!r.ok) { lista.innerHTML = '<p class="nota">' + esc(r.error || "No se ha podido cargar la lista.") + "</p>"; return; }
+  lista.innerHTML = "";
+  r.usuarios.forEach(u => {
+    const yo = u.id === usuario.id;
     const f = document.createElement("div"); f.className = "us-fila";
     f.innerHTML = "<b>" + esc(u.nombre || "Usuario") + (yo ? " (tú)" : "") + "<small>" + (u.cambiar ? "Pendiente de cambiar la contraseña provisional" : "Contraseña propia") + "</small></b>" +
       '<span class="us-rol">' + (u.rol === "admin" ? "Administra" : "Edita") + "</span>" +
       (yo ? "" : '<button class="btn" data-r>Restablecer contraseña</button><button class="btn btn-rojo" data-b>Dar de baja</button>');
     if (!yo) {
-      f.querySelector("[data-b]").onclick = () => {
-        if (usuarios().filter(x => x.rol === "admin").length === 1 && u.rol === "admin") { alert("Tiene que quedar al menos un administrador."); return; }
+      f.querySelector("[data-b]").onclick = async () => {
         if (!confirm("¿Dar de baja a " + (u.nombre || "este usuario") + "?")) return;
-        CFG.usuarios.splice(i, 1); claveCambiada = true; guardarBorrador(); pintarUsuarios();
+        const x = await api("usuarios", { tipo: "baja", id: u.id });
+        if (!x.ok) alert(x.error || "No se ha podido dar de baja."); pintarUsuarios();
       };
       f.querySelector("[data-r]").onclick = () => {
         if (f.querySelector(".us-reset")) return;
-        const r = document.createElement("div"); r.className = "us-reset";
-        r.innerHTML = '<input type="text" placeholder="Correo de este usuario"><input type="text" placeholder="Contraseña provisional"><button class="btn">Guardar</button>';
-        r.querySelector("button").onclick = () => {
-          const [c, k] = [...r.querySelectorAll("input")].map(x => x.value.trim());
+        const rr = document.createElement("div"); rr.className = "us-reset";
+        rr.innerHTML = '<input type="text" placeholder="Correo de este usuario"><input type="text" placeholder="Contraseña provisional"><button class="btn">Guardar</button>';
+        rr.querySelector("button").onclick = async () => {
+          const [c, k] = [...rr.querySelectorAll("input")].map(x => x.value.trim());
           if (huellaCorreo(c) !== u.id) { alert("Ese correo no corresponde a este usuario."); return; }
           if (k.length < 8) { alert("La contraseña provisional necesita al menos 8 caracteres."); return; }
-          u.clave = huellaClave(c, k); u.cambiar = true; claveCambiada = true; guardarBorrador(); pintarUsuarios();
+          const x = await api("usuarios", { tipo: "restablecer", id: u.id, clave: huellaClave(c, k) });
+          if (!x.ok) alert(x.error || "No se ha podido cambiar."); else alert("Hecho. La próxima vez que entre, tendrá que elegir una contraseña nueva.");
+          pintarUsuarios();
         };
-        f.appendChild(r);
+        f.appendChild(rr);
       };
     }
     lista.appendChild(f);
   });
 }
 $("btnUsuarios").onclick = () => { pintarUsuarios(); $("modalUsuarios").classList.add("abierto"); };
-$("formUsuario").onsubmit = e => {
+$("formUsuario").onsubmit = async e => {
   e.preventDefault();
   const c = $("nuCorreo").value.trim(), k = $("nuClave").value.trim();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)) { $("errUsuario").textContent = "Escribe un correo válido."; return; }
   if (k.length < 8) { $("errUsuario").textContent = "La contraseña provisional necesita al menos 8 caracteres."; return; }
-  if (usuarios().some(u => u.id === huellaCorreo(c))) { $("errUsuario").textContent = "Ese correo ya tiene acceso."; return; }
-  CFG.usuarios = usuarios();
-  CFG.usuarios.push({ id: huellaCorreo(c), clave: huellaClave(c, k), cambiar: true, rol: $("nuRol").value, nombre: enmascarar(c) });
-  claveCambiada = true; guardarBorrador();
+  const r = await api("usuarios", { tipo: "alta", id: huellaCorreo(c), clave: huellaClave(c, k), rol: $("nuRol").value, nombre: enmascarar(c) });
+  if (!r.ok) { $("errUsuario").textContent = r.error || "No se ha podido dar de alta."; return; }
   $("nuCorreo").value = $("nuClave").value = ""; $("errUsuario").textContent = "";
   pintarUsuarios();
 };
 
 $("btnClave").onclick = () => { $("txtCambiar").textContent = "Elige tu contraseña nueva."; mostrarAcceso("cambiar"); };
-$("btnSalir").onclick = () => { try { sessionStorage.removeItem("patriam_editor_sesion"); } catch (e) {} usuario = null; $("accCorreo").value = ""; mostrarAcceso("entrar"); };
+$("btnSalir").onclick = async () => { await guardarYa(); try { sessionStorage.removeItem(SES); } catch (e) {} usuario = null; TOKEN = ""; $("accCorreo").value = ""; mostrarAcceso("entrar"); };
 
 /* ---------- utilidades ---------- */
 function hoy() { return new Date().toISOString().slice(0, 10); }
 function nuevoId(p) { return (p || "b") + Date.now().toString(36) + Math.random().toString(36).slice(2, 5); }
-function guardarBorrador() { try { localStorage.setItem(CLAVE, JSON.stringify({ datos, CFG })); } catch (e) {} }
+/* Guardado automático en la web: lo que escribe cualquiera lo ven todos los del editor */
+let temporizador = null, guardando = null, otraVez = false;
+function estadoGuardado(t, mal) { const g = $("guardado"); if (g) { g.textContent = t; g.classList.toggle("mal", !!mal); } }
+function guardarBorrador() {
+  try { localStorage.setItem(CLAVE, JSON.stringify({ datos, CFG })); } catch (e) {}   // copia de seguridad en este navegador
+  if (!TOKEN) return;
+  estadoGuardado("Guardando…");
+  clearTimeout(temporizador); temporizador = setTimeout(guardarYa, 1200);
+}
+async function subirImagenes(obj) {   // las fotos se guardan aparte, como archivos de la web
+  if (!obj || typeof obj !== "object") return;
+  for (const k of Object.keys(obj)) {
+    const v = obj[k];
+    if (typeof v === "string" && v.startsWith("data:image/")) { const r = await api("imagen", { datos: v }); if (r.ok) obj[k] = r.url; }
+    else if (v && typeof v === "object") await subirImagenes(v);
+  }
+}
+function guardarYa() {
+  clearTimeout(temporizador);
+  if (!TOKEN) return Promise.resolve(false);
+  if (guardando) { otraVez = true; return guardando.then(() => guardarYa()); }
+  guardando = (async () => {
+    try {
+      await subirImagenes(CFG); await subirImagenes(datos);
+      const r = await api("borrador", { cfg: CFG, boletines: datos, version });
+      if (r.estado === 409) {
+        const id = actual && actual.id;
+        aplicarDatos(r);
+        actual = datos.find(b => b.id === id) || ordenar(datos)[0];
+        pintarSelector(); cargarFormulario();
+        alert("Otra persona ha guardado cambios mientras trabajabas, y se ha cargado su versión. Revisa y, si hace falta, repite tu último cambio.");
+        estadoGuardado("Actualizado");
+        return false;
+      }
+      if (!r.ok) { estadoGuardado("No se ha podido guardar", true); return false; }
+      version = r.version;
+      // si el servidor ha cambiado algún estado (un usuario tocó algo ya aprobado), se refleja aquí
+      (r.boletines || []).forEach(b => { const l = datos.find(x => x.id === b.id); if (l && l.estado !== b.estado) { l.estado = b.estado; delete l.aprobadoPor; } });
+      ((r.cfg || {}).alMomento || []).forEach(x => { const l = (CFG.alMomento || []).find(y => y.id === x.id); if (l && l.estado !== x.estado) l.estado = x.estado; });
+      pintarEstado();
+      estadoGuardado("Guardado ✓");
+      return true;
+    } catch (e) { estadoGuardado("Sin conexión: no se ha guardado", true); return false; }
+    finally { guardando = null; if (otraVez) { otraVez = false; guardarBorrador(); } }
+  })();
+  return guardando;
+}
 function direccionPublica() {
+  if (/^https?:$/.test(location.protocol)) return location.origin + "/";   // la dirección real de la web, sea cual sea
   let d = (CFG.direccion || "").trim();
   if (!d) d = location.href.replace(/[#?].*$/, "").replace(/editor\.html$/, "");
   return d.replace(/index\.html$/, "");
@@ -561,14 +729,19 @@ function miniatura(caja, src) {
 function cajaImagen(caja, leer, fijar) {
   const archivo = caja.querySelector("input[type=file]"), texto = caja.querySelector("input[type=text]");
   const v = leer() || "";
-  texto.value = v.startsWith("data:") ? "(imagen subida)" : v;
+  texto.value = /^(data:|\/img\/)/.test(v) ? "(imagen subida)" : v;
   miniatura(caja, v);
   texto.oninput = () => { if (texto.value === "(imagen subida)") return; fijar(texto.value); miniatura(caja, texto.value); cambio(); };
   caja.querySelector('[data-accion="elegir"]').onclick = () => archivo.click();
   caja.querySelector('[data-accion="quitar"]').onclick = () => { fijar(""); texto.value = ""; miniatura(caja, ""); cambio(); };
   archivo.onchange = async () => {
     if (!archivo.files[0]) return;
-    try { const d = await leerImagen(archivo.files[0]); fijar(d); texto.value = "(imagen subida)"; miniatura(caja, d); cambio(); }
+    try {
+      let d = await leerImagen(archivo.files[0]);
+      texto.value = "Subiendo…";
+      if (TOKEN) { const r = await api("imagen", { datos: d }); if (r.ok) d = r.url; }
+      fijar(d); texto.value = "(imagen subida)"; miniatura(caja, d); cambio();
+    }
     catch (e) { alert("No se ha podido leer la imagen."); }
     archivo.value = "";
   };
@@ -849,21 +1022,14 @@ function abrirVista(movil) {
   w.document.close();
 }
 $("btnCompleta").onclick = () => abrirVista(false);
+$("btnCorreo").onclick = () => {
+  const w = window.open("", "_blank");
+  if (!w) { alert("El navegador ha bloqueado la ventana. Permite las ventanas emergentes para esta página."); return; }
+  w.document.open(); w.document.write(renderCorreo(actual, CFG, { base: baseWeb() })); w.document.close();
+};
 $("btnMovil").onclick = () => abrirVista(true);
 
 /* ---------- aprobación: los usuarios envían, los administradores aprueban y publican ---------- */
-function textoArchivo() {
-  return "/* Este archivo lo genera el editor (editor.html). No hace falta editarlo a mano. */\n" +
-    "window.PATRIAM_CONFIG = " + JSON.stringify(CFG, null, 2) + ";\nwindow.BOLETINES = " + JSON.stringify(datos, null, 2) + ";\n";
-}
-function descargar() {
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([textoArchivo()], { type: "text/javascript" }));
-  a.download = "boletines.js"; a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-  try { localStorage.removeItem(CLAVE); } catch (e) {}
-  $("aviso").style.display = "none";
-}
 function pintarEstado() {
   const e = $("estadoBol"); if (!actual) { e.textContent = ""; return; }
   const est = actual.estado || "borrador";
@@ -875,56 +1041,46 @@ function trasEntrar() {
   const adm = esAdmin();
   $("btnUsuarios").hidden = !adm;
   $("btnSuscriptores").hidden = !adm;
-  $("btnCargar").hidden = !adm;
   $("btnPublicar").hidden = !adm;
   $("btnEnviar").hidden = adm;
   pintarEstado();
   ayudaPrimeraVez();
 }
-$("btnEnviar").onclick = () => {
+$("btnEnviar").onclick = async () => {
   if (!(actual.editorial || {}).titulo && !confirm("Falta el título de la editorial. ¿Enviar de todas formas?")) return;
   actual.estado = "pendiente"; delete actual.aprobadoPor; delete actual.aprobadoEl;
   actual.enviadoPor = usuario.nombre || ""; actual.enviadoEl = hoy();
-  pintarEstado(); descargar();
+  pintarEstado();
+  if (!(await guardarYa())) { alert("No se ha podido enviar. Comprueba la conexión e inténtalo otra vez."); return; }
   $("numEnviado").textContent = String(actual.numero).padStart(2, "0");
   $("modalEnviar").classList.add("abierto");
 };
-$("btnCargar").onclick = () => $("archivoRecibido").click();
-$("archivoRecibido").onchange = async () => {
-  const f = $("archivoRecibido").files[0]; if (!f) return;
-  try {
-    const t = await f.text();
-    const cfgTxt = t.slice(t.indexOf("window.PATRIAM_CONFIG = ") + 24, t.indexOf(";\nwindow.BOLETINES"));
-    const bolTxt = t.slice(t.indexOf("window.BOLETINES = ") + 19, t.lastIndexOf("];") + 1);
-    const nuevoCfg = JSON.parse(cfgTxt), nuevos = JSON.parse(bolTxt);
-    Object.keys(CFG).forEach(k => delete CFG[k]); Object.assign(CFG, nuevoCfg);
-    datos = nuevos;
-    actual = datos.find(b => b.estado === "pendiente") || ordenar(datos)[0];
-    pintarSelector(); cargarFormulario();
-    document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");
-    guardarBorrador();
-    alert(datos.some(b => b.estado === "pendiente") ? "Boletín recibido. Revísalo y pulsa «Aprobar y publicar»." : "Archivo abierto. No hay boletines pendientes de aprobar.");
-  } catch (e) { alert("No se ha podido leer el archivo. Tiene que ser el boletines.js que descarga el editor."); }
-  $("archivoRecibido").value = "";
-};
-$("btnPublicar").onclick = () => {
+$("btnPublicar").onclick = async () => {
   if (!esAdmin()) return;
   const vacios = [];
   if (!(actual.editorial || {}).titulo) vacios.push("el título de la editorial");
   if (!(actual.noticias || []).some(n => n.titular)) vacios.push("alguna noticia");
   if (vacios.length && !confirm("Falta " + vacios.join(" y ") + ". ¿Aprobar de todas formas?")) return;
-  if (!confirm("¿Apruebas el boletín Nº " + String(actual.numero).padStart(2, "0") + " para que se publique?")) return;
+  if (!confirm("¿Apruebas el boletín Nº " + String(actual.numero).padStart(2, "0") + " y lo publicas en la web?")) return;
   actual.estado = "aprobado"; actual.aprobadoPor = usuario.nombre || ""; actual.aprobadoEl = hoy();
-  pintarEstado(); descargar();
+  pintarEstado();
+  estadoGuardado("Publicando…");
+  if (!(await guardarYa())) { alert("No se ha podido guardar. Comprueba la conexión e inténtalo otra vez."); return; }
+  const r = await api("publicar", {});
+  if (!r.ok) { alert(r.error || "No se ha podido publicar."); return; }
+  estadoGuardado("Publicado ✓");
+  avisoPendientes();
   $("numAprobado").textContent = String(actual.numero).padStart(2, "0");
-  $("avisoClave").hidden = !claveCambiada;
+  $("bolWhatsapp").href = enlaceWhatsappBoletin(actual);
+  $("bolX").onclick = () => compartirBoletin(actual, "x");
+  $("bolInstagram").onclick = () => compartirBoletin(actual, "instagram");
   $("modal").classList.add("abierto");
 };
 
 /* ---------- Al momento: envíos sueltos con su propio enlace para WhatsApp ---------- */
 const NOMBRE_ESTADO = { aprobado: "Publicado", pendiente: "Pendiente de aprobar", borrador: "Borrador" };
 function slugDe(t) {
-  const base = sinAcentos(t || "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 45).replace(/-[^-]*$/, "") || "al-momento";
+  const base = sinAcentos(t || "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").replace(/^(.{45}).*$/, (m, c) => c.replace(/-[^-]*$/, "")) || "al-momento";
   const usados = new Set((CFG.alMomento || []).map(x => x.slug).filter(Boolean));
   let s = base, n = 2; while (usados.has(s)) s = base + "-" + n++;
   return s;
@@ -959,7 +1115,8 @@ function pintarMomento() {
         else f.querySelector(".am-acciones").insertAdjacentHTML("afterend", '<p class="nota am-aviso">La imagen se prepara cuando el editor está abierto desde la web (Acceso editor). Si la imagen es de otra web, descárgala y súbela con «Elegir…».</p>');
       };
       if (x.estado === "aprobado" && x.slug) {
-        f.insertAdjacentHTML("beforeend", '<div class="am-enlace">Enlace: <code>' + esc(enlaceMomento(x)) + '</code><button class="btn" data-am="copiar">Copiar</button><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent((x.titulo || "") + "\n" + enlaceMomento(x)) + '">WhatsApp</a></div>');
+        f.insertAdjacentHTML("beforeend", '<div class="am-enlace">Enlace: <code>' + esc(enlaceMomento(x)) + '</code><button class="btn" data-am="copiar">Copiar</button><button class="btn" data-red="whatsapp">WhatsApp</button><button class="btn" data-red="x">X</button><button class="btn" data-red="instagram">Instagram</button></div>');
+        f.querySelectorAll("[data-red]").forEach(bt => bt.onclick = () => compartirMomento(x, bt.dataset.red));
         f.querySelector('[data-am="copiar"]').onclick = e => copiar(enlaceMomento(x), e.target);
       }
     });
@@ -996,7 +1153,7 @@ function lineas(g, texto, ancho, max) {
   return res;
 }
 // Imagen cuadrada de 800 × 800 (WhatsApp la recorta en cuadrado): foto arriba, banda granate con el logo y el título
-async function imagenCompartir(x) {
+async function imagenCompartir(x, antetitulo) {
   try {
     await cargarFuente();
     const W = 800, H = 800, FH = 470, c = document.createElement("canvas"); c.width = W; c.height = H;
@@ -1017,7 +1174,7 @@ async function imagenCompartir(x) {
     try { const logo = await cargarImg(CFG.logoClaro || "logo-claro.png"); const lh = 74, lw = logo.width * lh / logo.height; g.drawImage(logo, W - lw - 36, H - lh - 30, lw, lh); } catch (e) {}
     g.fillStyle = "#d9bd7a"; g.font = "600 20px Spectral, Georgia, serif";
     if ("letterSpacing" in g) g.letterSpacing = "4px";
-    g.fillText(((CFG.cabecera || "Lo que hay que saber") + " · al momento").toUpperCase(), 40, FH + 52);
+    g.fillText((antetitulo || (CFG.cabecera || "Lo que hay que saber") + " · al momento").toUpperCase(), 40, FH + 52);
     if ("letterSpacing" in g) g.letterSpacing = "0px";
     g.fillStyle = "#fff"; g.font = "700 40px Spectral, Georgia, serif";
     let tam = 40, ls = lineas(g, x.titulo || "PATRIAM", W - 80, 3);
@@ -1029,96 +1186,103 @@ async function imagenCompartir(x) {
     return blob;
   } catch (e) { return null; }   // p. ej. editor abierto como archivo local: el navegador no deja exportar la imagen
 }
-function htmlCompartir(x, imgURL) {
-  const t = esc(x.titulo || "PATRIAM"), d = esc(recortar(textoPlano(x.resumen || x.comentario || "Lo que hay que saber, con criterio. PATRIAM."), 190));
-  const destino = "../#/al/" + encodeURIComponent(x.id);
-  return '<!doctype html>\n<html lang="es"><head><meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>' + t + ' · PATRIAM</title>\n' +
-    '<meta name="description" content="' + d + '">\n<meta property="og:type" content="article">\n<meta property="og:site_name" content="' + esc((CFG.cabecera || "Lo que hay que saber") + " · PATRIAM") + '">\n' +
-    '<meta property="og:title" content="' + t + '">\n<meta property="og:description" content="' + d + '">\n<meta property="og:url" content="' + esc(enlaceMomento(x)) + '">\n' +
-    '<meta property="og:image" content="' + esc(imgURL) + '">\n<meta property="og:image:secure_url" content="' + esc(imgURL) + '">\n<meta property="og:image:type" content="image/jpeg">\n<meta property="og:image:alt" content="' + t + '">\n' + (/compartir\.jpg|\/a\//.test(imgURL) ? '<meta property="og:image:width" content="800">\n<meta property="og:image:height" content="800">\n' : "") +
-    '<meta name="twitter:card" content="summary_large_image">\n<link rel="icon" href="../icono-192.png">\n' +
-    '<script>location.replace("' + destino + '");<\/script>\n</head><body style="font-family:Georgia,serif;text-align:center;padding:3rem">\n<p><a href="' + destino + '">' + t + '</a></p>\n</body></html>\n';
-}
-let carpeta = null;
-async function guardarArchivos(lista) {
-  if (window.showDirectoryPicker) {
-    try {
-      if (!carpeta) {
-        alert("Elige la carpeta del boletín (la que subes a Netlify, donde está index.html). El editor guardará ahí los archivos.");
-        carpeta = await window.showDirectoryPicker({ id: "patriam-boletin", mode: "readwrite" });
-        try { await carpeta.getFileHandle("index.html"); } catch (e) { carpeta = null; alert("Esa carpeta no es la del boletín (no tiene index.html). Vuelve a intentarlo."); return false; }
-      }
-      for (const [ruta, blob] of lista) {
-        const partes = ruta.split("/"); let dir = carpeta;
-        for (const p of partes.slice(0, -1)) dir = await dir.getDirectoryHandle(p, { create: true });
-        const fh = await dir.getFileHandle(partes[partes.length - 1], { create: true }), w = await fh.createWritable();
-        await w.write(blob); await w.close();
-      }
-      return "carpeta";
-    } catch (e) { if (e && e.name === "AbortError") return false; carpeta = null; }
-  }
-  lista.forEach(([ruta, blob], i) => setTimeout(() => {
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = ruta.split("/").pop(); a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  }, i * 400));
-  return "descargas";
-}
+function blobADatos(blob) { return new Promise(ok => { const l = new FileReader(); l.onload = () => ok(l.result); l.readAsDataURL(blob); }); }
 async function publicarMomento(x) {
   if (!esAdmin()) return;
   if (!x.titulo) { alert("Pon un título: es lo que se verá en WhatsApp."); return; }
   if (!x.slug) x.slug = slugDe(x.titulo);
   if (!x.fecha) x.fecha = hoy();
-  x.estado = "aprobado"; x.aprobadoPor = usuario.nombre || ""; x.aprobadoEl = hoy();
+  estadoGuardado("Publicando…");
   const blob = await imagenCompartir(x);
-  const imgURL = blob ? baseWeb() + "a/" + x.slug + ".jpg?v=" + Date.now().toString(36)
-               : (/^https?:/i.test(x.imagen || "") ? x.imagen : baseWeb() + "compartir.jpg?v=2");
-  const archivos = [["boletines.js", new Blob([textoArchivo()], { type: "text/javascript" })], ["a/" + x.slug + ".html", new Blob([htmlCompartir(x, imgURL)], { type: "text/html" })]];
-  if (blob) archivos.push(["a/" + x.slug + ".jpg", blob]);
-  const como = await guardarArchivos(archivos);
-  if (!como) { pintarMomento(); return; }
-  try { localStorage.removeItem(CLAVE); } catch (e) {}
-  $("aviso").style.display = "none";
-  pintarMomento();
+  if (blob) { const r = await api("imagen", { datos: await blobADatos(blob), nombre: "am-" + x.slug }); if (!r.ok) console.warn(r.error); }
+  x.estado = "aprobado"; x.aprobadoPor = usuario.nombre || ""; x.aprobadoEl = hoy(); x.version = Date.now().toString(36);
+  if (!(await guardarYa())) { alert("No se ha podido guardar. Inténtalo otra vez."); return; }
+  const r = await api("publicar", {});
+  if (!r.ok) { alert(r.error || "No se ha podido publicar."); return; }
+  estadoGuardado("Publicado ✓");
+  pintarMomento(); avisoPendientes();
   const url = enlaceMomento(x);
   $("amEnlace").textContent = url;
   $("amCopiar").onclick = e => copiar(url, e.target);
   $("amWhatsapp").href = "https://wa.me/?text=" + encodeURIComponent(x.titulo + "\n" + url);
-  $("amPasos").innerHTML = como === "carpeta"
-    ? "<p>Los archivos ya están guardados en la carpeta del boletín. <b>Sube la carpeta a Netlify</b> como siempre y el enlace funcionará (antes de subirla, el enlace todavía no existe).</p>"
-    : "<p>Se han descargado " + archivos.length + " archivos. Para que el enlace funcione:</p><ol><li>Pon <b>boletines.js</b> en la carpeta del boletín, sustituyendo al anterior.</li><li>Pon <b>" + esc(x.slug) + ".html</b>" + (blob ? " y <b>" + esc(x.slug) + ".jpg</b>" : "") + " dentro de la carpeta <b>a</b> (créala si no existe).</li><li>Sube la carpeta a Netlify.</li></ol>";
+  $("amX").onclick = () => compartirMomento(x, "x");
+  $("amInstagram").onclick = () => compartirMomento(x, "instagram");
+  $("amPasos").innerHTML = "<p><b>Ya está publicado.</b> Puedes compartirlo ahora mismo: sale con su imagen y su título.</p>";
   $("modalMomento").classList.add("abierto");
 }
-function enviarMomento(x) {
+async function enviarMomento(x) {
   if (!x.titulo) { alert("Pon un título: es lo que se verá en WhatsApp."); return; }
   x.estado = "pendiente"; x.enviadoPor = usuario.nombre || ""; x.enviadoEl = hoy();
-  descargar(); pintarMomento();
-  alert("Se ha descargado boletines.js. Mándaselo a Carlos o a PATRIAM: lo abren con «Abrir boletín recibido», lo revisan en «Al momento» y lo publican.");
+  pintarMomento();
+  if (!(await guardarYa())) { alert("No se ha podido enviar. Inténtalo otra vez."); return; }
+  alert("Enviado para aprobar. Carlos o PATRIAM lo verán al entrar al editor y lo publicarán.");
 }
 
+function enlaceWhatsappBoletin(b) {
+  const t = (CFG.cabecera || "Lo que hay que saber") + " · " + (CFG.claim || "con criterio") + "\nBoletín de PATRIAM nº " + String(b.numero).padStart(2, "0") +
+            ((b.editorial || {}).titulo ? " — " + b.editorial.titulo : "") + "\n" + baseWeb();
+  return "https://wa.me/?text=" + encodeURIComponent(t);
+}
+function ultimoPublicado() { return ordenar(datos.filter(b => b.estado === "aprobado"))[0] || actual; }
+$("btnWhatsapp").onclick = () => window.open(enlaceWhatsappBoletin(ultimoPublicado()), "_blank");
+$("btnX").onclick = () => compartirBoletin(ultimoPublicado(), "x");
+$("btnInstagram").onclick = () => compartirBoletin(ultimoPublicado(), "instagram");
+
+/* ---------- compartir en X e Instagram ---------- */
+function textoBoletin(b) {
+  return (CFG.cabecera || "Lo que hay que saber") + " · " + (CFG.claim || "con criterio") + "\nBoletín de PATRIAM nº " + String(b.numero).padStart(2, "0") + ((b.editorial || {}).titulo ? " — " + b.editorial.titulo : "");
+}
+function compartirBoletin(b, red) {
+  const url = baseWeb(), texto = textoBoletin(b);
+  if (red === "x") return abrirX(texto, url);
+  paraInstagram(texto, url, () => imagenCompartir({ titulo: (b.editorial || {}).titulo || "Boletín de la semana", imagen: CFG.banner || "banner-portada.jpg" },
+    (CFG.cabecera || "Lo que hay que saber") + " · nº " + String(b.numero).padStart(2, "0")), "boletin-patriam-" + String(b.numero).padStart(2, "0") + ".jpg");
+}
+function compartirMomento(x, red) {
+  const url = enlaceMomento(x);
+  if (red === "whatsapp") return window.open("https://wa.me/?text=" + encodeURIComponent((x.titulo || "") + "\n" + url), "_blank");
+  if (red === "x") return abrirX(x.titulo || "", url);
+  paraInstagram(x.titulo || "", url, () => imagenCompartir(x), (x.slug || "al-momento") + ".jpg");
+}
+function abrirX(texto, url) { window.open("https://x.com/intent/post?text=" + encodeURIComponent(texto) + "&url=" + encodeURIComponent(url), "_blank"); }
+// Instagram no deja publicar desde un enlace: se prepara la imagen cuadrada y el texto, y se publica a mano
+async function paraInstagram(texto, url, hacerImagen, nombre) {
+  const pie = texto + "\n\nLéelo entero en el enlace de nuestra bio 👆\n" + url + "\n\n#PATRIAM #LoQueHayQueSaber";
+  const blob = await hacerImagen();
+  if (blob) {
+    const archivo = new File([blob], nombre, { type: "image/jpeg" });
+    if (navigator.canShare && navigator.canShare({ files: [archivo] })) {   // en el móvil: se abre el menú de compartir y se elige Instagram
+      try { await navigator.share({ files: [archivo], text: pie }); return; } catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  try { await navigator.clipboard.writeText(pie); } catch (e) {}
+  alert((blob ? "Se ha descargado la imagen «" + nombre + "»" : "No se ha podido preparar la imagen (abre el editor desde la web)") + " y se ha copiado el texto.\n\n" +
+        "En Instagram: crea una publicación o una historia con la imagen y pega el texto.\n" +
+        "Ojo: en las publicaciones de Instagram los enlaces no se pueden pulsar. Pon el enlace del boletín en la bio, o en una historia usa el sticker «Enlace».");
+}
 /* ---------- instrucciones ---------- */
 $("btnAyuda").onclick = () => $("modalAyuda").classList.add("abierto");
 $("modalAyuda").addEventListener("click", e => { if (e.target.id === "modalAyuda") e.target.classList.remove("abierto"); });
 function ayudaPrimeraVez() { try { if (!localStorage.getItem("patriam_ayuda_vista")) { localStorage.setItem("patriam_ayuda_vista", "1"); $("modalAyuda").classList.add("abierto"); } } catch (e) {} }
 
 /* ---------- arranque ---------- */
-function arrancar() { if (!datos.length) { $("btnNuevo").click(); return; } actual = ordenar(datos)[0]; pintarSelector(); cargarFormulario(); }
-let borrador = null;
-try { borrador = localStorage.getItem(CLAVE); } catch (e) {}
-// Si en este ordenador ya se cambió una contraseña y aún no se ha publicado, vale la nueva
-try { const g = borrador && JSON.parse(borrador); if (g && g.CFG && g.CFG.usuarios) CFG.usuarios = g.CFG.usuarios; } catch (e) {}
-(function () {
+function arrancar() { if (!datos.length) return; actual = ordenar(datos)[0]; pintarSelector(); cargarFormulario(); }
+// Si ya había entrado en esta pestaña, sigue dentro
+(async function () {
   let ses = null;
-  try { ses = JSON.parse(sessionStorage.getItem("patriam_editor_sesion") || "null"); } catch (e) {}
-  const u = ses && usuarios().find(x => x.id === ses.id);
-  if (u && !u.cambiar) { usuario = u; correoActual = ses.correo; $("acceso").hidden = true; trasEntrar(); }
-  else mostrarAcceso("entrar");
+  try { ses = JSON.parse(sessionStorage.getItem(SES) || "null"); } catch (e) {}
+  if (ses && ses.token && EN_WEB) {
+    TOKEN = ses.token;
+    try {
+      const r = await api("yo");
+      if (r.ok && !r.usuario.cambiar) { usuario = r.usuario; correoActual = ses.correo || ""; $("acceso").hidden = true; await cargarDatos(); trasEntrar(); return; }
+    } catch (e) {}
+    TOKEN = "";
+  }
+  mostrarAcceso("entrar");
 })();
-if (borrador && JSON.parse(borrador).datos && JSON.stringify(JSON.parse(borrador).datos) !== JSON.stringify(datos)) {
-  $("aviso").style.display = "block";
-  $("btnRecuperar").onclick = () => { const g = JSON.parse(borrador); datos = g.datos; Object.assign(CFG, g.CFG || {}); document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || ""); $("aviso").style.display = "none"; arrancar(); };
-  $("btnDescartar").onclick = () => { try { localStorage.removeItem(CLAVE); } catch (e) {} $("aviso").style.display = "none"; };
-}
-arrancar();
 </script>
 </body>
 </html>

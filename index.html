@@ -54,6 +54,7 @@
   function pintar(r, arriba) {
     ruta = r || "#/";
     document.getElementById("app").innerHTML = renderApp(ruta, (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado"), CFG);
+    if (navigator.share) document.querySelectorAll(".bol-mas").forEach(b => b.hidden = false);  // en el móvil: compartir en Instagram y otras apps
     const sec = ruta.slice(2).split("/")[0];
     document.title = (CFG.cabecera || "Lo que hay que saber") + (TITULOS[sec] ? " · " + TITULOS[sec] : " · Boletín de PATRIAM");
     const caja = document.querySelector(".bol-buscar input");
