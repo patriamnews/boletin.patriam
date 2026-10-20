@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<base href="/">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lo que hay que saber · Boletín de PATRIAM</title>
@@ -31,10 +32,6 @@
 </head>
 <body>
 <div id="app"></div>
-<!-- Formulario de suscripción para Netlify Forms (oculto: el visible lo pinta boletin.js) -->
-<form name="suscripcion" data-netlify="true" netlify-honeypot="bot-field" hidden>
-  <input name="bot-field"><input name="nombre"><input type="email" name="email"><input type="tel" name="movil"><input type="checkbox" name="privacidad">
-</form>
 <script src="boletines.js"></script>
 <script src="legales.js"></script>
 <script src="boletin.js"></script>
@@ -42,19 +39,28 @@
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
      Los enlaces que llegan con #/... (por ejemplo, el de un colaborador) se abren y la dirección se limpia. */
   const CFG = window.PATRIAM_CONFIG || {};
-  const TITULOS = { noticias: "Noticias", historia: "Historia", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento" };
-  const LIMPIA = location.pathname;
+  const TITULOS = { noticias: "Noticias", historia: "Historia", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
+  /* Cada boletín tiene su dirección: /boletin/2. El resto de páginas se ven sin cambiar la dirección. */
+  const LISTA = (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado");
+  function direccionDe(r) {
+    const m = r.match(/^#\/boletin\/([^/]+)/);
+    const b = m && LISTA.find(x => x.id === decodeURIComponent(m[1]) || String(x.numero) === decodeURIComponent(m[1]));
+    if (b) return "/boletin/" + encodeURIComponent(b.numero);
+    const a = r.match(/^#\/al\/([^/]+)/), am = a && ((CFG.alMomento) || []).find(x => x.id === decodeURIComponent(a[1]) || x.slug === decodeURIComponent(a[1]));
+    return am && am.slug ? "/a/" + encodeURIComponent(am.slug) : "/";
+  }
   let ruta = "#/";
-
   const viejo = new URLSearchParams(location.search).get("n");
-  if (viejo) ruta = "#/boletin/" + encodeURIComponent(viejo);
-  else if (location.hash.startsWith("#/")) ruta = location.hash;
-  history.replaceState({ ruta }, "", LIMPIA);
+  const porDireccion = location.pathname.match(/^\/boletin\/([^/]+)/), porMomento = location.pathname.match(/^\/a\/([^/.]+)/);
+  if (location.hash.startsWith("#/")) ruta = location.hash;
+  else if (porDireccion) ruta = "#/boletin/" + porDireccion[1];
+  else if (porMomento) ruta = "#/al/" + porMomento[1];
+  else if (viejo) ruta = "#/boletin/" + encodeURIComponent(viejo);
+  history.replaceState({ ruta }, "", direccionDe(ruta));
 
   function pintar(r, arriba) {
     ruta = r || "#/";
-    document.getElementById("app").innerHTML = renderApp(ruta, (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado"), CFG);
-    if (navigator.share) document.querySelectorAll(".bol-mas").forEach(b => b.hidden = false);  // en el móvil: compartir en Instagram y otras apps
+    document.getElementById("app").innerHTML = renderApp(ruta, LISTA, CFG);
     const sec = ruta.slice(2).split("/")[0];
     document.title = (CFG.cabecera || "Lo que hay que saber") + (TITULOS[sec] ? " · " + TITULOS[sec] : " · Boletín de PATRIAM");
     const caja = document.querySelector(".bol-buscar input");
@@ -65,13 +71,13 @@
       window.scrollTo(0, y);
     }
   }
-  function ir(r) { if (r === ruta) { window.scrollTo({ top: 0, behavior: "smooth" }); return; } history.pushState({ ruta: r }, "", LIMPIA); pintar(r); }
+  function ir(r) { if (r === ruta) { window.scrollTo({ top: 0, behavior: "smooth" }); return; } history.pushState({ ruta: r }, "", direccionDe(r)); pintar(r); }
 
   // Lo que se abre va a una pestaña nueva, con «Volver al boletín semanal» arriba y abajo.
   // «Boletín semanal» y «Volver al boletín» vuelven a la portada en la misma pestaña.
   function abrirNueva(destino) {
     const a = document.createElement("a");
-    a.href = location.href.split("#")[0] + destino; a.target = "_blank"; a.rel = "noopener";
+    a.href = location.origin + "/" + destino; a.target = "_blank"; a.rel = "noopener";
     document.body.appendChild(a); a.click(); a.remove();
   }
   document.addEventListener("click", e => {
@@ -79,7 +85,8 @@
     if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;
     e.preventDefault();
     const destino = a.getAttribute("href");
-    if (destino === "#/") ir("#/"); else abrirNueva(destino);
+    // Portada y boletines: en la misma pestaña (cada boletín con su propia dirección para compartirla)
+    if (destino === "#/" || destino === "#/boletines" || destino.startsWith("#/boletin/")) ir(destino); else abrirNueva(destino);
   });
   window.buscarDesde = input => { const q = input.value.trim(); if (q) { abrirNueva("#/buscar/" + encodeURIComponent(q)); input.value = ""; } return false; };
   // Botón "atrás" del móvil o del navegador

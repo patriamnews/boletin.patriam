@@ -1,221 +1,269 @@
-/*
-  Servidor del boletín (Netlify Functions + Netlify Blobs).
-  Todo se gestiona desde el editor de la web: no hay que subir ni bajar archivos.
+/* API del editor del boletín. Todo se guarda en Netlify Blobs (almacén «boletin»). */
+import {
+  almacen, asegurar, json, hoy, sha256, limpio, idValido, huellaCorreo, cifrarClave,
+  comprobarClave, enmascarar, firmar, sesion, sacarImagenes
+  , claveCorreo, firmaBaja, enlaceBaja, darDeBaja
+} from "../lib/comun.mjs";
 
-  Almacén "patriam" (Netlify Blobs):
-    borrador   → lo que se está preparando en el editor (lo ven todos los usuarios del editor)
-    publicado  → lo que se ve en la web
-    usuarios   → usuarios del editor, con la contraseña cifrada (nunca se publica)
-    secreto    → clave interna para firmar las sesiones y cifrar contraseñas
-    img/...    → imágenes subidas desde el editor
-*/
-import { getStore } from "@netlify/blobs";
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
-import semilla from "../datos/semilla.mjs";
-import usuariosSemilla from "../datos/usuarios-semilla.mjs";
+export const config = { path: "/api/:accion" };
 
-export const config = { path: ["/api/*", "/img/*", "/boletines.js", "/a/*"] };
-
-const almacen = () => getStore({ name: "patriam", consistency: "strong" });
-const json = (datos, estado = 200, extra = {}) => new Response(JSON.stringify(datos), { status: estado, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extra } });
-const error = (texto, estado = 400) => json({ error: texto }, estado);
-const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
-/* ---------- secreto, contraseñas y sesiones ---------- */
-let secretoCache = null;
-async function secreto(st) {
-  if (secretoCache) return secretoCache;
-  if (process.env.SECRETO_BOLETIN) return (secretoCache = process.env.SECRETO_BOLETIN);
-  let s = await st.get("secreto");
-  if (!s) { s = randomBytes(32).toString("hex"); await st.set("secreto", s); }
-  return (secretoCache = s);
+const esAdmin = u => u && u.rol === "admin";
+/* «Al momento»: solo un administrador puede dejar un envío como publicado */
+const sinEstado = x => JSON.stringify(Object.assign({}, x, { estado: 0, aprobadoPor: 0, aprobadoEl: 0, enviadoPor: 0, enviadoEl: 0 }));
+function protegerAlMomento(cfg, ant) {
+  const antes = new Map(((ant && ant.alMomento) || []).map(x => [x.id, x]));
+  (cfg.alMomento || []).forEach(x => {
+    const p = antes.get(x.id);
+    if (x.estado === "aprobado") {
+      if (p && p.estado === "aprobado" && sinEstado(p) === sinEstado(x)) { x.aprobadoPor = p.aprobadoPor; x.aprobadoEl = p.aprobadoEl; }
+      else { x.estado = "borrador"; delete x.aprobadoPor; delete x.aprobadoEl; }
+    } else if (x.estado !== "pendiente") x.estado = "borrador";
+  });
 }
-const firmar = (sec, texto) => createHmac("sha256", sec).update(texto).digest("base64url");
-const cifrarClave = (sec, huella) => createHmac("sha256", sec).update("clave|" + huella).digest("hex");
-function iguales(a, b) { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && timingSafeEqual(x, y); }
+const rolValido = r => (["admin", "redes", "editor"].includes(r) ? r : "editor");
+const correoValido = c => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(c || "").trim());
+const publico = u => ({ id: u.id, nombre: u.nombre, rol: u.rol, cambiar: !!u.cambiar });
+const ESTADO = ["estado", "aprobadoPor", "aprobadoEl", "enviadoPor", "enviadoEl", "fraseMes", "fraseMesAutor", "tarjeta"];
 
-async function leerUsuarios(st) {
-  let us = await st.get("usuarios", { type: "json" });
-  if (!us) {   // primera vez: usuarios iniciales con su contraseña provisional
-    const sec = await secreto(st);
-    us = usuariosSemilla.map(u => ({ id: u.id, clave: cifrarClave(sec, u.clave), cambiar: true, rol: u.rol, nombre: u.nombre }));
-    await st.setJSON("usuarios", us);
-  }
-  return us;
+async function leerBoletin(s, id) {
+  const r = await s.getWithMetadata("b/" + id, { type: "json" });
+  return r ? { b: r.data, etag: r.etag } : null;
 }
-async function crearSesion(st, u) {
-  const sec = await secreto(st);
-  const datos = Buffer.from(JSON.stringify({ id: u.id, rol: u.rol, nombre: u.nombre, exp: Date.now() + 12 * 3600e3 })).toString("base64url");
-  return datos + "." + firmar(sec, datos);
+async function sinPublicar(s, b) {
+  if (b.estado !== "aprobado") return false;
+  const p = await s.get("pub/" + b.id, { type: "json" });
+  return !p || JSON.stringify(limpio(p)) !== JSON.stringify(limpio(b));
 }
-async function sesion(req, st) {
-  const t = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
-  const [datos, firma] = t.split(".");
-  if (!datos || !firma) return null;
-  const sec = await secreto(st);
-  if (!iguales(firma, firmar(sec, datos))) return null;
+
+export default async (req, context) => {
+  const accion = context.params.accion;
+  const s = almacen();
   try {
-    const s = JSON.parse(Buffer.from(datos, "base64url").toString());
-    if (s.exp < Date.now()) return null;
-    const u = (await leerUsuarios(st)).find(x => x.id === s.id);   // si le han dado de baja, deja de valer
-    return u ? { id: u.id, rol: u.rol, nombre: u.nombre } : null;
-  } catch { return null; }
-}
+    await asegurar(s);
 
-/* ---------- datos ---------- */
-async function leer(st, clave) {
-  let d = await st.get(clave, { type: "json" });
-  if (!d) { d = { cfg: semilla.cfg, boletines: semilla.boletines, version: 1, fecha: new Date().toISOString() }; await st.setJSON(clave, d); }
-  return d;
-}
-const limpiarCfg = cfg => { const c = { ...(cfg || {}) }; delete c.usuarios; return c; };
-function soloPublico(d) {
-  const cfg = limpiarCfg(d.cfg);
-  cfg.alMomento = (cfg.alMomento || []).filter(x => x.estado === "aprobado");
-  return { cfg, boletines: (d.boletines || []).filter(b => !b.estado || b.estado === "aprobado") };
-}
-const baseDe = req => new URL(req.url).origin + "/";
-
-/* ---------- página para compartir un envío «Al momento» (WhatsApp, X…) ---------- */
-async function paginaCompartir(req, st, slug) {
-  const pub = await leer(st, "publicado");
-  const x = (pub.cfg.alMomento || []).find(y => y.slug === slug && y.estado === "aprobado");
-  const base = baseDe(req);
-  if (!x) return Response.redirect(base, 302);
-  const tieneImg = await st.getMetadata("img/am-" + slug + ".jpg");
-  const img = tieneImg ? base + "img/am-" + slug + ".jpg?v=" + encodeURIComponent(x.version || x.aprobadoEl || "1") : base + "compartir.jpg?v=2";
-  const plano = t => String(t || "").replace(/\*\*|\*|^##\s+|^>\s?/gm, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\s+/g, " ").trim();
-  let d = plano(x.resumen || x.comentario) || "Lo que hay que saber, con criterio. PATRIAM.";
-  if (d.length > 190) d = d.slice(0, 190).replace(/\s+\S*$/, "") + "…";
-  const destino = base + "#/al/" + encodeURIComponent(x.id);
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(x.titulo)} · PATRIAM</title><meta name="description" content="${esc(d)}">
-<meta property="og:type" content="article"><meta property="og:site_name" content="${esc((pub.cfg.cabecera || "Lo que hay que saber") + " · PATRIAM")}">
-<meta property="og:title" content="${esc(x.titulo)}"><meta property="og:description" content="${esc(d)}"><meta property="og:url" content="${esc(base + "a/" + slug)}">
-<meta property="og:image" content="${esc(img)}"><meta property="og:image:secure_url" content="${esc(img)}"><meta property="og:image:type" content="image/jpeg">
-<meta property="og:image:width" content="800"><meta property="og:image:height" content="800"><meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/icono-192.png"><script>location.replace(${JSON.stringify(destino)});</script></head>
-<body style="font-family:Georgia,serif;text-align:center;padding:3rem"><p><a href="${esc(destino)}">${esc(x.titulo)}</a></p></body></html>`;
-  return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=60" } });
-}
-
-/* ---------- peticiones ---------- */
-export default async (req) => {
-  const st = almacen();
-  const url = new URL(req.url), ruta = url.pathname;
-  try {
-    // Datos públicos de la web (lo que antes era el archivo boletines.js)
-    if (ruta === "/boletines.js") {
-      const p = soloPublico(await leer(st, "publicado"));
-      return new Response("window.PATRIAM_CONFIG = " + JSON.stringify(p.cfg) + ";\nwindow.BOLETINES = " + JSON.stringify(p.boletines) + ";\n",
-        { headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache" } });
+    /* ---------- suscripción (pública) ---------- */
+    if (accion === "suscribir") {
+      if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
+      const f = new URLSearchParams(await req.text());
+      if (f.get("bot-field")) return json({ ok: true });
+      const email = String(f.get("email") || "").trim().toLowerCase();
+      if (!correoValido(email) || !f.get("privacidad")) return json({ error: "Faltan datos" }, 400);
+      // Si se había dado de baja y vuelve a apuntarse, sale de la lista de bajas y queda anotado
+      const k = claveCorreo(email), ahora = new Date().toISOString();
+      const baja = await s.get("bajas/" + k, { type: "json" });
+      const historial = baja ? (baja.historial || []).concat([{ que: "vuelve a darse de alta", fecha: ahora }]) : [{ que: "alta", fecha: ahora }];
+      await s.setJSON("sus/" + k, {
+        nombre: String(f.get("nombre") || "").trim().slice(0, 120), email,
+        movil: String(f.get("movil") || "").trim().slice(0, 40), privacidad: "acepta", fecha: ahora, historial
+      });
+      if (baja) await s.delete("bajas/" + k);
+      return json({ ok: true });
     }
-    // Imágenes subidas desde el editor
-    if (ruta.startsWith("/img/")) {
-      const clave = "img/" + decodeURIComponent(ruta.slice(5));
-      const r = await st.getWithMetadata(clave, { type: "arrayBuffer" });
-      if (!r) return new Response("No encontrada", { status: 404 });
-      return new Response(r.data, { headers: { "content-type": (r.metadata && r.metadata.tipo) || "image/jpeg", "cache-control": "public, max-age=31536000, immutable" } });
-    }
-    // Páginas para compartir «Al momento»
-    if (ruta.startsWith("/a/")) return paginaCompartir(req, st, decodeURIComponent(ruta.slice(3)).replace(/\.html$/, "").replace(/\/$/, ""));
 
-    const accion = ruta.replace(/^\/api\//, "").replace(/\/$/, "");
+    /* ---------- darse de baja (pública): con el enlace firmado del correo o escribiendo el correo ---------- */
+    if (accion === "baja") {
+      if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
+      const b = await req.json().catch(() => ({}));
+      const email = String(b.email || "").trim().toLowerCase();
+      if (!correoValido(email)) return json({ error: "Escribe un correo válido." }, 400);
+      const conEnlace = b.t && b.t === firmaBaja(email);
+      await darDeBaja(s, email, conEnlace ? "enlace del correo" : "formulario de la web");
+      return json({ ok: true }); // no se dice si el correo estaba o no en la lista
+    }
+
+    if (req.method !== "GET" && req.method !== "POST") return json({ error: "Método no permitido" }, 405);
     const cuerpo = req.method === "POST" ? await req.json().catch(() => ({})) : {};
 
-    // Entrar
-    if (accion === "entrar" && req.method === "POST") {
-      const us = await leerUsuarios(st), sec = await secreto(st);
-      const u = us.find(x => x.id === cuerpo.id);
-      if (!u || !iguales(u.clave, cifrarClave(sec, String(cuerpo.clave || "")))) return error("El correo o la contraseña no son correctos.", 401);
-      return json({ token: await crearSesion(st, u), usuario: { id: u.id, rol: u.rol, nombre: u.nombre, cambiar: !!u.cambiar } });
+    /* ---------- entrar ---------- */
+    if (accion === "entrar") {
+      const usuarios = (await s.get("usuarios", { type: "json" })) || [];
+      const u = usuarios.find(x => x.id === huellaCorreo(cuerpo.correo || ""));
+      if (!u || !comprobarClave(u, cuerpo.correo, String(cuerpo.clave || ""))) {
+        await new Promise(r => setTimeout(r, 600));
+        return json({ error: "El correo o la contraseña no son correctos." }, 401);
+      }
+      if (!u.clave.startsWith("s$")) { // contraseña con el cifrado antiguo: se pasa al cifrado fuerte (scrypt con sal)
+        u.clave = cifrarClave(String(cuerpo.clave || "")); await s.setJSON("usuarios", usuarios);
+      }
+      return json({ token: firmar(u), usuario: publico(u) });
     }
 
-    // A partir de aquí, hace falta haber entrado
-    const yo = await sesion(req, st);
-    if (!yo) return error("Tienes que volver a entrar.", 401);
-    const admin = yo.rol === "admin";
+    const yo = await sesion(req, s);
+    if (!yo) return json({ error: "sesion" }, 401);
 
-    if (accion === "yo") {
-      const u = (await leerUsuarios(st)).find(x => x.id === yo.id);
-      return json({ usuario: { ...yo, cambiar: !!u.cambiar } });
-    }
-    // Cambiar mi contraseña
-    if (accion === "clave" && req.method === "POST") {
-      const us = await leerUsuarios(st), sec = await secreto(st), u = us.find(x => x.id === yo.id);
+    /* ---------- cambiar mi contraseña ---------- */
+    if (accion === "clave") {
       const nueva = String(cuerpo.nueva || "");
-      if (!/^[0-9a-f]{64}$/.test(nueva)) return error("Contraseña no válida.");
-      if (iguales(u.clave, cifrarClave(sec, nueva))) return error("Tiene que ser distinta de la anterior.");
-      u.clave = cifrarClave(sec, nueva); u.cambiar = false;
-      await st.setJSON("usuarios", us);
+      if (nueva.length < 8) return json({ error: "Usa al menos 8 caracteres." }, 400);
+      const usuarios = (await s.get("usuarios", { type: "json" })) || [];
+      const u = usuarios.find(x => x.id === yo.id);
+      if (cuerpo.correo && comprobarClave(u, cuerpo.correo, nueva)) return json({ error: "Tiene que ser distinta de la anterior." }, 400);
+      u.clave = cifrarClave(nueva); u.cambiar = false;
+      await s.setJSON("usuarios", usuarios);
+      return json({ token: firmar(u), usuario: publico(u) });
+    }
+    if (yo.cambiar) return json({ error: "Primero tienes que cambiar la contraseña provisional." }, 403);
+
+    /* ---------- cargar todo para el editor ---------- */
+    if (accion === "datos") {
+      const cfg = await s.getWithMetadata("cfg", { type: "json" });
+      const { blobs } = await s.list({ prefix: "b/" });
+      const boletines = [];
+      for (const { key } of blobs) {
+        const r = await s.getWithMetadata(key, { type: "json" });
+        if (!r) continue;
+        r.data._etag = r.etag;
+        r.data._sinPublicar = await sinPublicar(s, r.data);
+        boletines.push(r.data);
+      }
+      return json({ cfg: cfg ? cfg.data : {}, cfgEtag: cfg ? cfg.etag : null, boletines, usuario: publico(yo) });
+    }
+
+    /* ---------- guardar (se llama solo mientras se escribe) ---------- */
+    if (accion === "guardar") {
+      const resp = {};
+      if (cuerpo.cfg) {
+        const ant = await s.getWithMetadata("cfg", { type: "json" });
+        if (ant && cuerpo.cfgEtag !== ant.etag) return json({ error: "conflicto", que: "cfg" }, 409);
+        const cfg = limpio(cuerpo.cfg); delete cfg.usuarios;
+        if (!esAdmin(yo)) protegerAlMomento(cfg, ant ? ant.data : {});
+        resp.mapa = await sacarImagenes(s, cfg);
+        const r = await s.setJSON("cfg", cfg, ant ? { onlyIfMatch: ant.etag } : { onlyIfNew: true });
+        if (!r.modified) return json({ error: "conflicto", que: "cfg" }, 409);
+        resp.cfgEtag = r.etag;
+        if (esAdmin(yo)) await s.setJSON("pubcfg", cfg); // lo que cambia un administrador (p. ej. la frase del mes) sale al momento
+      }
+      if (cuerpo.boletin) {
+        const b = limpio(cuerpo.boletin);
+        if (!idValido(b.id)) return json({ error: "Boletín no válido" }, 400);
+        const ant = await leerBoletin(s, b.id);
+        if (ant ? cuerpo.etag !== ant.etag : !!cuerpo.etag) return json({ error: "conflicto", que: b.id }, 409);
+        // El estado (borrador / pendiente / aprobado) solo cambia con «Enviar» y «Aprobar»
+        ESTADO.forEach(k => { delete b[k]; if (ant && ant.b[k] !== undefined) b[k] = ant.b[k]; });
+        if (!b.estado) b.estado = "borrador";
+        if (!esAdmin(yo) && b.estado === "aprobado") { b.estado = "borrador"; delete b.aprobadoPor; delete b.aprobadoEl; }
+        Object.assign(resp.mapa || (resp.mapa = {}), await sacarImagenes(s, b));
+        const r = await s.setJSON("b/" + b.id, b, ant ? { onlyIfMatch: ant.etag } : { onlyIfNew: true });
+        if (!r.modified) return json({ error: "conflicto", que: b.id }, 409);
+        Object.assign(resp, { etag: r.etag, estado: b.estado, sinPublicar: await sinPublicar(s, b) });
+      }
+      return json(resp);
+    }
+
+    /* ---------- enviar a aprobación ---------- */
+    if (accion === "enviar" || accion === "aprobar") {
+      if (accion === "aprobar" && !esAdmin(yo)) return json({ error: "Solo los administradores pueden aprobar." }, 403);
+      const ant = idValido(cuerpo.id) && await leerBoletin(s, cuerpo.id);
+      if (!ant) return json({ error: "No existe ese boletín." }, 404);
+      const b = ant.b;
+      if (accion === "enviar") {
+        b.estado = "pendiente"; delete b.aprobadoPor; delete b.aprobadoEl;
+        b.enviadoPor = yo.nombre || ""; b.enviadoEl = hoy();
+      } else {
+        b.estado = "aprobado"; b.aprobadoPor = yo.nombre || ""; b.aprobadoEl = hoy();
+        if (!b.fraseMes) { // el boletín se queda con la frase del mes en que se publica
+          const c = (await s.get("cfg", { type: "json" })) || {};
+          if (c.fraseMes) { b.fraseMes = c.fraseMes; b.fraseMesAutor = c.fraseMesAutor || ""; }
+        }
+      }
+      const r = await s.setJSON("b/" + b.id, b, { onlyIfMatch: ant.etag });
+      if (!r.modified) return json({ error: "conflicto", que: b.id }, 409);
+      if (accion === "aprobar") {
+        await s.setJSON("pub/" + b.id, b);
+        const cfg = await s.get("cfg", { type: "json" });
+        if (cfg) await s.setJSON("pubcfg", cfg);
+      }
+      return json({ etag: r.etag, boletin: b });
+    }
+
+    /* ---------- eliminar un boletín ---------- */
+    if (accion === "borrar") {
+      if (!idValido(cuerpo.id)) return json({ error: "Boletín no válido" }, 400);
+      const ant = await leerBoletin(s, cuerpo.id);
+      const pub = await s.get("pub/" + cuerpo.id);
+      if ((pub !== null || (ant && ant.b.estado === "aprobado")) && !esAdmin(yo))
+        return json({ error: "Este boletín está publicado: solo un administrador puede eliminarlo." }, 403);
+      await s.delete("b/" + cuerpo.id); await s.delete("pub/" + cuerpo.id);
       return json({ ok: true });
     }
-    // Borrador compartido del editor
-    if (accion === "borrador" && req.method === "GET") {
-      const [b, p] = await Promise.all([leer(st, "borrador"), leer(st, "publicado")]);
-      return json({ ...b, cfg: limpiarCfg(b.cfg), publicadoEl: p.fecha });
+
+    /* ---------- tarjeta para X y vista previa de enlaces (la genera el editor al aprobar) ---------- */
+    if (accion === "tarjeta") {
+      if (!esAdmin(yo)) return json({ error: "Solo para administradores." }, 403);
+      const img = String(cuerpo.imagen || "");
+      if (!idValido(cuerpo.id) || !/^data:image\/jpeg;base64,/.test(img) || img.length > 3e6) return json({ error: "Imagen no válida" }, 400);
+      const ant = await leerBoletin(s, cuerpo.id);
+      if (!ant) return json({ error: "No existe ese boletín." }, 404);
+      const o = { imagen: img }; await sacarImagenes(s, o);
+      const b = ant.b; b.tarjeta = o.imagen;
+      const r = await s.setJSON("b/" + b.id, b, { onlyIfMatch: ant.etag });
+      if (!r.modified) return json({ error: "conflicto", que: b.id }, 409);
+      const pub = await s.get("pub/" + b.id, { type: "json" });
+      if (pub) { pub.tarjeta = o.imagen; await s.setJSON("pub/" + b.id, pub); }
+      return json({ etag: r.etag, tarjeta: o.imagen });
     }
-    if (accion === "borrador" && req.method === "POST") {
-      const actual = await leer(st, "borrador");
-      if (cuerpo.version !== actual.version) return json({ error: "conflicto", ...actual, cfg: limpiarCfg(actual.cfg) }, 409);
-      const nuevo = { cfg: limpiarCfg(cuerpo.cfg), boletines: Array.isArray(cuerpo.boletines) ? cuerpo.boletines : actual.boletines, version: actual.version + 1, fecha: new Date().toISOString(), por: yo.nombre };
-      if (!admin) {   // un usuario no puede dejar nada como aprobado: eso solo lo hacen los administradores
-        const antes = id => (actual.boletines || []).find(b => b.id === id);
-        nuevo.boletines.forEach(b => { if (b.estado === "aprobado" && JSON.stringify(b) !== JSON.stringify(antes(b.id))) { b.estado = "borrador"; delete b.aprobadoPor; } });
-        const antesAm = id => ((actual.cfg || {}).alMomento || []).find(x => x.id === id);
-        (nuevo.cfg.alMomento || []).forEach(x => { if (x.estado === "aprobado" && JSON.stringify(x) !== JSON.stringify(antesAm(x.id))) { x.estado = "borrador"; delete x.aprobadoPor; } });
-      }
-      await st.setJSON("borrador", nuevo);
-      return json({ ok: true, version: nuevo.version, boletines: nuevo.boletines, cfg: nuevo.cfg });
+
+    /* ---------- a partir de aquí, solo administradores ---------- */
+    if (!esAdmin(yo)) return json({ error: "Solo para administradores." }, 403);
+    const usuarios = (await s.get("usuarios", { type: "json" })) || [];
+
+    if (accion === "usuarios") return json({ usuarios: usuarios.map(publico), yo: yo.id });
+    if (accion === "usuario-nuevo") {
+      const c = String(cuerpo.correo || "").trim(), k = String(cuerpo.clave || "").trim();
+      if (!correoValido(c)) return json({ error: "Escribe un correo válido." }, 400);
+      if (k.length < 8) return json({ error: "La contraseña provisional necesita al menos 8 caracteres." }, 400);
+      if (usuarios.some(u => u.id === huellaCorreo(c))) return json({ error: "Ese correo ya tiene acceso." }, 400);
+      usuarios.push({ id: huellaCorreo(c), clave: cifrarClave(k), cambiar: true, rol: rolValido(cuerpo.rol), nombre: enmascarar(c) });
+      await s.setJSON("usuarios", usuarios);
+      return json({ usuarios: usuarios.map(publico), yo: yo.id });
     }
-    // Publicar: lo aprobado del borrador pasa a la web (solo administradores)
-    if (accion === "publicar" && req.method === "POST") {
-      if (!admin) return error("Solo pueden publicar los administradores.", 403);
-      const b = await leer(st, "borrador");
-      await st.setJSON("publicado", { cfg: limpiarCfg(b.cfg), boletines: b.boletines, version: b.version, fecha: new Date().toISOString(), por: yo.nombre });
+    if (accion === "usuario-baja") {
+      const u = usuarios.find(x => x.id === cuerpo.id);
+      if (!u) return json({ error: "No existe ese usuario." }, 404);
+      if (u.id === yo.id) return json({ error: "No puedes darte de baja a ti misma." }, 400);
+      if (u.rol === "admin" && usuarios.filter(x => x.rol === "admin").length === 1) return json({ error: "Tiene que quedar al menos un administrador." }, 400);
+      const quedan = usuarios.filter(x => x.id !== u.id);
+      await s.setJSON("usuarios", quedan);
+      return json({ usuarios: quedan.map(publico), yo: yo.id });
+    }
+    if (accion === "usuario-rol") {
+      const u = usuarios.find(x => x.id === cuerpo.id);
+      if (!u) return json({ error: "No existe ese usuario." }, 404);
+      const rol = rolValido(cuerpo.rol);
+      if (u.rol === "admin" && rol !== "admin" && usuarios.filter(x => x.rol === "admin").length === 1) return json({ error: "Tiene que quedar al menos un administrador." }, 400);
+      u.rol = rol; await s.setJSON("usuarios", usuarios);
+      return json({ usuarios: usuarios.map(publico), yo: yo.id });
+    }
+    if (accion === "usuario-reset") {
+      const u = usuarios.find(x => x.id === cuerpo.id);
+      if (!u) return json({ error: "No existe ese usuario." }, 404);
+      if (huellaCorreo(cuerpo.correo || "") !== u.id) return json({ error: "Ese correo no corresponde a este usuario." }, 400);
+      if (String(cuerpo.clave || "").length < 8) return json({ error: "La contraseña provisional necesita al menos 8 caracteres." }, 400);
+      u.clave = cifrarClave(String(cuerpo.clave)); u.cambiar = true;
+      await s.setJSON("usuarios", usuarios);
+      return json({ usuarios: usuarios.map(publico), yo: yo.id });
+    }
+    if (accion === "suscriptores") {
+      const { blobs } = await s.list({ prefix: "sus/" });
+      const lista = [];
+      const origen = new URL(req.url).origin;
+      for (const { key } of blobs) { const d = await s.get(key, { type: "json" }); if (d) lista.push({ clave: key.slice(4), ...d, enlaceBaja: enlaceBaja(origen, d.email) }); }
+      lista.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+      const bajas = [];
+      for (const { key } of (await s.list({ prefix: "bajas/" })).blobs) { const d = await s.get(key, { type: "json" }); if (d) bajas.push(d); }
+      bajas.sort((a, b) => String(b.baja).localeCompare(String(a.baja)));
+      return json({ suscriptores: lista, bajas });
+    }
+    if (accion === "suscriptor-baja") {
+      if (!/^[0-9a-f]{32}$/.test(cuerpo.clave || "")) return json({ error: "No válido" }, 400);
+      const d = await s.get("sus/" + cuerpo.clave, { type: "json" });
+      if (d) await darDeBaja(s, d.email, "administrador (" + (yo.nombre || "") + ")");
       return json({ ok: true });
     }
-    // Subir una imagen
-    if (accion === "imagen" && req.method === "POST") {
-      const m = String(cuerpo.datos || "").match(/^data:(image\/(?:jpeg|png|webp|gif));base64,(.+)$/);
-      if (!m) return error("Imagen no válida.");
-      const bytes = Buffer.from(m[2], "base64");
-      if (bytes.length > 4.5e6) return error("La imagen es demasiado grande.");
-      const ext = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" }[m[1]];
-      let nombre = String(cuerpo.nombre || "").replace(/[^a-z0-9\-]/gi, "").slice(0, 80);
-      nombre = nombre ? nombre + "." + ext : Date.now().toString(36) + randomBytes(4).toString("hex") + "." + ext;
-      await st.set("img/" + nombre, bytes, { metadata: { tipo: m[1], por: yo.nombre } });
-      return json({ url: "/img/" + nombre });
-    }
-    // Usuarios (solo administradores)
-    if (accion === "usuarios") {
-      if (!admin) return error("Solo los administradores gestionan usuarios.", 403);
-      const us = await leerUsuarios(st), sec = await secreto(st);
-      if (req.method === "POST") {
-        const { tipo, id, clave, rol, nombre } = cuerpo;
-        if (!/^[0-9a-f]{64}$/.test(String(id || ""))) return error("Usuario no válido.");
-        if (tipo === "alta") {
-          if (us.some(u => u.id === id)) return error("Ese correo ya tiene acceso.");
-          if (!/^[0-9a-f]{64}$/.test(String(clave || ""))) return error("Contraseña no válida.");
-          us.push({ id, clave: cifrarClave(sec, clave), cambiar: true, rol: rol === "admin" ? "admin" : "editor", nombre: String(nombre || "Usuario").slice(0, 60) });
-        } else if (tipo === "baja") {
-          const u = us.find(x => x.id === id);
-          if (!u) return error("No existe.");
-          if (id === yo.id) return error("No puedes darte de baja a ti mismo.");
-          if (u.rol === "admin" && us.filter(x => x.rol === "admin").length === 1) return error("Tiene que quedar al menos un administrador.");
-          us.splice(us.indexOf(u), 1);
-        } else if (tipo === "restablecer") {
-          const u = us.find(x => x.id === id);
-          if (!u || !/^[0-9a-f]{64}$/.test(String(clave || ""))) return error("Datos no válidos.");
-          u.clave = cifrarClave(sec, clave); u.cambiar = true;
-        } else return error("Acción no válida.");
-        await st.setJSON("usuarios", us);
-      }
-      return json({ usuarios: us.map(u => ({ id: u.id, rol: u.rol, nombre: u.nombre, cambiar: !!u.cambiar })) });
-    }
-    return error("No existe.", 404);
+
+    return json({ error: "No existe" }, 404);
   } catch (e) {
     console.error(e);
-    return error("Error del servidor: " + (e && e.message ? e.message : e), 500);
+    return json({ error: "Error del servidor: " + e.message }, 500);
   }
 };
