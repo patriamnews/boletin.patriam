@@ -54,7 +54,10 @@
   const porDireccion = location.pathname.match(/^\/boletin\/([^/]+)/), porMomento = location.pathname.match(/^\/a\/([^/.]+)/);
   if (location.hash.startsWith("#/")) ruta = location.hash;
   else if (porDireccion) ruta = "#/boletin/" + porDireccion[1];
-  else if (porMomento) ruta = "#/al/" + porMomento[1];
+  else if (porMomento) {   // la editorial o la firma invitada compartidas desde «Al momento» se abren completas
+    const am = (CFG.alMomento || []).find(x => x.estado === "aprobado" && (x.slug === decodeURIComponent(porMomento[1]) || x.id === decodeURIComponent(porMomento[1])));
+    ruta = am && /^#\/(editorial|colaboracion)\//.test(am.destino || "") ? am.destino : "#/al/" + porMomento[1];
+  }
   else if (viejo) ruta = "#/boletin/" + encodeURIComponent(viejo);
   history.replaceState({ ruta }, "", direccionDe(ruta));
 

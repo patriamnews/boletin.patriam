@@ -211,6 +211,8 @@
       <section class="paso paso-bib"><h2><b>⚡</b>Al momento <small>una noticia o un post suelto, con su propio enlace para WhatsApp</small></h2><div class="paso-in">
         <p class="nota" style="margin-top:8px">Para compartir algo entre boletín y boletín: una noticia, un post de Instagram o de X, un vídeo… Cada uno tiene su <b>propio enlace</b>, y al mandarlo por WhatsApp sale con una imagen de PATRIAM con el título. Lo de Instagram, X y YouTube se ve dentro de nuestra web.</p>
         <button class="btn btn-add" id="btnMomento">+ Nuevo envío al momento</button>
+        <button class="btn" id="btnMomentoBoletin" hidden style="width:100%;margin-top:6px">Crear la editorial y la firma invitada del último boletín publicado</button>
+        <p class="nota" style="margin-top:6px">Al aprobar cada boletín, la editorial y los textos de la firma invitada se crean solos aquí, ya publicados, con su enlace y su imagen para compartir.</p>
         <div id="momento"></div>
       </div></section>
     </div>
@@ -1029,6 +1031,7 @@ function pintarEstado() {
 function trasEntrar() {
   const adm = esAdmin();
   $("btnUsuarios").hidden = !adm;
+  $("btnMomentoBoletin").hidden = !adm;
   $("btnSuscriptores").hidden = !adm;
   $("btnPublicar").hidden = !adm;
   $("btnEnviar").hidden = adm;
@@ -1069,6 +1072,7 @@ $("btnPublicar").onclick = async () => {
   try {
     aplicar(actual, await api("aprobar", { id: actual.id }));
     await hacerTarjeta(actual);
+    await crearMomentosDe(actual);
     $("numAprobado").textContent = String(actual.numero).padStart(2, "0");
     $("urlAprobado").textContent = urlDe(actual);
     $("waAprobado").href = "https://wa.me/?text=" + encodeURIComponent("Boletín Nº " + String(actual.numero).padStart(2, "0") + " de PATRIAM · " + ((actual.editorial || {}).titulo || "Lo que hay que saber") + "\n" + urlDe(actual));
@@ -1168,7 +1172,7 @@ async function imagenCompartir(x) {
     try { const logo = await cargarImgAM(CFG.logoClaro || "logo-claro.png"); const lh = 74, lw = logo.width * lh / logo.height; g.drawImage(logo, W - lw - 36, H - lh - 30, lw, lh); } catch (e) {}
     g.fillStyle = "#d9bd7a"; g.font = "600 20px Spectral, Georgia, serif";
     if ("letterSpacing" in g) g.letterSpacing = "4px";
-    g.fillText(((CFG.cabecera || "Lo que hay que saber") + " · al momento").toUpperCase(), 40, FH + 52);
+    g.fillText(((CFG.cabecera || "Lo que hay que saber") + " · " + ({ editorial: "editorial", colaboracion: "firma invitada" }[x.origen] || "al momento")).toUpperCase(), 40, FH + 52);
     if ("letterSpacing" in g) g.letterSpacing = "0px";
     g.fillStyle = "#fff"; g.font = "700 40px Spectral, Georgia, serif";
     let tam = 40, ls = lineasAM(g, x.titulo || "PATRIAM", W - 80, 3);
@@ -1197,6 +1201,32 @@ async function publicarMomento(x) {
   $("amPasos").innerHTML = "<p><b>Ya está publicado.</b> Puedes mandarlo ahora mismo: al pegarlo en WhatsApp sale con su imagen.</p>";
   $("modalMomento").classList.add("abierto");
 }
+/* La editorial y la firma invitada de cada boletín pasan solas a «Al momento» para poder compartirlas una a una */
+async function crearMomentosDe(b) {
+  if (!b || !esAdmin()) return 0;
+  CFG.alMomento = CFG.alMomento || [];
+  const num = String(b.numero).padStart(2, "0"), ed = b.editorial || {};
+  const piezas = [];
+  if (ed.titulo) piezas.push({ id: "m-ed-" + b.id, origen: "editorial", destino: "#/editorial/" + encodeURIComponent(b.id), titulo: ed.titulo,
+    medio: "Editorial · Boletín nº " + num, resumen: recortar(textoPlano(primerParrafo(ed.texto)), 280), comenta: ed.firma || "", imagen: ed.imagen || "" });
+  (b.colaboraciones || []).filter(c => c.titulo).forEach(c => piezas.push({ id: "m-col-" + c.id, origen: "colaboracion", destino: "#/colaboracion/" + encodeURIComponent(c.id), titulo: c.titulo,
+    medio: "Firma invitada · " + (c.autor || "") + (c.cargo ? " (" + c.cargo + ")" : ""), resumen: c.entradilla || recortar(textoPlano(primerParrafo(c.texto)), 280), comenta: c.autor || "", imagen: c.imagen || "" }));
+  for (const p of piezas) {
+    let x = CFG.alMomento.find(y => y.id === p.id);
+    if (!x) { x = { id: p.id, slug: slugDe(p.titulo), comentario: "" }; CFG.alMomento.unshift(x); }
+    Object.assign(x, p, { url: baseWeb() + p.destino, fecha: b.fecha || hoy(), estado: "aprobado", aprobadoPor: usuario.nombre || "", aprobadoEl: hoy() });
+    const blob = await imagenCompartir(x);
+    if (blob) x.tarjeta = await new Promise(ok => { const r = new FileReader(); r.onload = () => ok(r.result); r.readAsDataURL(blob); });
+  }
+  if (piezas.length) { await guardarAhora(); if (typeof pintarMomento === "function") pintarMomento(); }
+  return piezas.length;
+}
+$("btnMomentoBoletin").onclick = async () => {
+  const b = ordenar(datos.filter(x => x.estado === "aprobado"))[0];
+  if (!b) { alert("Todavía no hay ningún boletín publicado."); return; }
+  const n = await crearMomentosDe(b);
+  alert(n ? "Hecho: " + n + " envío(s) del boletín Nº " + String(b.numero).padStart(2, "0") + " listos en «Al momento», con su enlace para compartir." : "Ese boletín no tiene editorial ni firma invitada.");
+};
 async function enviarMomento(x) {
   if (!x.titulo) { alert("Pon un título: es lo que se verá en WhatsApp."); return; }
   x.estado = "pendiente"; x.enviadoPor = usuario.nombre || ""; x.enviadoEl = hoy();
