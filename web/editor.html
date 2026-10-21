@@ -140,6 +140,10 @@
   .estado-bol { font-size: 12px; font-weight: 700; letter-spacing: .04em; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.18); color: #fff; }
   .estado-bol.pendiente { background: #f0c75e; color: #4a3300; }
   .estado-bol.aprobado { background: #cfe8c9; color: #1f4d1a; }
+  .permisos { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 8px 0; }
+  .permisos th, .permisos td { border-bottom: 1px solid #eee3d2; padding: 6px 8px; text-align: left; }
+  .permisos th { background: #f7f2ea; color: var(--acento); font-weight: 700; }
+  .permisos td:not(:first-child), .permisos th:not(:first-child) { text-align: center; width: 70px; }
 </style>
 </head>
 <body>
@@ -178,6 +182,7 @@
   <a href='/' rel='noopener' style='color:#fff;font-weight:600;text-decoration:none;padding:7px 6px' target='_blank'>Ver boletín ↗</a>
   <button id="btnCompleta" title="Ver el boletín tal como quedará en la web, antes de publicarlo">Vista previa</button>
   <button id="btnMovil" title="Ver cómo quedará en un móvil">Vista móvil</button>
+  <button id="btnCorreo" title="Ver cómo llegará el boletín por correo electrónico">Vista correo</button>
   <button id="btnUsuarios" hidden>Usuarios</button>
   <button id="btnSuscriptores" hidden title="Personas apuntadas al boletín (solo administradores)">Suscriptores</button>
   <button id="btnClave">Mi contraseña</button>
@@ -309,6 +314,23 @@
   <p><b>Quién hace qué:</b> los <b>usuarios</b> preparan el boletín y lo envían para aprobar. Los de <b>redes</b> hacen lo mismo y además preparan las publicaciones de Instagram y X. Los <b>administradores</b> (Carlos y PATRIAM) lo revisan, lo aprueban y se publica. Sin la aprobación de uno de los dos no se publica nada.</p>
   <div class="consejo">Todo se <b>guarda solo</b> mientras escribes (arriba pone «Guardado ✓») y se ve igual desde cualquier ordenador o móvil. Lo que escribes <b>no sale en la web hasta que se aprueba</b>. A la derecha ves cómo va quedando; «Vista previa» lo enseña tal como quedará en la web y «Vista móvil», en tamaño de teléfono.</div>
 
+  <details><summary>Quién puede hacer qué (permisos)</summary><div>
+  <table class="permisos">
+    <tr><th></th><th>Usuario</th><th>Redes</th><th>Admin.</th></tr>
+    <tr><td>Preparar el boletín (editorial, noticias, colaboradores, eventos, recomendados)</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Añadir y cambiar la biblioteca (Historia, Análisis, Noticias)</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Preparar envíos de «Al momento»</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Vista previa (web, móvil y correo)</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Enviar a aprobación</td><td>✔</td><td>✔</td><td>—</td></tr>
+    <tr><td>Preparar las publicaciones de Instagram y X</td><td>✘</td><td>✔</td><td>✔</td></tr>
+    <tr><td><b>Aprobar y publicar</b> en la web</td><td>✘</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Ver los suscriptores</td><td>✘</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Dar de alta y de baja usuarios, cambiar su tipo y restablecer contraseñas</td><td>✘</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Cambiar su propia contraseña</td><td>✔</td><td>✔</td><td>✔</td></tr>
+  </table>
+  <p>Las contraseñas se guardan cifradas y nadie puede verlas, ni los administradores: si alguien la olvida, un administrador le pone una provisional nueva desde «Usuarios».</p>
+  </div></details>
+
   <details open><summary>1. Empezar el boletín de la semana</summary><div><ol>
     <li>Pulsa <b>«+ Nuevo boletín»</b>. El número se pone solo; revisa la fecha.</li>
     <li><b>Editorial:</b> título, texto, imagen y firma. Para negritas, cursivas o enlaces, selecciona el texto y pulsa el botón. Un párrafo nuevo es una línea en blanco.</li>
@@ -390,6 +412,21 @@
 <div class="modal" id="modalUsuarios"><div class="modal-caja" style="max-width:620px">
   <h3>Usuarios del editor</h3>
   <p class="nota" style="margin:0 0 10px">Los cambios valen al momento en cualquier ordenador o móvil.</p>
+  <details style="margin:0 0 12px"><summary style="cursor:pointer;font-weight:700;color:var(--acento)">Qué puede hacer cada uno</summary>
+  <table class="permisos">
+    <tr><th></th><th>Usuario</th><th>Redes</th><th>Admin.</th></tr>
+    <tr><td>Preparar el boletín (editorial, noticias, colaboradores, eventos, recomendados)</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Añadir y cambiar la biblioteca (Historia, Análisis, Noticias)</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Preparar envíos de «Al momento»</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Vista previa (web, móvil y correo)</td><td>✔</td><td>✔</td><td>✔</td></tr>
+    <tr><td>Enviar a aprobación</td><td>✔</td><td>✔</td><td>—</td></tr>
+    <tr><td>Preparar las publicaciones de Instagram y X</td><td>✘</td><td>✔</td><td>✔</td></tr>
+    <tr><td><b>Aprobar y publicar</b> en la web</td><td>✘</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Ver los suscriptores</td><td>✘</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Dar de alta y de baja usuarios, cambiar su tipo y restablecer contraseñas</td><td>✘</td><td>✘</td><td>✔</td></tr>
+    <tr><td>Cambiar su propia contraseña</td><td>✔</td><td>✔</td><td>✔</td></tr>
+  </table>
+  </details>
   <div id="listaUsuarios"></div>
   <h4 style="margin:18px 0 4px;color:var(--acento);font:700 14px system-ui,sans-serif">Añadir usuario</h4>
   <form id="formUsuario">
@@ -963,6 +1000,11 @@ function abrirVista(movil) {
 }
 $("btnCompleta").onclick = () => abrirVista(false);
 $("btnMovil").onclick = () => abrirVista(true);
+$("btnCorreo").onclick = () => {
+  const w = window.open("", "_blank");
+  if (!w) { alert("El navegador ha bloqueado la ventana. Permite las ventanas emergentes para esta página."); return; }
+  w.document.open(); w.document.write(renderCorreo(actual, CFG, { base: location.origin + "/" })); w.document.close();
+};
 
 /* ---------- aprobación: los usuarios envían, los administradores aprueban y se publica al momento ---------- */
 function urlDe(b) { return "https://boletinpatriam.netlify.app/boletin/" + encodeURIComponent(b.numero); }
