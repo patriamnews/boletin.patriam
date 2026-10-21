@@ -2,6 +2,7 @@
 import { getStore } from "@netlify/blobs";
 import crypto from "node:crypto";
 import semilla from "./datos-iniciales.mjs";
+import respaldo from "./respaldo.mjs";
 
 export const almacen = () => getStore({ name: "boletin", consistency: "strong" });
 
@@ -46,20 +47,22 @@ async function importarAntiguo(s) {
     }
     await s.setJSON("usuarios", usuarios);
   }
+  if (!usuarios.length && respaldo.usuarios.length) {   // sin variables de usuarios: los de siempre, con la contraseña provisional
+    await s.setJSON("usuarios", respaldo.usuarios.map(u => ({ ...u })));
+  }
   // Boletines publicados y ajustes
   const yaHay = (await s.list({ prefix: "pub/" })).blobs.length > 0;
   if (!yaHay) {
     let txt = null;
     for (const ruta of (process.env.BOLETIN_ORIGEN_RUTAS || "/boletines.js,/web/boletines.js,/.netlify/functions/boletines").split(",")) {
-      const r = await fetch(origen + ruta, { headers: { "Cache-Control": "no-cache" } });
-      const t = await r.text();
+      let r, t;
+      try { r = await fetch(origen + ruta, { headers: { "Cache-Control": "no-cache" } }); t = await r.text(); } catch (e) { continue; }
       console.log("importarAntiguo", ruta, r.status, t.length, t.slice(0, 160).replace(/\s+/g, " "));
       if (r.ok && t.includes("window.BOLETINES")) { txt = t; break; }
     }
-    if (!txt) {
-      const h = await (await fetch(origen + "/")).text();
-      console.log("importarAntiguo portada", [...h.matchAll(/(?:src|href)="([^"]+)"/g)].map(x => x[1]).join(" | "));
-      throw new Error("No se pudo leer el boletín antiguo");
+    if (!txt) {   // la web antigua ya no existe: se usa la copia de respaldo que va con el código
+      console.log("importarAntiguo: web antigua no disponible, se usa la copia de respaldo");
+      txt = "window.PATRIAM_CONFIG = " + JSON.stringify(respaldo.cfg) + ";\nwindow.BOLETINES = " + JSON.stringify(respaldo.boletines) + ";";
     }
     const m = txt.match(/window\.PATRIAM_CONFIG\s*=\s*([\s\S]*?);\s*window\.BOLETINES\s*=\s*([\s\S]*?);\s*$/);
     if (!m) throw new Error("Formato inesperado en boletines.js antiguo");
@@ -97,6 +100,7 @@ async function quitarPodcastDuplicado(s) {
 }
 
 export async function asegurar(s) {
+  await cargarSecreto(s);
   if ((await s.get("usuarios")) !== null) return migrar(s);
   const { usuarios, ...cfg } = semilla.cfg;
   await s.setJSON("cfg", cfg);
@@ -140,7 +144,7 @@ export function enmascarar(c) { c = String(c).trim().toLowerCase(); const [u, d]
 
 /* ---------- bajas del boletín: enlace firmado para cada suscriptor ---------- */
 export const claveCorreo = email => sha256(String(email).trim().toLowerCase()).slice(0, 32);
-export const firmaBaja = email => crypto.createHmac("sha256", Netlify.env.get("SESION_SECRETO") || "").update("baja|" + String(email).trim().toLowerCase()).digest("hex").slice(0, 32);
+export const firmaBaja = email => crypto.createHmac("sha256", Netlify.env.get("SESION_SECRETO") || secretoGuardado || "").update("baja|" + String(email).trim().toLowerCase()).digest("hex").slice(0, 32);
 export const enlaceBaja = (origen, email) => origen + "/#/baja/" + encodeURIComponent(String(email).trim().toLowerCase()) + "/" + firmaBaja(email);
 /* Pasa a un suscriptor a la lista de bajas, con la fecha y cómo se dio de baja (queda registrado) */
 export async function darDeBaja(s, email, via) {
@@ -156,9 +160,16 @@ export async function darDeBaja(s, email, via) {
 }
 
 /* ---------- sesiones firmadas ---------- */
+let secretoGuardado = null;   // si no hay variable SESION_SECRETO, se usa uno propio guardado en el almacén
+async function cargarSecreto(st) {
+  if (Netlify.env.get("SESION_SECRETO") || secretoGuardado) return;
+  let x = await st.get("secreto-sesion");
+  if (!x) { x = crypto.randomBytes(32).toString("hex"); await st.set("secreto-sesion", x); }
+  secretoGuardado = x;
+}
 function secreto() {
-  const s = Netlify.env.get("SESION_SECRETO");
-  if (!s) throw new Error("Falta la variable SESION_SECRETO en Netlify");
+  const s = Netlify.env.get("SESION_SECRETO") || secretoGuardado;
+  if (!s) throw new Error("Falta la clave de sesiones");
   return s;
 }
 const b64 = t => Buffer.from(t).toString("base64url");
