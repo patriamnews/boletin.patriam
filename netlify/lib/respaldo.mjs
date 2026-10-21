@@ -18,7 +18,7 @@ export default {
   "banner": "banner-portada.jpg",
   "web": "https://patriam.netlify.app/",
   "direccion": "https://boletinpatriam.netlify.app/",
-  "suscripcion": "https://patriam.netlify.app/#/adhierete",
+  "suscripcion": "https://patriam.netlify.app/#/unete",
   "uneteTitulo": "Únete a PATRIAM",
   "uneteTexto": "Recibe cada semana nuestro boletín y forma parte del cambio.",
   "x": "https://x.com/movpatriam",
