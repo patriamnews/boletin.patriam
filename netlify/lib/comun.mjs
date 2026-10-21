@@ -49,9 +49,18 @@ async function importarAntiguo(s) {
   // Boletines publicados y ajustes
   const yaHay = (await s.list({ prefix: "pub/" })).blobs.length > 0;
   if (!yaHay) {
-    const r = await fetch(origen + "/boletines.js", { headers: { "Cache-Control": "no-cache" } });
-    if (!r.ok) throw new Error("No se pudo leer el boletín antiguo: " + r.status);
-    const txt = await r.text();
+    let txt = null;
+    for (const ruta of (process.env.BOLETIN_ORIGEN_RUTAS || "/boletines.js,/web/boletines.js,/.netlify/functions/boletines").split(",")) {
+      const r = await fetch(origen + ruta, { headers: { "Cache-Control": "no-cache" } });
+      const t = await r.text();
+      console.log("importarAntiguo", ruta, r.status, t.length, t.slice(0, 160).replace(/\s+/g, " "));
+      if (r.ok && t.includes("window.BOLETINES")) { txt = t; break; }
+    }
+    if (!txt) {
+      const h = await (await fetch(origen + "/")).text();
+      console.log("importarAntiguo portada", [...h.matchAll(/(?:src|href)="([^"]+)"/g)].map(x => x[1]).join(" | "));
+      throw new Error("No se pudo leer el boletín antiguo");
+    }
     const m = txt.match(/window\.PATRIAM_CONFIG\s*=\s*([\s\S]*?);\s*window\.BOLETINES\s*=\s*([\s\S]*?);\s*$/);
     if (!m) throw new Error("Formato inesperado en boletines.js antiguo");
     const cfgAnt = JSON.parse(m[1]), boletines = JSON.parse(m[2]);
