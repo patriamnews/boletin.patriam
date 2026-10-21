@@ -2,7 +2,8 @@
   "name": "patriam-boletin",
   "private": true,
   "type": "module",
+  "description": "Boletín «Lo que hay que saber» de PATRIAM. Diseño y desarrollo web: odlc.es",
   "dependencies": {
-    "@netlify/blobs": "^11.1.5"
+    "@netlify/blobs": "^8.2.0"
   }
 }

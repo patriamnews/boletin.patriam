@@ -1,17 +1,35 @@
-«LO QUE HAY QUE SABER» · BOLETÍN DE PATRIAM
-===========================================
-Publicado en https://boletinpatriam.netlify.app
-
-Cómo está hecho
-- web/                 → la web del boletín (index.html), el editor (editor.html), diseño y plantillas.
-- netlify/functions/   → el «servidor»: guarda boletines, usuarios, suscriptores y bajas en Netlify Blobs,
-                         publica al aprobar, da a cada boletín su dirección (/boletin/N) y a cada
-                         envío «Al momento» la suya (/a/nombre), con su imagen para WhatsApp y redes.
-- netlify/lib/         → piezas comunes (contraseñas cifradas con scrypt, sesiones firmadas, bajas).
-
-Uso diario: todo se hace desde el editor (boletinpatriam.netlify.app/editor.html).
-Escribir, aprobar y publicar NO necesita subir archivos ni volver a desplegar.
-Solo hace falta desplegar cuando se cambia el diseño o el funcionamiento.
-
-Variable necesaria en Netlify: SESION_SECRETO (clave para firmar las sesiones y los enlaces de baja).
+BOLETÍN «LO QUE HAY QUE SABER» · PATRIAM
 Diseño y desarrollo web: odlc.es
+=========================================
+
+CÓMO FUNCIONA
+-------------
+- Todo se gestiona desde el editor de la web (enlace «Acceso editor» en el pie del boletín).
+  No hay que descargar ni subir archivos: lo que se escribe se guarda solo en la web.
+- Los datos (boletines, biblioteca, «Al momento», fotos) y los usuarios se guardan en Netlify (Netlify Blobs).
+  Las contraseñas se guardan cifradas y nunca aparecen en la web ni en GitHub.
+- Los usuarios preparan y envían a aprobación. Los administradores (Carlos y PATRIAM) aprueban y publican:
+  al pulsar «Aprobar y publicar» ya está en la web.
+- En el editor, el botón «? Instrucciones» explica paso a paso cómo se hace cada cosa.
+
+GITHUB Y NETLIFY (solo para quien mantiene la web)
+--------------------------------------------------
+- El código está en GitHub (repositorio patriam-boletin) y Netlify lo publica solo al guardar cambios allí.
+- Cambiar archivos en GitHub NO borra los boletines, las fotos ni los usuarios: esos están guardados en Netlify, aparte.
+  Los archivos netlify/datos/semilla.mjs y usuarios-semilla.mjs solo se usan la primera vez, cuando Netlify aún no tiene nada guardado.
+- boletines.js es solo una copia de seguridad para abrir la web en local. En la web publicada no se usa.
+- Configuración de Netlify: Build command vacío, Publish directory «.». No hace falta nada más.
+
+PRIMER ACCESO
+-------------
+- Usuarios iniciales: patriam-merc@outlook.es (administra), carlosrubioromo@yahoo.es (administra), lauraolivareses@yahoo.es (edita).
+- Contraseña provisional: patriam12345. La primera vez, el editor pide elegir una nueva.
+
+SUSCRIPCIONES
+-------------
+- El formulario «Suscríbete» guarda las altas en Netlify (Forms). En el editor, los administradores las ven con «Suscriptores ↗».
+- En Netlify: Project configuration > Forms > Enable form detection (una vez), y en Form notifications añadir los avisos por correo.
+
+PENDIENTE
+---------
+- Envío del boletín por correo con Resend: hace falta un dominio propio (por ejemplo patriam.es) y una cuenta de Resend.

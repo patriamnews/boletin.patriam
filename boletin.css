@@ -637,42 +637,6 @@ mark.pendiente { background: #fbe9b6; color: #6b4a00; padding: 0 .2em; border-ra
 .sus-letra { max-width: 560px; font-size: .85rem; color: #6b5f58; margin-top: 1rem; }
 @media (max-width: 700px) { .sus-form { padding: 1.2rem; } }
 
-
-/* Frase del mes bajo «con criterio» */
-.bol-frase-mes { max-width: 34em; text-transform: none; letter-spacing: .01em; font-weight: 600; font-style: italic; line-height: 1.35;
-  font-size: clamp(.82rem, 1.25vw, 1.02rem); text-align: center; }
-.bol-frase-mes q { quotes: "«" "»"; }
-.bol-frase-mes span { display: block; margin-top: .25rem; font-style: normal; font-weight: 800; font-size: .74em; letter-spacing: .18em; text-transform: uppercase; }
-@media (max-width: 760px) { .bol-frase-mes { font-size: .74rem; letter-spacing: 0; max-width: 92vw; } }
-
-/* Compartir un boletín */
-.bol-compartir { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .7rem; margin: 0 0 1.4rem; padding: .7rem .9rem;
-  border: 1px solid rgba(123,28,44,.18); border-radius: 4px; background: rgba(250,245,236,.7); }
-.bol-compartir > span { flex: 1 1 12em; font-weight: 700; color: var(--acento); }
-.bol-compartir > div { display: flex; flex-wrap: wrap; gap: .45rem; }
-.bol-comp { display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .8rem; border-radius: 999px; border: 0; cursor: pointer;
-  font: 700 .82rem/1 Inter, system-ui, sans-serif; color: #fff; text-decoration: none; }
-.bol-comp .ico { width: 1.05em; height: 1.05em; }
-.bol-comp.wa { background: #1f8f4e; } .bol-comp.xx { background: #111; }
-.bol-comp.ig { background: linear-gradient(45deg, #f09433, #dc2743 50%, #bc1888); } .bol-comp.en { background: var(--acento); }
-.bol-comp:hover { filter: brightness(1.1); color: #fff; }
-.ig-modal { position: fixed; inset: 0; z-index: 1000; background: rgba(29,23,25,.6); display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 16px; }
-.ig-caja { position: relative; background: var(--crema); max-width: 520px; width: 100%; border-radius: 8px; padding: 20px 18px; margin: auto; }
-.ig-caja h3 { margin: 0 0 6px; color: var(--acento); }
-.ig-nota { font-size: .85rem; margin: 0 0 10px; color: #5b5254; }
-.ig-cerrar { position: absolute; top: 6px; right: 10px; border: 0; background: none; font-size: 28px; cursor: pointer; color: var(--acento); }
-.ig-fmt { display: flex; gap: 6px; margin-bottom: 10px; }
-.ig-fmt button { flex: 1; padding: 8px; border: 1px solid var(--acento); background: #fff; color: var(--acento); border-radius: 4px; cursor: pointer; font-weight: 700; }
-.ig-fmt button.activo { background: var(--acento); color: #fff; }
-.ig-vista { text-align: center; background: #efe8dc; border-radius: 4px; min-height: 120px; }
-.ig-vista img { max-width: 100%; max-height: 52vh; display: block; margin: 0 auto; }
-.ig-cargando { padding: 40px 0; margin: 0; }
-.ig-caja label { display: block; font-weight: 700; font-size: .85rem; margin: 12px 0 4px; }
-.ig-texto { width: 100%; box-sizing: border-box; font: .85rem/1.4 Inter, system-ui, sans-serif; padding: 8px; border: 1px solid #d6cab7; border-radius: 4px; }
-.ig-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.ig-botones .bol-btn { cursor: pointer; }
-
-
 /* ---------- Al momento ---------- */
 .am-pieza { max-width: 760px; }
 .am-ante { font-size: .78rem; letter-spacing: .22em; text-transform: uppercase; color: var(--acento); font-weight: 600; margin: 0 0 .6rem; }
@@ -695,33 +659,14 @@ mark.pendiente { background: #fbe9b6; color: #6b4a00; padding: 0 .2em; border-ra
 .am-fila p { margin: 0; color: #5b4f49; font-size: .95rem; }
 @media (max-width: 700px) { .am-fila img, .am-sin-img { width: 90px; } .am-ig iframe { height: 640px; } }
 
-/* Cabecera y menú encuadrados en el centro, con los lados del color del fondo */
-.bol-cab { border-top: 0; background: var(--crema); padding-top: 18px; }
-.bol-cab-in { max-width: 1240px; margin: 0 auto; border-top: 10px solid var(--acento); min-height: clamp(330px, 27vw, 400px);
-  box-shadow: 0 6px 24px rgba(74,15,25,.12); background: var(--crema); overflow: hidden; }
-.bol-mancheta-nombre.largo { font-size: clamp(2.3rem, 4.3vw, 4.3rem); }
-.bol-menu { background: transparent; box-shadow: none; }
-.bol-menu-in { background: var(--acento); box-shadow: 0 4px 16px rgba(74,15,25,.2); padding: 0 12px; }
-@media (max-width: 760px) {
-  .bol-cab { padding-top: 0; }
-  .bol-cab-in { box-shadow: none; }
-  .bol-menu { background: var(--acento); }
-}
-
-/* Mismo ancho para la cabecera, el menú y el contenido; el menú cabe entero */
-.bol-cab-in, .bol-menu-in { max-width: calc(1240px - 48px); }
-@media (max-width: 1240px) { .bol-cab-in, .bol-menu-in { max-width: none; margin-left: 24px; margin-right: 24px; } }
-.bol-menu-in { justify-content: space-between; overflow: hidden; }
-.bol-menu a { padding: .9rem .75rem; gap: .45rem; letter-spacing: .12em; font-size: .68rem; }
-.bol-menu a .ico { width: 18px; height: 18px; }
-.bol-buscar { margin-left: .4rem; flex: none; }
-.bol-buscar input { width: 70px; }
-.bol-buscar input:focus { width: 120px; }
-@media (max-width: 1100px) { .bol-menu a span { display: none; } .bol-menu a { padding: .9rem .9rem; } }
-@media (max-width: 760px) {
-  .bol-cab-in, .bol-menu-in { margin-left: 0; margin-right: 0; }
-  .bol-menu-in { overflow-x: auto; justify-content: flex-start; }
-  .bol-menu a span { display: inline; }
-}
-.bol-menu a { padding: .9rem .62rem; letter-spacing: .1em; }
-.bol-buscar input { width: 60px; }
+/* ---------- compartir por WhatsApp ---------- */
+.bol-compartir { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 2rem 0 0; padding: 1rem; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
+.bol-compartir span { font-size: .8rem; letter-spacing: .2em; text-transform: uppercase; color: var(--acento); font-weight: 600; }
+.bol-btn.bol-wa { background: #25d366; border-color: #25d366; color: #fff; }
+.bol-btn.bol-wa:hover { background: #1da851; border-color: #1da851; }
+.bol-btn.bol-wa .ico { width: 20px; height: 20px; }
+.bol-btn.bol-xr { background: #000; border-color: #000; color: #fff; }
+.bol-btn.bol-xr:hover { background: #333; border-color: #333; }
+.bol-btn.bol-mas { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); border-color: #dc2743; color: #fff; font-family: var(--serif); cursor: pointer; }
+.bol-btn.bol-mas[hidden] { display: none; }
+.bol-btn.bol-xr .ico, .bol-btn.bol-mas .ico { width: 18px; height: 18px; }
