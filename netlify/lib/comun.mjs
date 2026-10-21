@@ -9,6 +9,7 @@ export const almacen = () => getStore({ name: "boletin", consistency: "strong" }
 /* Cambios de datos que se aplican una sola vez */
 const FRASE_OCTUBRE = { fraseMes: "Que cualquiera que crea sin reserva se una a nuestras filas. Que el que tenga dudas permanezca al margen.", fraseMesAutor: "Corneliu Zelea Codreanu" };
 async function migrar(s) {
+  try { await importarAntiguo(s); } catch (e) { console.error("importarAntiguo", e); }
   await quitarPodcastDuplicado(s);
   if ((await s.get("migracion/frase-octubre")) !== null) return;
   for (const k of ["cfg", "pubcfg"]) {
@@ -23,6 +24,55 @@ async function migrar(s) {
     }
   }
   await s.set("migracion/frase-octubre", new Date().toISOString());
+}
+
+/* ---------- Paso de la cuenta antigua de Netlify a la nueva (una sola vez) ----------
+   Copia los boletines publicados, los ajustes públicos y sus imágenes desde la web antigua
+   (BOLETIN_ORIGEN, por defecto https://patriamboletin.netlify.app) y crea los usuarios
+   indicados en BOLETIN_USUARIOS ("correo:rol,correo:rol") con la clave BOLETIN_CLAVE_INICIAL.
+   Correos y clave van en variables de Netlify, no en este repositorio público. */
+async function importarAntiguo(s) {
+  if ((await s.get("migracion/importar-antiguo")) !== null) return;
+  const origen = (process.env.BOLETIN_ORIGEN || "https://patriamboletin.netlify.app").replace(/\/$/, "");
+  // Usuarios
+  const usuarios = (await s.get("usuarios", { type: "json" })) || [];
+  const lista = String(process.env.BOLETIN_USUARIOS || "").split(",").map(x => x.trim()).filter(Boolean);
+  const clave = String(process.env.BOLETIN_CLAVE_INICIAL || "");
+  if (!usuarios.length && lista.length && clave.length >= 8) {
+    for (const par of lista) {
+      const [correo, rol] = par.split(":");
+      if (!correo || usuarios.some(u => u.id === huellaCorreo(correo))) continue;
+      usuarios.push({ id: huellaCorreo(correo), clave: cifrarClave(clave), cambiar: true, rol: ["admin", "redes", "editor"].includes(rol) ? rol : "editor", nombre: enmascarar(correo.trim().toLowerCase()) });
+    }
+    await s.setJSON("usuarios", usuarios);
+  }
+  // Boletines publicados y ajustes
+  const yaHay = (await s.list({ prefix: "pub/" })).blobs.length > 0;
+  if (!yaHay) {
+    const r = await fetch(origen + "/boletines.js", { headers: { "Cache-Control": "no-cache" } });
+    if (!r.ok) throw new Error("No se pudo leer el boletín antiguo: " + r.status);
+    const txt = await r.text();
+    const m = txt.match(/window\.PATRIAM_CONFIG\s*=\s*([\s\S]*?);\s*window\.BOLETINES\s*=\s*([\s\S]*?);\s*$/);
+    if (!m) throw new Error("Formato inesperado en boletines.js antiguo");
+    const cfgAnt = JSON.parse(m[1]), boletines = JSON.parse(m[2]);
+    // Imágenes guardadas en el almacén (/img/…): se copian con la misma clave
+    const claves = new Set();
+    const buscar = o => { if (typeof o === "string") { for (const x of o.matchAll(/\/img\/([0-9a-f]{32})/g)) claves.add(x[1]); } else if (o && typeof o === "object") Object.values(o).forEach(buscar); };
+    buscar(cfgAnt); buscar(boletines);
+    for (const k of claves) {
+      if ((await s.getMetadata("img/" + k)) !== null) continue;
+      const ri = await fetch(origen + "/img/" + k);
+      if (!ri.ok) continue;
+      await s.set("img/" + k, await ri.arrayBuffer(), { metadata: { tipo: ri.headers.get("content-type") || "image/jpeg" } });
+    }
+    const cfgActual = (await s.get("cfg", { type: "json" })) || {};
+    const cfg = Object.assign({}, cfgAnt, cfgActual.fraseMes ? { fraseMes: cfgActual.fraseMes, fraseMesAutor: cfgActual.fraseMesAutor } : {});
+    delete cfg.usuarios;
+    await s.setJSON("cfg", cfg);
+    await s.setJSON("pubcfg", cfg);
+    for (const b of boletines) { if (!b || !b.id) continue; await s.setJSON("b/" + b.id, b); await s.setJSON("pub/" + b.id, b); }
+  }
+  await s.set("migracion/importar-antiguo", new Date().toISOString());
 }
 
 /* Boletín Nº 01: el podcast de Desmemoria Histórica estaba en Noticias y también en «Podcast recomendado» */
