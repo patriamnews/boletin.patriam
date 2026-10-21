@@ -213,7 +213,7 @@ function reproductorYoutube(yt, titulo, url) {
     return '<a class="leer-video sin-embed" href="' + esc(url || "https://www.youtube.com/watch?v=" + yt) + '" target="_blank" rel="noopener" style="background-image:url(\'https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg\')">' +
       '<span class="bol-play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span><em>En la web publicada se ve aquí mismo. Ahora se abre en YouTube.</em></a>';
   }
-  return '<div class="leer-video"><iframe src="https://www.youtube.com/embed/' + yt + '?rel=0&modestbranding=1" title="' + esc(titulo || "Vídeo") +
+  return '<div class="leer-video"><iframe src="https://www.youtube-nocookie.com/embed/' + yt + '?rel=0&modestbranding=1" title="' + esc(titulo || "Vídeo") +
     '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>';
 }
 function logoMedio(n, cfg) {
