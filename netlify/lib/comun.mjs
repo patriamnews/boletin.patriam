@@ -10,6 +10,7 @@ export const almacen = () => getStore({ name: "boletin", consistency: "strong" }
 /* Cambios de datos que se aplican una sola vez */
 const FRASE_OCTUBRE = { fraseMes: "Que cualquiera que crea sin reserva se una a nuestras filas. Que el que tenga dudas permanezca al margen.", fraseMesAutor: "Corneliu Zelea Codreanu" };
 async function migrar(s) {
+  await lemaSinFamilia(s);
   try { await importarAntiguo(s); } catch (e) { console.error("importarAntiguo", e); }
   await quitarPodcastDuplicado(s);
   if ((await s.get("migracion/frase-octubre")) !== null) return;
@@ -25,6 +26,15 @@ async function migrar(s) {
     }
   }
   await s.set("migracion/frase-octubre", new Date().toISOString());
+}
+
+/* El lema queda en «Dios · Patria · Justicia» (sin «Familia»), en ajustes y en cada boletín */
+async function lemaSinFamilia(s) {
+  if ((await s.get("migracion/lema-sin-familia")) !== null) return;
+  const quitar = o => { if (o && typeof o.lema === "string" && /familia/i.test(o.lema)) { o.lema = o.lema.replace(/\s*[·,|-]?\s*familia\s*/i, "").trim(); return true; } return false; };
+  for (const k of ["cfg", "pubcfg"]) { const c = await s.get(k, { type: "json" }); if (quitar(c)) await s.setJSON(k, c); }
+  for (const pre of ["b/", "pub/"]) for (const { key } of (await s.list({ prefix: pre })).blobs) { const b = await s.get(key, { type: "json" }); if (quitar(b)) await s.setJSON(key, b); }
+  await s.set("migracion/lema-sin-familia", new Date().toISOString());
 }
 
 /* ---------- Paso de la cuenta antigua de Netlify a la nueva (una sola vez) ----------

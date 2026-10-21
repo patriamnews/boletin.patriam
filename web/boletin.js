@@ -188,7 +188,7 @@ function copiarEnlace(boton, url) {
 
 function cabecera(cfg, b, activo) {
   cfg = cfg || {};
-  const lema = cfg.lema || "Dios · Patria · Justicia · Familia";
+  const lema = cfg.lema || "Dios · Patria · Justicia";
   const banner = urlSegura(cfg.banner);
   let h = '<header class="bol-cab"><div class="bol-cab-in">';
 
@@ -818,7 +818,7 @@ function renderCorreo(b, cfg, opciones) {
   h += '<tr><td style="padding:8px 32px;background:#f4ede2;text-align:right;font:400 12px ' + F + ';color:#6b5f58">¿No se ve bien? <a href="' + esc(base) + '" style="color:' + G + '">Ábrelo en la web</a></td></tr>';
   // cabecera
   h += '<tr><td style="padding:24px 32px 14px;text-align:center;background:#faf6ef"><a href="' + esc(base) + '"><img src="' + esc(abs(cfg.logo || "logo.png")) + '" alt="PATRIAM" width="170" style="display:inline-block;width:170px;height:auto;border:0"></a>' +
-       '<p style="margin:8px 0 0;font:600 10px ' + F + ';letter-spacing:3px;color:' + T + '">' + esc(cfg.lema || "Dios · Patria · Justicia · Familia").toUpperCase() + "</p></td></tr>";
+       '<p style="margin:8px 0 0;font:600 10px ' + F + ';letter-spacing:3px;color:' + T + '">' + esc(cfg.lema || "Dios · Patria · Justicia").toUpperCase() + "</p></td></tr>";
   h += '<tr><td style="padding:0"><a href="' + esc(base) + '"><img src="' + esc(abs(cfg.banner || "banner-portada.jpg")) + '" alt="" width="600" style="display:block;width:100%;height:auto;border:0"></a></td></tr>';
   h += '<tr><td style="padding:22px 32px 20px;text-align:center;background:' + G + '">' +
        '<p style="margin:0;font:600 11px ' + F + ';letter-spacing:4px;color:#d9bd7a">' + esc((cfg.subtitulo || "Boletín de noticias").toUpperCase()) + "</p>" +
@@ -922,7 +922,7 @@ function renderApp(ruta, lista, cfg) {
 
 function pie(cfg) {
   cfg = cfg || {};
-  const web = cfg.web || "", lema = cfg.lema || "Dios · Patria · Justicia · Familia";
+  const web = cfg.web || "", lema = cfg.lema || "Dios · Patria · Justicia";
   let h = '<footer class="bol-pie"><div class="ancho bol-pie-in"><div>';
   h += '<img src="' + esc(cfg.logoClaro || "logo-claro.png") + '" alt="PATRIAM">';
   h += '<div class="bol-pie-lema">' + esc(lema) + "</div><p>Acción ciudadana, cultural y social.</p></div>";
@@ -1010,7 +1010,7 @@ async function imagenInstagram(b, cfg, formato) {
   const barra = HIST ? 210 : 150;
   if (logo) { const h = HIST ? 92 : 78, w = logo.width * h / logo.height; x.drawImage(logo, W / 2 - w / 2, HIST ? 40 : 18, w, h); }
   x.fillStyle = TINTA; x.font = "600 " + (HIST ? 24 : 21) + "px Spectral"; esp(5);
-  centrado(String(cfg.lema || "Dios · Patria · Justicia · Familia").toUpperCase(), barra - (HIST ? 38 : 26)); esp(0);
+  centrado(String(cfg.lema || "Dios · Patria · Justicia").toUpperCase(), barra - (HIST ? 38 : 26)); esp(0);
   x.fillStyle = ACENTO; x.fillRect(0, barra - 6, W, 6);
 
   // Foto principal con el velo claro arriba

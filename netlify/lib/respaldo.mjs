@@ -10,7 +10,7 @@ export default {
   "claim": "con criterio",
   "editor": "LODLC",
   "notaColaboradores": "Muchos de nuestros colaboradores firman con sus siglas por la persecución que existe actualmente. Son personas que siguen y pertenecen al movimiento PATRIAM, o invitados de PATRIAM.",
-  "lema": "Dios · Patria · Justicia · Familia",
+  "lema": "Dios · Patria · Justicia",
   "frase": "Nuestra historia nos une.\nNuestro compromiso nos define.",
   "secciones": "Ideas · Análisis · Actualidad · Acción",
   "logo": "logo.png",
