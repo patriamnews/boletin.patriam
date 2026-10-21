@@ -965,7 +965,7 @@ $("btnCompleta").onclick = () => abrirVista(false);
 $("btnMovil").onclick = () => abrirVista(true);
 
 /* ---------- aprobación: los usuarios envían, los administradores aprueban y se publica al momento ---------- */
-function urlDe(b) { return "https://patriamboletin.netlify.app/boletin/" + encodeURIComponent(b.numero); }
+function urlDe(b) { return "https://boletinpatriam.netlify.app/boletin/" + encodeURIComponent(b.numero); }
 function copiar(t, boton) {
   const ok = () => { const v = boton.textContent; boton.textContent = "¡Copiado!"; setTimeout(() => boton.textContent = v, 1500); };
   (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(ok).catch(() => prompt("Copia el enlace:", t));
@@ -1042,7 +1042,7 @@ function slugDe(t) {
   let s = base, n = 2; while (usados.has(s)) s = base + "-" + n++;
   return s;
 }
-function baseWeb() { return "https://patriamboletin.netlify.app/"; }
+function baseWeb() { return "https://boletinpatriam.netlify.app/"; }
 function enlaceMomento(x) { return baseWeb() + "a/" + x.slug; }
 function pintarMomento() {
   CFG.alMomento = CFG.alMomento || [];

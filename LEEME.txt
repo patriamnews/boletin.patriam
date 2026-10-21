@@ -1,6 +1,6 @@
 «LO QUE HAY QUE SABER» · BOLETÍN DE PATRIAM
 ===========================================
-Publicado en https://patriamboletin.netlify.app
+Publicado en https://boletinpatriam.netlify.app
 
 Cómo está hecho
 - web/                 → la web del boletín (index.html), el editor (editor.html), diseño y plantillas.
@@ -9,7 +9,7 @@ Cómo está hecho
                          envío «Al momento» la suya (/a/nombre), con su imagen para WhatsApp y redes.
 - netlify/lib/         → piezas comunes (contraseñas cifradas con scrypt, sesiones firmadas, bajas).
 
-Uso diario: todo se hace desde el editor (patriamboletin.netlify.app/editor.html).
+Uso diario: todo se hace desde el editor (boletinpatriam.netlify.app/editor.html).
 Escribir, aprobar y publicar NO necesita subir archivos ni volver a desplegar.
 Solo hace falta desplegar cuando se cambia el diseño o el funcionamiento.
 
