@@ -180,7 +180,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 700; line-height: 1.15; mar
 .bol-colab-img .ico.grande { width: 40px; height: 40px; }
 .bol-colab-txt { padding: 1rem 1.2rem; display: flex; flex-direction: column; gap: .45rem; }
 .bol-colab h3 { font-size: 1.25rem; line-height: 1.15; }
-.bol-colab p { margin: 0; font-size: .9rem; color: #4a4244; line-height: 1.45; }
+.bol-colab p { margin: 0; font-size: 1.05rem; color: #4a4244; line-height: 1.45; }
 .bol-colab-autor { display: flex; align-items: center; gap: .55rem; margin-top: auto; padding-top: .4rem; font-size: .88rem; }
 .bol-colab-autor small, .bol-firma small { display: block; color: var(--suave); font-size: .78rem; font-weight: 400; }
 
@@ -275,7 +275,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 700; line-height: 1.15; mar
 .bol-articulo { max-width: 740px; margin: 0 auto; }
 .bol-volver { display: inline-block; margin-bottom: 1.6rem; font-size: .74rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; text-decoration: none; }
 .bol-articulo h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); font-weight: 800; line-height: 1.02; text-transform: uppercase; margin: .9rem 0 1.1rem; }
-.bol-entradilla { font-size: 1.3rem; line-height: 1.45; color: #4a4244; font-style: italic; margin: 0 0 1.3rem; }
+.bol-entradilla { font-size: 1.55rem; line-height: 1.45; color: #4a4244; font-style: italic; margin: 0 0 1.3rem; }
 .bol-firma { display: flex; align-items: center; gap: .6rem; font-weight: 700; padding: .9rem 0; border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); margin-bottom: 1.8rem; }
 .bol-articulo-img { width: 100%; border-radius: 4px; margin-bottom: 1.8rem; }
 .bol-articulo-texto p, .bol-articulo-texto li { font-size: 1.15rem; line-height: 1.8; }
@@ -421,7 +421,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 700; line-height: 1.15; mar
 .bol-firmas .bol-colab-img { min-height: 220px; }
 .bol-firmas .bol-colab-txt { padding: 1.4rem 1.6rem; gap: .6rem; }
 .bol-firmas .bol-colab h3 { font-size: 1.7rem; line-height: 1.1; }
-.bol-firmas .bol-colab p { font-size: 1rem; }
+.bol-firmas .bol-colab p { font-size: 1.2rem; line-height: 1.4; }
 
 /* Noticias en el centro */
 .bol-noticias .bol-tarjeta { grid-template-columns: 40% 1fr; }
