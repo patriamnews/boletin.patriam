@@ -225,6 +225,17 @@ function logoMedio(n, cfg) {
   const l = urlSegura(n.logoMedio) || urlSegura(((cfg && cfg.logos) || {})[String(n.medio || "").trim().toLowerCase()]);
   return l ? '<img class="medio-logo" src="' + esc(l) + '" alt="' + esc(n.medio || "") + '">' : "";
 }
+/* Si la noticia no tiene imagen (o no carga), se ve el logo del medio sobre fondo crema */
+function urlLogoMedio(n, cfg, url) {
+  const propio = urlSegura(n.logoMedio) || urlSegura(((cfg && cfg.logos) || {})[String(n.medio || "").trim().toLowerCase()]);
+  if (propio) return propio;
+  try { const host = new URL(url).hostname; return host ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(host) + "&sz=128" : ""; } catch (e) { return ""; }
+}
+function sinFoto(n, cfg, sec, url) {
+  const logo = url && !idYoutube(url) ? urlLogoMedio(n, cfg, url) : "";
+  return '<div class="bol-sinfoto">' + (logo ? '<img class="sinfoto-logo" src="' + esc(logo) + '" alt="" onerror="this.remove()">' : icono(sec.ruta === "noticias" ? "noticias" : sec.clave)) +
+    "<span>" + esc(n.medio || sec.nombre) + "</span></div>";
+}
 function autorComentario(n, cfg) { return n.comenta || (cfg && cfg.editor) || "LODLC"; }
 function bloqueComentario(n, cfg) {
   if (!n.comentario) return "";
@@ -236,7 +247,9 @@ function tarjetaNoticia(n, i, cfg, b, conBoletin, idAncla) {
   const url = urlSegura(n.url), yt = idYoutube(url), sec = seccionDe(n);
   const img = urlSegura(n.imagen) || (yt ? "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg" : "");
   const k = b ? (b.noticias || []).indexOf(n) : -1;
-  const dentro = url && !url.startsWith("#") && k >= 0 ? "#/leer/" + encodeURIComponent(b.id) + "/" + k : "";
+  // Las noticias se abren en su propia web (pestaña nueva): muchos periódicos rechazan mostrarse dentro de otra página.
+  // Solo vídeos y podcasts de YouTube se ven dentro del boletín.
+  const dentro = yt && k >= 0 ? "#/leer/" + encodeURIComponent(b.id) + "/" + k : "";
   const destino = dentro || url;
   const fuera = !dentro && url && !url.startsWith("#") ? ' target="_blank" rel="noopener"' : "";
   let h = '<article class="bol-tarjeta' + (yt ? " es-video" : "") + '"' + (idAncla ? ' id="' + idAncla + '"' : "") + ">";
@@ -250,7 +263,7 @@ function tarjetaNoticia(n, i, cfg, b, conBoletin, idAncla) {
          (i != null ? '<span class="bol-n">' + dosCifras(i + 1) + "</span>" : "") + "</a>";
   } else {
     h += '<a class="bol-foto" href="' + esc(destino || "#/") + '"' + fuera + ' tabindex="-1" aria-hidden="true">' +
-         (img ? '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '<div class="bol-sinfoto">' + icono(sec.ruta === "noticias" ? "noticias" : sec.clave) + "<span>" + esc(n.medio || sec.nombre) + "</span></div>") +
+         sinFoto(n, cfg, sec, url) + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : "") +
          (i != null ? '<span class="bol-n">' + dosCifras(i + 1) + "</span>" : "") + "</a>";
   }
   h += '<div class="bol-tarjeta-in"><div class="bol-etiqueta"><span>' + esc(sec.nombre) + "</span>" + (yt || (n.formato && n.formato !== "Noticia") ? '<b class="bol-tipo">' + esc(n.formato && n.formato !== "Noticia" ? n.formato : "Vídeo") + "</b>" : "") +
@@ -814,7 +827,7 @@ function renderCorreo(b, cfg, opciones) {
         titulo(n.titular || n.url, 20) + (n.resumen ? parr(txt(n.resumen)) : "") +
         (n.comentario ? '<div style="margin:4px 0 16px;padding:12px 16px;background:#faf6ef;border-left:3px solid ' + G + '"><p style="margin:0 0 4px;font:600 11px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + G + '">' + esc(autorComentario(n, cfg)) + " opina</p>" +
           '<p style="margin:0;font:italic 400 15px/1.55 ' + F + ";color:" + T + '">' + txt(n.comentario) + "</p></div>" : "") +
-        boton(ir("#/leer/" + encodeURIComponent(b.id) + "/" + k), yt ? "Ver el vídeo" : n.formato === "Podcast" ? "Escuchar" : "Leer la noticia"));
+        boton(yt ? ir("#/leer/" + encodeURIComponent(b.id) + "/" + k) : (abs(n.url) || ir("#/")), yt ? "Ver el vídeo" : n.formato === "Podcast" ? "Escuchar" : "Leer la noticia"));
     });
   }
   // recomendados
