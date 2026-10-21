@@ -725,3 +725,12 @@ mark.pendiente { background: #fbe9b6; color: #6b4a00; padding: 0 .2em; border-ra
 }
 .bol-menu a { padding: .9rem .62rem; letter-spacing: .1em; }
 .bol-buscar input { width: 60px; }
+
+/* Botones «Web» y «Afíliate» debajo del logo */
+.bol-panel-logo { display: flex; flex-direction: column; align-items: center; gap: .9rem; color: inherit; text-decoration: none; }
+.bol-panel-btns { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+.bol-pbtn { display: inline-block; padding: .45rem 1.3rem; border: 1.5px solid var(--acento); border-radius: 999px; color: var(--acento); background: transparent;
+  font: 700 .72rem var(--serif); letter-spacing: .2em; text-transform: uppercase; text-decoration: none; transition: background .2s, color .2s; }
+.bol-pbtn:hover, .bol-pbtn.lleno { background: var(--acento); color: #fff; }
+.bol-pbtn.lleno:hover { background: var(--acento-osc, #5a1320); border-color: var(--acento-osc, #5a1320); }
+@media (max-width: 760px) { .bol-pbtn { padding: .3rem .8rem; font-size: .6rem; letter-spacing: .14em; } .bol-panel-btns { gap: .4rem; } }

@@ -169,10 +169,15 @@ function cabecera(cfg, b, activo) {
   let h = '<header class="bol-cab"><div class="bol-cab-in">';
 
   // Panel del logo
-  h += '<a class="bol-panel" href="#/"><img src="' + esc(cfg.logo || "logo.png") + '" alt="PATRIAM">' +
-       '<span class="bol-lema">' + esc(lema) + '</span><span class="bol-orla"><i></i></span>';
+  const webUrl = urlSegura(cfg.web) || "https://patriam.netlify.app/";
+  const afiliaUrl = urlSegura(cfg.afiliate) || webUrl.replace(/\/?$/, "/") + "#/adhierete";
+  h += '<div class="bol-panel"><a class="bol-panel-logo" href="#/"><img src="' + esc(cfg.logo || "logo.png") + '" alt="PATRIAM">' +
+       '<span class="bol-lema">' + esc(lema) + '</span></a>' +
+       '<span class="bol-panel-btns"><a class="bol-pbtn" href="' + esc(webUrl) + '" target="_blank" rel="noopener">Web</a>' +
+       '<a class="bol-pbtn lleno" href="' + esc(afiliaUrl) + '" target="_blank" rel="noopener">Afíliate</a></span>' +
+       '<span class="bol-orla"><i></i></span>';
   if (cfg.frase) h += '<span class="bol-frase">' + esc(cfg.frase).replace(/\n/g, "<br>") + "</span>";
-  h += "</a>";
+  h += "</div>";
 
   // Imagen con la cabecera encima
   h += '<div class="bol-imagen"' + (banner ? ' style="--foto:url(\'' + esc(banner) + '\')"' : "") + ">";
