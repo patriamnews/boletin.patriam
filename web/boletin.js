@@ -117,6 +117,29 @@ function paginaColaboraciones(lista, cfg) {
   return '<div class="bol-pagina">' + cabPagina("Colaboraciones", "Textos de nuestros colaboradores y firmas invitadas.", cs.length) + notaColab(cfg) +
     (cs.length ? '<div class="bol-colab-rejilla">' + cs.map(({ c, b }) => tarjetaColaboracion(c, b)).join("") + "</div>" : '<p class="bol-vacio">Todavía no hay colaboraciones.</p>') + "</div>";
 }
+/* Para que cada lector lo comparta en SU propio WhatsApp, X, Facebook o Instagram */
+function enlaceParaCompartir(cfg, destino) {
+  const base = typeof location !== "undefined" && /^https?:$/.test(location.protocol) ? location.origin + "/" : String(cfg.direccion || "").replace(/\/?$/, "/");
+  const am = ((cfg && cfg.alMomento) || []).find(x => x.estado === "aprobado" && x.destino === destino && x.slug);
+  return am ? base + "a/" + encodeURIComponent(am.slug) : base + destino;   // el de «Al momento» lleva su propia imagen
+}
+function barraLector(rotulo, titulo, url) {
+  const t = String(titulo || ""), u = String(url || "");
+  return '<div class="bol-compartir bol-compartir-lector"><span>' + esc(rotulo) + "</span><div>" +
+    '<a class="bol-comp wa" href="https://wa.me/?text=' + encodeURIComponent(t + "\n" + u) + '" target="_blank" rel="noopener">' + icono("whatsapp") + "WhatsApp</a>" +
+    '<a class="bol-comp xx" href="https://x.com/intent/post?text=' + encodeURIComponent(t) + "&url=" + encodeURIComponent(u) + '" target="_blank" rel="noopener">' + icono("x") + "X</a>" +
+    '<a class="bol-comp fb" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u) + '" target="_blank" rel="noopener">' + icono("facebook") + "Facebook</a>" +
+    '<button type="button" class="bol-comp ig" data-t="' + esc(t) + '" data-u="' + esc(u) + '" onclick="compartirInstagram(this)">' + icono("instagram") + "Instagram</button>" +
+    '<button type="button" class="bol-comp en" onclick="copiarEnlace(this,\'' + esc(u) + '\')">' + icono("enlace") + "Copiar enlace</button></div></div>";
+}
+function compartirInstagram(boton) {
+  const t = boton.dataset.t, u = boton.dataset.u;
+  if (navigator.share) { navigator.share({ title: t, text: t, url: u }).catch(() => {}); return; }   // en el móvil: se elige Instagram en el menú
+  const texto = t + "\n" + u;
+  (navigator.clipboard ? navigator.clipboard.writeText(texto) : Promise.reject()).catch(() => {});
+  alert("Instagram no deja publicar desde el ordenador con un enlace. Hemos copiado el título y el enlace: ábrelo en el móvil o pégalo en tu historia (con el sticker «Enlace»).");
+}
+
 function paginaColaboracion(lista, id, cfg) {
   const cs = todasColaboraciones(lista), x = cs.find(y => y.c.id === id);
   if (!x) return '<div class="bol-pagina"><p class="bol-vacio">No se encuentra este texto. <a href="#/colaboraciones">Ver todas las colaboraciones</a></p></div>';
@@ -130,6 +153,7 @@ function paginaColaboracion(lista, id, cfg) {
   if (img) h += '<img class="bol-articulo-img" src="' + esc(img) + '" alt="">';
   h += '<div class="bol-articulo-texto">' + maquetar(c.texto) + "</div>";
   if (c.bio) h += '<div class="bol-bio"><b>Sobre ' + esc(c.autor || "el autor") + "</b><p>" + esc(c.bio) + "</p></div>";
+  h += barraLector("Compártelo en tus redes", c.titulo + (c.autor ? " — " + c.autor : ""), enlaceParaCompartir(cfg, "#/colaboracion/" + encodeURIComponent(c.id)));
   h += notaColab(cfg);
   h += '<div class="bol-articulo-pie"><a class="bol-btn claro" href="#/boletin/' + encodeURIComponent(b.id) + '">Ver el boletín de esa semana ' + icono("flecha") + "</a></div>";
   return h + "</article></div>";
@@ -639,6 +663,7 @@ function paginaEditorial(lista, cfg, id) {
   h += '<div class="bol-firma"><span class="bol-avatar">' + esc((ed.firma || editor).charAt(0).toUpperCase()) + "</span>" + esc(ed.firma || editor) + "</div>";
   if (img) h += '<img class="bol-articulo-img" src="' + esc(img) + '" alt="">';
   h += '<div class="bol-articulo-texto">' + maquetar(ed.texto) + "</div>";
+  h += barraLector("Compártela en tus redes", (ed.titulo || "Editorial") + " — Editorial de PATRIAM", enlaceParaCompartir(cfg, "#/editorial/" + encodeURIComponent(b.id)));
   h += '<div class="bol-articulo-pie"><a class="bol-btn claro" href="#/boletin/' + encodeURIComponent(b.id) + '">Ver el boletín de esa semana ' + icono("flecha") + "</a></div>";
   h += '<nav class="bol-anterior-siguiente">' +
        (eds[i + 1] ? '<a href="#/editorial/' + encodeURIComponent(eds[i + 1].b.id) + '"><small>← Anterior</small>' + esc(eds[i + 1].ed.titulo || "Editorial") + "</a>" : "<span></span>") +

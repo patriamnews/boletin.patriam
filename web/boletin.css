@@ -735,3 +735,5 @@ mark.pendiente { background: #fbe9b6; color: #6b4a00; padding: 0 .2em; border-ra
 .bol-pbtn:hover, .bol-pbtn.lleno { background: var(--acento); color: #fff; }
 .bol-pbtn.lleno:hover { background: var(--acento-osc, #5a1320); border-color: var(--acento-osc, #5a1320); }
 @media (max-width: 760px) { .bol-pbtn { padding: .3rem .8rem; font-size: .6rem; letter-spacing: .14em; } .bol-panel-btns { gap: .4rem; } }
+.bol-comp.fb { background: #1877f2; }
+.bol-compartir-lector { margin: 2rem 0 1.2rem; }
