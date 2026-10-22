@@ -180,7 +180,7 @@ function fraseMes(cfg, b) {
     (f.a ? "<span>" + esc(f.a) + "</span>" : "") + "</div>";
   return cfg.secciones ? '<div class="bol-mancheta-inf">' + esc(cfg.secciones) + "</div>" : "";
 }
-function enlaceBoletin(b, cfg) { return String((cfg && cfg.direccion) || "https://boletinpatriam.netlify.app/").replace(/\/?$/, "/") + "boletin/" + encodeURIComponent(b.numero); }
+function enlaceBoletin(b, cfg) { return String((cfg && cfg.direccion) || "https://boletin.movimientopatriam.es/").replace(/\/?$/, "/") + "boletin/" + encodeURIComponent(b.numero); }
 function copiarEnlace(boton, url) {
   const t = boton.innerHTML, ok = () => { boton.textContent = "¡Enlace copiado!"; setTimeout(() => boton.innerHTML = t, 1600); };
   (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(ok).catch(() => prompt("Copia el enlace:", url));
