@@ -21,7 +21,7 @@ export default {
   "suscripcion": "https://patriam.netlify.app/#/unete",
   "uneteTitulo": "Únete a PATRIAM",
   "uneteTexto": "Recibe cada semana nuestro boletín y forma parte del cambio.",
-  "x": "https://x.com/movpatriam",
+  "x": "https://x.com/patriam_es",
   "instagram": "",
   "facebook": "",
   "tiktok": "",
