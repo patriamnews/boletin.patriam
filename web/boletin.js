@@ -193,7 +193,7 @@ function cabecera(cfg, b, activo) {
   let h = '<header class="bol-cab"><div class="bol-cab-in">';
 
   // Panel del logo
-  const webUrl = urlSegura(cfg.web) || "https://patriam.netlify.app/";
+  const webUrl = urlSegura(cfg.web) || "https://movimientopatriam.es/";
   const afiliaUrl = urlSegura(cfg.unete) || webUrl.replace(/\/?$/, "/") + "#/unete";
   h += '<div class="bol-panel"><a class="bol-panel-logo" href="#/"><img src="' + esc(cfg.logo || "logo.png") + '" alt="PATRIAM">' +
        '<span class="bol-lema">' + esc(lema) + '</span></a>' +
