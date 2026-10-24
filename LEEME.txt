@@ -15,3 +15,14 @@ Solo hace falta desplegar cuando se cambia el diseño o el funcionamiento.
 
 Variable necesaria en Netlify: SESION_SECRETO (clave para firmar las sesiones y los enlaces de baja).
 Diseño y desarrollo web: odlc.es
+
+Comunicaciones personales (pestaña «Comunicaciones» del editor, solo administradores)
+- «Buenos días, Nombre:» + texto + firma, a cada persona por separado, por correo y por WhatsApp.
+- Se guardan en el almacén privado (clave «com»); nunca se publican en la web.
+- Variables de Netlify para enviar:
+    BREVO_API_KEY       correo (Brevo). El remitente tiene que estar dado de alta en Brevo.
+    WHATSAPP_TOKEN      API de WhatsApp Cloud (Meta): token permanente
+    WHATSAPP_PHONE_ID   identificador del número de WhatsApp Business
+    WHATSAPP_PLANTILLA  (opcional) plantilla aprobada; por defecto comunicacion_patriam
+                        Texto de la plantilla: «Buenos días, {{1}}:\n\n{{2}}\n\nUn saludo,\nPATRIAM»
+- Sin la API de WhatsApp, «WhatsApp uno a uno» abre cada chat con el mensaje ya escrito.

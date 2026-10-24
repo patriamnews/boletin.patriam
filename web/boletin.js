@@ -1148,3 +1148,47 @@ async function imagenX(b, cfg, alto) {
   x.fillStyle = ORO; x.fillRect(sx + 55, sy + 92, 140, 2); x.fillStyle = TINTA; esp(1); ajustar(d.fecha.toUpperCase(), "700", 17, 215); x.fillText(d.fecha.toUpperCase(), sx + 125, sy + 118); esp(0);
   return new Promise(ok => c.toBlob(ok, "image/jpeg", 0.9));
 }
+
+/* ---------- Comunicación personalizada por correo («Buenos días, Nombre:» + texto + firma) ----------
+   %%NOMBRE%% lo cambia el servidor por el nombre de cada persona; el bloque <!--BAJA-->…<!--/BAJA-->
+   solo se deja a quien está apuntado al boletín, con su enlace de baja (%%BAJA%%). */
+function saludoComunicacion(c, aj, nombre) {
+  const s = String((c && c.saludo) || (aj && aj.saludo) || "Buenos días").trim();
+  return nombre ? s + ", " + nombre + ":" : s + ":";
+}
+function renderComunicacion(c, aj, cfg, opciones) {
+  c = c || {}; aj = aj || {}; cfg = cfg || {}; opciones = opciones || {};
+  const base = String(opciones.base || "https://boletin.movimientopatriam.es/").replace(/\/?$/, "/");
+  const G = "#7b1c2c", T = "#1d1719", F = "Georgia, 'Times New Roman', serif";
+  const abs = u => { u = String(u || "").trim(); if (!u) return ""; if (/^(https?:|data:)/i.test(u)) return u; return /^[\w\-./]+$/.test(u) ? base + u.replace(/^\.?\//, "") : ""; };
+  const nombre = opciones.nombre === undefined ? "%%NOMBRE%%" : esc(opciones.nombre);
+  const estilo = h => h
+    .replace(/<p>/g, '<p style="margin:0 0 14px;font:400 16px/1.6 ' + F + ";color:" + T + '">')
+    .replace(/<h2>/g, '<h2 style="margin:18px 0 10px;font:700 19px/1.3 ' + F + ";color:" + G + '">')
+    .replace(/<blockquote>/g, '<blockquote style="margin:0 0 14px;padding:10px 16px;border-left:3px solid ' + G + ";background:#faf6ef;font:italic 400 16px/1.55 " + F + ";color:" + T + '">')
+    .replace(/<ul>/g, '<ul style="margin:0 0 14px;padding-left:22px;font:400 16px/1.6 ' + F + ";color:" + T + '">')
+    .replace(/<a href=/g, '<a style="color:' + G + '" href=');
+  const s = String((c.saludo || aj.saludo || "Buenos días")).trim();
+  const saludo = '<p style="margin:0 0 16px;font:400 16px/1.6 ' + F + ";color:" + T + '">' + esc(s) + (opciones.nombre === "" ? ":" : ", " + nombre + ":") + "</p>";
+  const firmaImg = abs(aj.firmaImagen);
+  const firma = (aj.firmaTexto ? estilo(maquetar(aj.firmaTexto)) : "") +
+    (firmaImg ? '<img src="' + esc(firmaImg) + '" alt="' + esc(aj.remitenteNombre || "PATRIAM") + '" style="display:block;max-width:100%;width:auto;height:auto;border:0;margin:6px 0 0">' : "");
+  return '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="x-apple-disable-message-reformatting">' +
+    "<title>" + esc(c.asunto || "PATRIAM") + "</title></head>" +
+    '<body style="margin:0;padding:0;background:#f4ede2">' +
+    '<div style="display:none;max-height:0;overflow:hidden">' + esc(recortar(textoPlano(primerParrafo(c.texto)), 110)) + "</div>" +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4ede2"><tr><td align="center" style="padding:20px 10px">' +
+    '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-top:5px solid ' + G + '">' +
+    '<tr><td style="padding:22px 32px 6px"><img src="' + esc(abs(cfg.logo || "logo.png")) + '" alt="PATRIAM" width="120" style="display:block;width:120px;height:auto;border:0"></td></tr>' +
+    '<tr><td style="padding:16px 32px 26px">' + saludo + estilo(maquetar(c.texto)) +
+    (firma ? '<div style="margin-top:22px">' + firma + "</div>" : "") + "</td></tr>" +
+    '<tr><td style="padding:14px 32px;background:#faf6ef;border-top:1px solid #e4d9c7;font:400 12px/1.5 ' + F + ';color:#6b5f58">' +
+    esc(cfg.lema || "Dios · Patria · Justicia") + " · Asociación PATRIAM · " + '<a href="https://movimientopatriam.es" style="color:' + G + '">movimientopatriam.es</a>' +
+    '<!--BAJA--><br>Recibes este correo porque estás apuntado al boletín de PATRIAM. <a href="%%BAJA%%" style="color:' + G + '">Darme de baja</a><!--/BAJA-->' +
+    "</td></tr></table></td></tr></table></body></html>";
+}
+/* Texto sin formato (para la versión de texto del correo y para WhatsApp) */
+function textoComunicacion(c, aj, nombre) {
+  const plano = t => String(t || "").replace(/^##\s+|^>\s?|^-\s+/gm, "").replace(/\*\*|\*/g, "").replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)").trim();
+  return [saludoComunicacion(c, aj, nombre), plano(c.texto), plano(aj.firmaTexto)].filter(Boolean).join("\n\n");
+}

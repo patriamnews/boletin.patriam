@@ -4,6 +4,7 @@ import {
   comprobarClave, enmascarar, firmar, sesion, sacarImagenes
   , claveCorreo, firmaBaja, enlaceBaja, darDeBaja
 } from "../lib/comun.mjs";
+import { accionComunicaciones } from "../lib/comunicaciones.mjs";
 
 export const config = { path: "/api/:accion" };
 
@@ -205,6 +206,10 @@ export default async (req, context) => {
 
     /* ---------- a partir de aquí, solo administradores ---------- */
     if (!esAdmin(yo)) return json({ error: "Solo para administradores." }, 403);
+    if (accion.startsWith("com-")) {
+      const r = await accionComunicaciones(accion, s, cuerpo, yo, req);
+      if (r) return r;
+    }
     const usuarios = (await s.get("usuarios", { type: "json" })) || [];
 
     if (accion === "usuarios") return json({ usuarios: usuarios.map(publico), yo: yo.id });
