@@ -21,5 +21,5 @@ Comunicaciones personales (pestaña «Comunicaciones» del editor, solo administ
 - Funcionan en Hostinger (web/com.php): no necesitan desplegar Netlify. Las comunicaciones, la firma y las
   claves se guardan en una carpeta privada del servidor (patriam-privado, fuera de la web y de GitHub).
 - Las claves (Brevo, WhatsApp) se ponen desde el editor: pestaña Comunicaciones → «Claves de envío».
-                        Texto de la plantilla: «Buenos días, {{1}}:\n\n{{2}}\n\nUn saludo,\nPATRIAM»
+- Plantilla de WhatsApp «comunicacion_patriam»: «Buenos días, {{1}}:\n\n{{2}}\n\nUn saludo,\nPATRIAM»
 - Sin la API de WhatsApp, «WhatsApp uno a uno» abre cada chat con el mensaje ya escrito.
