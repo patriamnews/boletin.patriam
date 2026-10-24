@@ -262,6 +262,15 @@
         <label>Texto de la firma <small>(opcional: va encima de la imagen y es lo que se usa en WhatsApp)</small></label>
         <textarea data-aj="firmaTexto" style="min-height:70px" placeholder="Un saludo,&#10;Isabel Olivares&#10;PATRIAM"></textarea>
       </div></section>
+      <section class="paso"><h2><b>🔑</b>Claves de envío <small>solo hace falta ponerlas una vez</small></h2><div class="paso-in">
+        <p class="nota" style="margin-top:8px">Se guardan en el servidor de Hostinger, fuera de la web y de GitHub. Una vez guardadas no se vuelven a enseñar: solo sus últimas letras. Para cambiar una, escribe la nueva y guarda.</p>
+        <label>Clave de la API de Brevo <small>(Brevo → SMTP &amp; API → API Keys)</small></label><input type="password" id="clBrevo" autocomplete="off" placeholder="xkeysib-…">
+        <label>Token de WhatsApp <small>(Meta → tu app → WhatsApp; mejor el permanente de «Usuarios del sistema»)</small></label><input type="password" id="clWaToken" autocomplete="off" placeholder="EAA…">
+        <div class="fila"><div><label>Identificador del número <small>(Phone number ID, no el teléfono)</small></label><input type="text" id="clWaPhone" autocomplete="off" placeholder="1234567890…"></div>
+          <div><label>Nombre de la plantilla</label><input type="text" id="clWaPlantilla" placeholder="comunicacion_patriam"></div></div>
+        <button class="btn" id="btnClaves" style="margin-top:10px;background:var(--acento);color:#fff;border-color:var(--acento);font-weight:700">Guardar claves</button>
+        <p class="nota" id="clEstado"></p>
+      </div></section>
       <section class="paso"><h2><b>☎</b>Otros destinatarios <small>personas que no están apuntadas al boletín</small></h2><div class="paso-in">
         <p class="nota" style="margin-top:8px">Los suscriptores del boletín ya salen solos. Aquí puedes añadir a otras personas (socios, colaboradores, contactos…).</p>
         <div id="comContactos"></div>
@@ -1358,7 +1367,9 @@ async function abrirComunicaciones() {
   pintarComServicios(); pintarComContactos(); pintarComLista();
 }
 function pintarComServicios() {
-  $("comServicios").innerHTML = '<div class="com-serv"><span class="' + (comServ.correo ? "si" : "") + '">' + (comServ.correo ? "✔ Correo conectado (Brevo)" : "Correo: falta conectar Brevo") + "</span>" +
+  $("clEstado").textContent = "Guardado: Brevo " + (comServ.brevo || "—") + " · token WhatsApp " + (comServ.waToken || "—") + " · número " + (comServ.waPhone || "—") + " · plantilla " + (comServ.plantilla || "comunicacion_patriam");
+  $("clWaPlantilla").value = comServ.plantilla || "";
+  $("comServicios").innerHTML = '<div class="com-serv"><span class="' + (comServ.correo ? "si" : "") + '">' + (comServ.correo ? "✔ Correo conectado (Brevo)" : "Correo: falta la clave de Brevo") + "</span>" +
     '<span class="' + (comServ.whatsapp ? "si" : "") + '">' + (comServ.whatsapp ? "✔ WhatsApp conectado (API)" : "WhatsApp API: falta conectar · mientras, se manda uno a uno") + "</span></div>";
 }
 function pintarComAjustes() {
@@ -1485,7 +1496,7 @@ function pintarComLista() {
     };
     f.querySelector('[data-a="correo"]').onclick = e => enviarCom(c, "correo", e.target, f);
     f.querySelector('[data-a="wa"]').onclick = e => {
-      if (!comServ.whatsapp) { alert("La API de WhatsApp todavía no está conectada. Mientras tanto usa «WhatsApp uno a uno»: abre cada conversación con el mensaje ya escrito a su nombre."); return; }
+      if (!comServ.whatsapp) { alert("Falta poner el token y el identificador del número de WhatsApp en «Claves de envío» (abajo). Mientras tanto usa «WhatsApp uno a uno»: abre cada conversación con el mensaje ya escrito a su nombre."); return; }
       enviarCom(c, "whatsapp", e.target, f);
     };
     f.querySelector('[data-a="wa1"]').onclick = () => {
@@ -1516,7 +1527,7 @@ async function enviarCom(c, canal, boton, f) {
   const personas = comPersonas().filter(p => c.sel.includes(p.id));
   const clave = p => canal === "correo" ? String(p.email || "").toLowerCase() : movilWa(p.movil);
   const validos = personas.filter(clave), ya = new Set((c.enviados && c.enviados[canal]) || []);
-  if (canal === "correo" && !comServ.correo) { alert("El correo todavía no está conectado: falta poner la clave de Brevo (BREVO_API_KEY) en Netlify."); return; }
+  if (canal === "correo" && !comServ.correo) { alert("Falta poner la clave de Brevo en «Claves de envío» (abajo)."); return; }
   if (canal === "correo" && !c.asunto) { alert("Pon el asunto del correo."); return; }
   if (!String(c.texto || "").trim()) { alert("Escribe el texto."); return; }
   if (!validos.length) { alert("Ninguna de las personas elegidas tiene " + (canal === "correo" ? "correo." : "móvil.")); return; }
@@ -1535,7 +1546,7 @@ async function enviarCom(c, canal, boton, f) {
     for (let i = 0; i < pendientes.length; i += 20) {
       boton.textContent = "Enviando " + Math.min(i + 20, pendientes.length) + " de " + pendientes.length + "…";
       const lote = pendientes.slice(i, i + 20).map(p => ({ id: p.id, nombre: nombreSaludo(p), email: p.email, movil: p.movil }));
-      const d = await api("com-enviar", { id: c.id, canal, para: lote, html, texto, textoWa });
+      const d = await api("com-enviar", { id: c.id, canal, para: lote, html, texto, textoWa, por: usuario.nombre || "" });
       d.resultados.forEach(r => { if (r.ok) bien++; else fallos.push((pendientes.find(p => p.id === r.id) || {}).nombre + ": " + r.motivo); });
       c.enviados = d.enviados; c.envios = d.envios; c.estado = "enviado"; comEtag = d.etag; comGuardado = huella(COM);
     }
@@ -1546,6 +1557,11 @@ async function enviarCom(c, canal, boton, f) {
   pintarComLista();
   alert((bien ? "Enviado a " + bien + (bien === 1 ? " persona." : " personas.") : "No se ha enviado a nadie.") + (fallos.length ? "\n\nNo ha podido ser:\n" + fallos.slice(0, 15).join("\n") + (fallos.length > 15 ? "\n…" : "") : ""));
 }
+$("btnClaves").onclick = async () => {
+  const c = { brevo: $("clBrevo").value, waToken: $("clWaToken").value, waPhone: $("clWaPhone").value, waPlantilla: $("clWaPlantilla").value };
+  try { const d = await api("com-claves", c); comServ = d.servicios; ["clBrevo", "clWaToken", "clWaPhone"].forEach(i => $(i).value = ""); pintarComServicios(); pintarComLista(); alert("Claves guardadas."); }
+  catch (err) { if (err.status !== 401) alert(err.message); }
+};
 $("btnComNueva").onclick = () => {
   COM.lista.unshift({ id: nuevoId("k"), fecha: hoy(), asunto: "", saludo: "", texto: "", sel: [], estado: "borrador", enviados: { correo: [], whatsapp: [] }, envios: [] });
   comGuardarLuego(); pintarComLista(); $("comLista").firstElementChild.scrollIntoView({ behavior: "smooth" });
