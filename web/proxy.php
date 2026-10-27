@@ -35,4 +35,16 @@ foreach (explode("\r\n", substr($res, 0, $tam)) as $l) {
   if (strcasecmp($m[1], 'Location') === 0 && $host) $v = str_replace($ORIGEN, 'https://' . $host, $v);
   header($m[1] . ': ' . $v, strcasecmp($m[1], 'Set-Cookie') !== 0);
 }
+// La página de cada boletín (/boletin/N) es la web de aquí (la actual), con la vista previa para redes que prepara Netlify
+if (strpos($ruta, 'boletin/') === 0 && is_file(__DIR__ . '/index.html') && stripos($cuerpo, '<html') !== false) {
+  $local = file_get_contents(__DIR__ . '/index.html');
+  if (preg_match('#<title>.*?</title>#s', $cuerpo, $t)) $local = preg_replace('#<title>.*?</title>#s', str_replace('$', '\\$', $t[0]), $local, 1);
+  if (preg_match_all('#<meta (?:property|name)="(og:[a-z:_]+|twitter:[a-z:_]+|description)" content="[^"]*"\s*/?>#', $cuerpo, $ms, PREG_SET_ORDER)) {
+    foreach ($ms as $m) {
+      $patron = '#<meta (?:property|name)="' . preg_quote($m[1], '#') . '" content="[^"]*"\s*/?>#';
+      $local = preg_match($patron, $local) ? preg_replace($patron, str_replace('$', '\\$', $m[0]), $local, 1) : $local;
+    }
+  }
+  $cuerpo = $local;
+}
 echo $cuerpo;

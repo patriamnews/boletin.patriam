@@ -33,7 +33,25 @@
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
+<script src="importar.js"></script>
 <script>
+/* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
+   Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
+(function(){
+  var L = window.BOLETINES || [], hoy = new Date().toISOString().slice(0, 10);
+  L.forEach(function(b){ if (Number(b.numero) === 1 && b.fecha === "2026-10-21") b.fecha = "2026-10-30"; });
+  var orden = L.slice().sort(function(a, b){ return (a.numero || 0) - (b.numero || 0); });
+  var destino = orden.filter(function(b){ return b.fecha && b.fecha >= hoy; })[0] || orden[orden.length - 1];
+  if (destino) {
+    destino.colaboraciones = destino.colaboraciones || [];
+    (window.PATRIAM_IMPORTAR || []).forEach(function(it){
+      if (!it || !it.id || L.some(function(b){ return (b.colaboraciones || []).some(function(c){ return c.id === it.id; }); })) return;
+      destino.colaboraciones.push(JSON.parse(JSON.stringify(it)));
+    });
+  }
+  var C = window.PATRIAM_CONFIG;
+  if (C && C.lema && /familia/i.test(C.lema)) C.lema = "Dios · Patria · Justicia";
+})();
 /* Fuera las piezas de ejemplo de la plantilla (noticias a ejemplo.com, «Evento/Iniciativa de ejemplo»). */
 (function(){
   var ej = function(t){ return /\bde ejemplo\b|ejemplo\.com/i.test(String(t||"")); };
