@@ -228,8 +228,9 @@
     <nav class="pestanas-ed" role="tablist">
       <button class="activa" data-panel="boletin">Boletín de esta semana</button>
       <button data-panel="seccion" data-sec="Historia">Historia</button>
+      <button data-panel="seccion" data-sec="Sociedad">Sociedad</button>
       <button data-panel="seccion" data-sec="Análisis">Análisis</button>
-      <button data-panel="seccion" data-sec="Actualidad">Noticias</button>
+      <button data-panel="seccion" data-sec="Actualidad">Actualidad</button>
       <button data-panel="momento">Al momento · WhatsApp</button>
       <button data-panel="com" id="pestCom" hidden>Comunicaciones</button>
     </nav>
@@ -832,8 +833,8 @@ function pintarLista(cont, arr, titulo, plantilla, alPintar) {
 function pintarNoticias() {
   const quien = (CFG.comentaristas && CFG.comentaristas.length ? CFG.comentaristas : [CFG.editor || "LODLC"]).map(x => "<option>" + esc(x) + "</option>").join("");
   const BAR = '<div class="herramientas"><button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button><button type="button" data-f="a">Enlace</button></div>';
-  pintarLista($("noticias"), actual.noticias = actual.noticias || [], (n, i) => "Noticia " + (i + 1) + " · se archiva en " + ({ Actualidad: "Noticias", Historia: "Historia", "Análisis": "Análisis" }[n.seccion || "Actualidad"] || "Noticias") + (n.formato && n.formato !== "Noticia" ? " · " + n.formato : ""),
-    '<div class="fila"><div><label>¿Dónde se archiva?</label><select class="campo" data-k="seccion"><option value="Actualidad">Noticias (actualidad)</option><option value="Historia">Historia</option><option value="Análisis">Análisis</option></select></div>' +
+  pintarLista($("noticias"), actual.noticias = actual.noticias || [], (n, i) => "Noticia " + (i + 1) + " · se archiva en " + ({ Actualidad: "Actualidad", Historia: "Historia", Sociedad: "Sociedad", "Análisis": "Análisis" }[n.seccion || "Actualidad"] || "Actualidad") + (n.formato && n.formato !== "Noticia" ? " · " + n.formato : ""),
+    '<div class="fila"><div><label>¿Dónde se archiva?</label><select class="campo" data-k="seccion"><option value="Actualidad">Actualidad</option><option value="Historia">Historia</option><option value="Sociedad">Sociedad (cómo vivimos y cómo vivíamos)</option><option value="Análisis">Análisis</option></select></div>' +
     '<div><label>Tipo</label><select class="campo" data-k="formato"><option>Noticia</option><option>Podcast</option><option>Vídeo</option></select></div></div>' +
     '<label>Título</label><input type="text" data-k="titular">' +
     '<label>Tema <small>(para agrupar dentro de la sección)</small></label><input type="text" data-k="tema" list="temasLista">' +
@@ -863,7 +864,7 @@ function pintarBiblioteca() {
   const BAR = '<div class="herramientas"><button type="button" data-f="b"><b>Negrita</b></button><button type="button" data-f="i"><i>Cursiva</i></button><button type="button" data-f="a">Enlace</button></div>';
   pintarLista($("biblioteca"), CFG.biblioteca, (x, i) => (x.tipo || "Recurso") + " · " + (x.titulo || "sin título") + " · en " + (x.seccion || "Historia") + ((actual.recomendados || []).includes(x.id) ? " · ★ esta semana" : ""),
     '<label class="recomendar"><input type="checkbox" class="chk-rec"> Añadir al boletín de esta semana (Nº ' + String(actual.numero).padStart(2, "0") + ')</label>' +
-    '<div class="fila"><div><label>¿Dónde se guarda?</label><select class="campo" data-k="seccion"><option>Historia</option><option>Análisis</option><option value="Actualidad">Noticias (actualidad)</option></select></div>' +
+    '<div class="fila"><div><label>¿Dónde se guarda?</label><select class="campo" data-k="seccion"><option>Historia</option><option>Sociedad</option><option>Análisis</option><option value="Actualidad">Actualidad</option></select></div>' +
     '<div><label>Tipo</label><select class="campo" data-k="tipo">' + tipos + '</select></div></div>' +
     '<label>Título</label><input type="text" data-k="titulo">' +
     '<label>Tema <small>(para agrupar: «Segunda República y Guerra Civil», «Reconquista»…)</small></label><input type="text" data-k="tema" list="temasLista">' +
@@ -1022,7 +1023,7 @@ $("btnBorrar").onclick = async () => {
 $("btnNoticia").onclick = () => { actual.noticias.push({ seccion: "Actualidad", formato: "Noticia", titular: "", medio: "", url: "", imagen: "", resumen: "", comenta: "", comentario: "" }); pintarNoticias(); cambio(); $("noticias").lastElementChild.scrollIntoView({ behavior: "smooth" }); };
 $("btnColab").onclick = () => { actual.colaboraciones.push({ id: nuevoId("c"), autor: "", cargo: "", titulo: "", entradilla: "", imagen: "", texto: "", bio: "" }); pintarColaboraciones(); cambio(); $("colaboraciones").lastElementChild.scrollIntoView({ behavior: "smooth" }); };
 let seccionActual = "Historia";
-const NOMBRE_SEC = { Historia: "Historia", "Análisis": "Análisis", Actualidad: "Noticias" };
+const NOMBRE_SEC = { Historia: "Historia", Sociedad: "Sociedad", "Análisis": "Análisis", Actualidad: "Actualidad" };
 function verPanel(panel, sec) {
   document.querySelectorAll(".pestanas-ed button").forEach(b => b.classList.toggle("activa", b.dataset.panel === panel && (panel !== "seccion" || b.dataset.sec === sec)));
   $("panelMomento").hidden = panel !== "momento";
@@ -1581,6 +1582,7 @@ async function cargar() {
     usuario = d.usuario;
     Object.keys(CFG).forEach(k => delete CFG[k]); Object.assign(CFG, d.cfg || {});
     cfgEtag = d.cfgEtag; cfgGuardado = huella(CFG);
+    if (CFG.lema && /familia/i.test(CFG.lema)) CFG.lema = lemaDe(CFG);   // el lema ya no lleva «Familia»: se corrige y se guarda solo
     datos = d.boletines || [];
     datos.forEach(b => { etags[b.id] = b._etag; guardados[b.id] = huella(b); });
     document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");

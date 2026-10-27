@@ -39,7 +39,7 @@
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
      Los enlaces que llegan con #/... (por ejemplo, el de un colaborador) se abren y la dirección se limpia. */
   const CFG = window.PATRIAM_CONFIG || {};
-  const TITULOS = { noticias: "Noticias", historia: "Historia", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
+  const TITULOS = { noticias: "Actualidad", historia: "Historia", sociedad: "Sociedad", podcasts: "Podcasts y vídeos", libros: "Libros", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
   /* Cada boletín tiene su dirección: /boletin/2. El resto de páginas se ven sin cambiar la dirección. */
   const LISTA = (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado");
   function direccionDe(r) {

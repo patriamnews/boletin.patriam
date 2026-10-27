@@ -56,14 +56,24 @@ function parrafosRicos(t) {
 }
 function textoPlano(t) { return String(t || "").replace(/^##\s+|^>\s?/gm, "").replace(/\*\*|\*/g, "").replace(/\[([^\]]+)\]\([^)]+\)/g, "$1"); }
 
+/* ---------- lema: siempre «Dios · Patria · Justicia» (sin «Familia», aunque esté guardado así) ---------- */
+function lemaDe(cfg) {
+  const partes = String((cfg && cfg.lema) || "Dios · Patria · Justicia").split(/\s*[·•|]\s*/).map(x => x.trim()).filter(x => x && !/^familia$/i.test(x));
+  return partes.length ? partes.join(" · ") : "Dios · Patria · Justicia";
+}
+
 /* ---------- secciones ---------- */
 const SECCIONES = [
-  { clave: "actualidad", nombre: "Actualidad", menu: "Noticias", ruta: "noticias", texto: "Las noticias de la semana, con el comentario de nuestro editor." },
+  { clave: "actualidad", nombre: "Actualidad", menu: "Actualidad", ruta: "noticias", texto: "Las noticias de la semana, con el comentario de nuestro editor." },
   { clave: "historia", nombre: "Historia", menu: "Historia", ruta: "historia", texto: "Episodios, personas y lugares que forjaron nuestra identidad." },
+  { clave: "sociedad", nombre: "Sociedad", menu: "Sociedad", ruta: "sociedad", texto: "Cómo vivimos y cómo vivíamos: costumbres, familia, pueblos y la España de antes y de ahora." },
   { clave: "analisis", nombre: "Análisis", menu: "Análisis", ruta: "analisis", texto: "Reflexión rigurosa para un debate necesario." }
 ];
 function claveSeccion(n) { const s = sinAcentos(n.seccion || "Actualidad"); return SECCIONES.find(x => x.clave === s) ? s : "actualidad"; }
 function seccionDe(n) { return SECCIONES.find(x => x.clave === claveSeccion(n)); }
+/* Podcasts y libros tienen su propia página, vengan de la biblioteca o de una noticia */
+const ES_PODCAST = t => /podcast|v[ií]deo|documental/i.test(t || "");
+const ES_LIBRO = t => /libro/i.test(t || "");
 
 const ICONOS = {
   editorial: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 12h6M10 15.5h6M10 19h4"/>',
@@ -84,6 +94,9 @@ const ICONOS = {
   boletines: '<rect x="3.5" y="4" width="17" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/>',
   enlace: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   whatsapp: '<path d="M4 20l1.3-4A8 8 0 1 1 8.4 19z"/><path d="M9.2 8.6c.2 2.6 2.6 5 5.2 5.2l1.1-1.2-1.6-.9-.8.7c-.9-.4-1.9-1.4-2.3-2.3l.7-.8-.9-1.6z"/>',
+  sociedad: '<path d="M3.5 20V10l8.5-6 8.5 6v10"/><path d="M9.5 20v-5.5h5V20M3 20h18"/>',
+  podcasts: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
+  libros: '<path d="M4 4h4v16H4zM9.5 4h4v16h-4z"/><path d="m15 5.2 3.8-1 3.2 15.6-3.8 1z"/>',
   colaboraciones: '<path d="M4 20l1.2-4.6L15.8 4.8a2 2 0 0 1 2.9 0l.5.5a2 2 0 0 1 0 2.9L8.6 18.8z"/><path d="M13.8 6.8l3.4 3.4M4 20h7"/>'
 };
 function icono(n, cls) { return '<svg class="ico ' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICONOS[n] + "</svg>"; }
@@ -188,7 +201,7 @@ function copiarEnlace(boton, url) {
 
 function cabecera(cfg, b, activo) {
   cfg = cfg || {};
-  const lema = cfg.lema || "Dios · Patria · Justicia";
+  const lema = lemaDe(cfg);
   const banner = urlSegura(cfg.banner);
   let h = '<header class="bol-cab"><div class="bol-cab-in">';
 
@@ -214,8 +227,9 @@ function cabecera(cfg, b, activo) {
   h += "</div></div></header>";
 
   // Menú
-  const op = [["inicio", "#/", "Boletín semanal"], ["editorial", "#/editoriales", "Editorial"], ["noticias", "#/noticias", "Noticias"], ["historia", "#/historia", "Historia"],
-              ["analisis", "#/analisis", "Análisis"], ["colaboraciones", "#/colaboraciones", "Colaboraciones"], ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"]];
+  const op = [["inicio", "#/", "Este boletín"], ["editorial", "#/editoriales", "Editorial"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
+              ["sociedad", "#/sociedad", "Sociedad"], ["analisis", "#/analisis", "Análisis"], ["podcasts", "#/podcasts", "Podcasts"], ["libros", "#/libros", "Libros"],
+              ["colaboraciones", "#/colaboraciones", "Colaboraciones"], ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"]];
   h += '<nav class="bol-menu" aria-label="Secciones del boletín"><div class="bol-menu-in">';
   op.forEach(o => h += '<a href="' + o[1] + '"' + (o[0] === activo ? ' class="activo" aria-current="page"' : "") + ">" + icono(o[0]) + "<span>" + o[2] + "</span></a>");
   h += '<form class="bol-buscar" role="search" onsubmit="return buscarDesde(this.q)"><input name="q" type="search" placeholder="Buscar…" aria-label="Buscar en el boletín"><button aria-label="Buscar">' + icono("buscar") + "</button></form>";
@@ -406,28 +420,88 @@ function lateral(b, cfg, ls) {
   return h;
 }
 
-/* ---------- centro de la portada: firma invitada + noticias ---------- */
+/* ---------- centro de la portada ---------- */
+/* Noticias del boletín agrupadas por sección (Actualidad, Historia, Sociedad, Análisis), numeradas seguidas */
+function gruposNoticias(ns) {
+  let i = 0;
+  return SECCIONES.map(sec => ({ sec, items: ns.filter(n => claveSeccion(n) === sec.clave) })).filter(g => g.items.length)
+    .map(g => ({ sec: g.sec, items: g.items.map(n => ({ n, i: i++ })) }));
+}
+/* Recomendados de la semana (biblioteca) por tipo: podcasts y vídeos, libros, otros */
+function gruposRecomendados(recs) {
+  const g = [{ t: "Podcasts y vídeos", clave: "podcasts", ruta: "#/podcasts", xs: recs.filter(x => ES_PODCAST(x.tipo)) },
+             { t: "Libros", clave: "libros", ruta: "#/libros", xs: recs.filter(x => ES_LIBRO(x.tipo)) }];
+  g.push({ t: "Recomendado", clave: "recomendado", ruta: "", xs: recs.filter(x => !ES_PODCAST(x.tipo) && !ES_LIBRO(x.tipo)) });
+  return g.filter(x => x.xs.length);
+}
+function enEditor() { return typeof location !== "undefined" && location.pathname.indexOf("editor") >= 0; }
+/* «Entrar en el boletín»: se abre el boletín completo y baja hasta lo elegido */
+function entrarBoletin(ancla) {
+  const c = document.getElementById("completo"); if (!c) return false;
+  c.classList.remove("plegado");
+  const e = document.querySelector(".sum-entrar"); if (e) e.hidden = true;
+  const destino = (ancla && document.getElementById(ancla)) || c;
+  const menu = document.querySelector(".bol-menu"), alto = menu && getComputedStyle(menu).position === "sticky" ? menu.offsetHeight : 0;
+  window.scrollTo({ top: destino.getBoundingClientRect().top + window.scrollY - alto - 14, behavior: "smooth" });
+  return false;
+}
+/* «Este boletín»: el sumario con todo lo que trae el número, por secciones */
+function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
+  const ed = b.editorial || {};
+  const ir = (ancla, t, extra) => '<li><a href="#' + ancla + '" onclick="return entrarBoletin(\'' + ancla + '\')">' + esc(t) + "</a>" + (extra ? "<small>" + esc(extra) + "</small>" : "") + "</li>";
+  const fuera = (href, t, extra) => '<li><a href="' + esc(href) + '">' + esc(t) + "</a>" + (extra ? "<small>" + esc(extra) + "</small>" : "") + "</li>";
+  const caja = (ico, titulo, n, lis, mas) => '<div class="sum-caja"><div class="sum-caja-cab">' + icono(ico) + "<b>" + esc(titulo) + "</b>" + (n ? "<span>" + n + "</span>" : "") + "</div><ul>" + lis + "</ul>" + (mas || "") + "</div>";
+  const cajas = [];
+  if (ed.titulo) cajas.push(caja("editorial", "Editorial", 0, fuera("#/editorial/" + encodeURIComponent(b.id), ed.titulo, ed.firma || cfg.editor || "")));
+  if (cols.length) cajas.push(caja("colaboraciones", "Firma invitada", 0, cols.map(c => fuera(enlaceColaboracion(c), c.titulo, c.autor || "")).join("")));
+  grupos.forEach(g => cajas.push(caja(g.sec.clave === "actualidad" ? "noticias" : g.sec.clave, g.sec.nombre, g.items.length,
+    g.items.map(({ n, i }) => ir("n" + (i + 1), n.titular || n.url, [n.medio, n.formato && n.formato !== "Noticia" ? n.formato : ""].filter(Boolean).join(" · "))).join(""))));
+  gruposRecomendados(recs).forEach(g => cajas.push(caja(g.clave === "libros" ? "libros" : g.clave === "podcasts" ? "podcasts" : "historia", g.t, g.xs.length,
+    g.xs.map(x => ir("rec-" + g.clave, x.titulo, [x.tipo, x.medio].filter(Boolean).join(" · "))).join(""))));
+  if (evs.length) cajas.push(caja("iniciativas", "Agenda", evs.length, evs.slice(0, 4).map(e => fuera("#/iniciativas", e.titulo, [e.fecha ? fechaLarga(e.fecha) : "", e.lugar].filter(Boolean).join(" · "))).join("")));
+  // Resumen en una línea: «1 editorial · 5 noticias · 1 podcast…»
+  const total = grupos.reduce((t, g) => t + g.items.length, 0);
+  const cuenta = [ed.titulo ? "editorial" : "", cols.length ? cols.length + (cols.length === 1 ? " firma invitada" : " firmas invitadas") : "",
+    total ? total + (total === 1 ? " noticia" : " noticias") : "", recs.length ? recs.length + (recs.length === 1 ? " recomendación" : " recomendaciones") : "",
+    evs.length ? evs.length + (evs.length === 1 ? " cita en la agenda" : " citas en la agenda") : ""].filter(Boolean).join(" · ").replace(/^./, c => c.toUpperCase());
+  const temas = [...new Set(grupos.flatMap(g => g.items.map(({ n }) => (n.tema || "").trim())).filter(Boolean))];
+  let h = '<section class="bol-sumario" id="sumario"><div class="sum-cab"><div class="sum-eti"><i></i>Este boletín<i></i></div>' +
+    "<h2>Boletín Nº " + esc(dosCifras(b.numero)) + "<small>" + esc(fechaLarga(b.fecha)) + "</small></h2>" + (cuenta ? "<p>" + esc(cuenta) + "</p>" : "") + "</div>";
+  if (temas.length) h += '<div class="sum-temas"><span>Temas</span>' + temas.map(t => {
+    const x = grupos.flatMap(g => g.items).find(({ n }) => (n.tema || "").trim() === t);
+    return '<a href="#n' + (x.i + 1) + '" onclick="return entrarBoletin(\'n' + (x.i + 1) + '\')">' + esc(t) + "</a>";
+  }).join("") + "</div>";
+  h += '<div class="sum-rejilla">' + cajas.join("") + "</div>";
+  h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Entrar en el boletín ' + icono("flecha") + "</a></div></section>";
+  return h;
+}
 function centroInicio(b, cfg, todos) {
   // Lo que ya sale abajo como recomendado (podcast, serie, libro…) no se repite en las noticias
   const urlsRec = new Set((b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean)
     .flatMap(x => [x.url].concat((x.capitulos || []).map(c => c.url))).filter(Boolean).map(u => String(u).trim()));
   const ns = (b.noticias || []).filter(n => (n.titular || n.url) && !urlsRec.has(String(n.url || "").trim()));
   const cols = (b.colaboraciones || []).filter(c => c.titulo);
-  let h = typeof location !== "undefined" && location.pathname.indexOf("editor") < 0 ? barraCompartir(b, cfg) : "";
+  const grupos = gruposNoticias(ns);
+  const recs = (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean);
+  const evs = todosEventos([b]).proximos;
+  const editor = enEditor();
+  let h = editor ? "" : barraCompartir(b, cfg);
+  h += sumarioBoletin(b, cfg, grupos, cols, recs, evs);
+  // El boletín completo: plegado hasta pulsar «Entrar» (en la vista previa del editor se ve siempre)
+  h += '<div class="bol-completo' + (editor ? "" : " plegado") + '" id="completo">';
   if (cols.length) h += '<section class="bol-firmas" id="colaboraciones"><div class="bol-sec-cab"><h2 class="bol-tit-sec">Firma invitada</h2>' +
                         (cols.length > 1 ? "" : '<a href="#/colaboraciones">Todas ' + icono("flecha") + "</a>") + "</div>" +
                         '<div class="bol-firmas-lista">' + cols.map(c => tarjetaColaboracion(c, b)).join("") + "</div>" + notaColab(cfg) + "</section>";
-  h += '<section class="bol-noticias" id="noticias"><div class="bol-sec-cab"><h2 class="bol-tit-sec">Las noticias de la semana</h2><span>' + ns.length + "</span></div>";
-  h += '<div class="bol-lista">' + ns.map((n, i) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1))).join("") + "</div></section>";
-  const recs = (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean);
-  // Un bloque por tipo: «Podcast recomendado esta semana», «Libro recomendado esta semana»…
-  const TIPO_REC = t => /podcast/i.test(t || "") ? "Podcast" : (t || "Recomendado");
-  const grupos = [];
-  recs.forEach(x => { const t = TIPO_REC(x.tipo); let g = grupos.find(y => y.t === t); if (!g) grupos.push(g = { t, xs: [] }); g.xs.push(x); });
   grupos.forEach(g => {
-    const sec = SECCIONES.find(z => z.clave === sinAcentos(g.xs[0].seccion || "Historia")) || SECCIONES[1];
-    const titulo = g.t === "Recomendado" ? "Recomendado esta semana" : g.t + (g.xs.length > 1 ? "s recomendados" : " recomendado") + " esta semana";
-    h += '<section class="bol-recomendados"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(titulo) + '</h2><a href="#/' + sec.ruta + '">Ver más en ' + esc(sec.nombre || g.xs[0].seccion) + " " + icono("flecha") + "</a></div>" +
+    h += '<section class="bol-noticias" id="sec-' + g.sec.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(g.sec.nombre) + "</h2>" +
+         '<a href="#/' + g.sec.ruta + '">Ver más en ' + esc(g.sec.menu) + " " + icono("flecha") + "</a></div>";
+    h += '<div class="bol-lista">' + g.items.map(({ n, i }) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1))).join("") + "</div></section>";
+  });
+  // Un bloque por tipo: «Podcasts y vídeos recomendados», «Libros recomendados»…
+  gruposRecomendados(recs).forEach(g => {
+    const titulo = g.clave === "recomendado" ? "Recomendado esta semana" : g.t + " recomendados esta semana";
+    h += '<section class="bol-recomendados" id="rec-' + g.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(titulo) + "</h2>" +
+         (g.ruta ? '<a href="' + g.ruta + '">Ver todos ' + icono("flecha") + "</a>" : "") + "</div>" +
          '<div class="bib-lista">' + g.xs.map(x => tarjetaBib(x, cfg, true)).join("") + "</div></section>";
   });
   h += bloqueRedes(cfg);
@@ -437,7 +511,7 @@ function centroInicio(b, cfg, todos) {
   const otros = ordenar(todos || []).filter(x => x.id !== b.id).slice(0, 4);
   if (otros.length) h += '<section class="bol-otros"><div class="bol-sec-cab"><h2 class="bol-tit-sec">Boletines anteriores</h2><a href="#/boletines">Ver todos ' + icono("flecha") + "</a></div>" +
                         '<div class="bol-archivo">' + otros.map(x => tarjetaBoletin(x, false)).join("") + "</div></section>";
-  return h;
+  return h + "</div>";
 }
 
 /* ---------- noticia de otra web, dentro de la nuestra ---------- */
@@ -482,7 +556,7 @@ function paginaLegal(clave, cfg) {
 
 /* ---------- montaje: cabecera · columna fija · centro · pie ---------- */
 function barraVolver(abajo) {
-  return '<div class="bol-volver-barra' + (abajo ? " abajo" : "") + '"><a class="bol-btn" href="#/">← Volver al boletín semanal</a></div>';
+  return '<div class="bol-volver-barra' + (abajo ? " abajo" : "") + '"><a class="bol-btn" href="#/">← Volver al boletín</a></div>';
 }
 function marco(cfg, b, ls, activo, centro) {
   const interior = activo !== "inicio";
@@ -603,12 +677,8 @@ function lineaPublicado(b, verbo) {
 }
 function conPie(html, pie) { return pie ? html.replace(/<\/div><\/article>$/, pie + "</div></article>") : html; }
 
-function paginaSeccion(lista, cfg, s) {
-  const todas = todasNoticias(lista, s.clave);
-  const bib = biblioteca(cfg, s.nombre).slice().reverse();
-  const total = todas.length + bib.length;
-  let h = '<div class="bol-pagina">' + cabPagina(s.menu, s.texto, total);
-  if (!total) return h + '<p class="bol-vacio">Todavía no hay contenidos en esta sección.</p></div>';
+/* Elementos para las páginas de listado: biblioteca + noticias de los boletines */
+function itemsListado(lista, cfg, bib, noticias) {
   const tipoN = n => (n.formato && n.formato !== "Noticia") ? n.formato : (idYoutube(urlSegura(n.url)) ? "Vídeo" : "Noticia");
   const items = [];
   bib.forEach(x => {
@@ -616,11 +686,16 @@ function paginaSeccion(lista, cfg, s) {
     items.push({ tema: (x.tema || "").trim() || "Otros temas", tipo: x.tipo || "", texto: [x.titulo, x.medio, x.descripcion, x.comentario, x.tema, (x.capitulos || []).map(c => c.titulo).join(" ")].join(" "),
                  html: conPie(tarjetaBib(x, cfg), bRec ? lineaPublicado(bRec, "Recomendado") : "") });
   });
-  todas.forEach(({ n, b }) => items.push({ tema: (n.tema || "").trim() || "Otros temas", tipo: tipoN(n), texto: [n.titular, n.medio, n.resumen, n.comentario, n.tema].join(" "), html: conPie(tarjetaNoticia(n, null, cfg, b, false), lineaPublicado(b)) }));
+  noticias.forEach(({ n, b }) => items.push({ tema: (n.tema || "").trim() || "Otros temas", tipo: tipoN(n), texto: [n.titular, n.medio, n.resumen, n.comentario, n.tema].join(" "), html: conPie(tarjetaNoticia(n, null, cfg, b, false), lineaPublicado(b)) }));
+  return items;
+}
+function paginaListado(titulo, texto, items) {
+  let h = '<div class="bol-pagina">' + cabPagina(titulo, texto, items.length);
+  if (!items.length) return h + '<p class="bol-vacio">Todavía no hay contenidos en esta sección.</p></div>';
   const temas = [...new Set(items.map(i => i.tema))].sort((x, y) => (x === "Otros temas") - (y === "Otros temas") || x.localeCompare(y, "es"));
   const tipos = [...new Set(items.map(i => i.tipo).filter(Boolean))];
   h += '<div class="sec-filtros">';
-  h += '<div class="bol-filtro">' + icono("buscar") + '<input type="search" id="filtroTexto" placeholder="Buscar en ' + esc(s.menu.toLowerCase()) + '…" oninput="aplicarFiltros()" aria-label="Buscar en la sección"></div>';
+  h += '<div class="bol-filtro">' + icono("buscar") + '<input type="search" id="filtroTexto" placeholder="Buscar en ' + esc(titulo.toLowerCase()) + '…" oninput="aplicarFiltros()" aria-label="Buscar en la sección"></div>';
   if (temas.length > 1) h += '<div class="fil-fila"><span>Temas</span><div class="bib-filtros" data-filtro="tema"><button class="activo" data-v="">Todos</button>' + temas.map(t => '<button data-v="' + esc(t) + '">' + esc(t) + "</button>").join("") + "</div></div>";
   if (tipos.length > 1) h += '<div class="fil-fila"><span>Tipo</span><div class="bib-filtros" data-filtro="tipo"><button class="activo" data-v="">Todo</button>' + tipos.map(t => '<button data-v="' + esc(t) + '">' + esc(t) + "</button>").join("") + "</div></div>";
   h += "</div>";
@@ -631,6 +706,18 @@ function paginaSeccion(lista, cfg, s) {
          '<div class="bol-lista bib-lista">' + grupo.map(i => '<div class="bol-item" data-tema="' + esc(i.tema) + '" data-tipo="' + esc(i.tipo) + '" data-texto="' + esc(sinAcentos(i.texto)) + '">' + i.html + "</div>").join("") + "</div></section>";
   });
   return h + '</div><p class="bol-vacio" id="sin-resultados" hidden>No hay resultados. Prueba con otra palabra o quita algún filtro.</p></div>';
+}
+function paginaSeccion(lista, cfg, s) {
+  return paginaListado(s.menu, s.texto, itemsListado(lista, cfg, biblioteca(cfg, s.nombre).slice().reverse(), todasNoticias(lista, s.clave)));
+}
+/* Podcasts (y vídeos) y libros, de cualquier sección */
+function paginaTipo(lista, cfg, cual) {
+  const es = cual === "libros" ? ES_LIBRO : ES_PODCAST;
+  const bib = biblioteca(cfg).filter(x => es(x.tipo)).reverse();
+  const ns = cual === "libros" ? [] : todasNoticias(lista).filter(({ n }) => ES_PODCAST(n.formato) || idYoutube(urlSegura(n.url)));
+  return cual === "libros"
+    ? paginaListado("Libros", "Libros que recomendamos para entender España y su historia.", itemsListado(lista, cfg, bib, ns))
+    : paginaListado("Podcasts y vídeos", "Podcasts, vídeos y documentales recomendados por PATRIAM.", itemsListado(lista, cfg, bib, ns));
 }
 function aplicarFiltros() {
   const caja = document.getElementById("filtroTexto"), q = caja ? sinAcentos(caja.value.trim()) : "";
@@ -818,13 +905,25 @@ function renderCorreo(b, cfg, opciones) {
   h += '<tr><td style="padding:8px 32px;background:#f4ede2;text-align:right;font:400 12px ' + F + ';color:#6b5f58">¿No se ve bien? <a href="' + esc(base) + '" style="color:' + G + '">Ábrelo en la web</a></td></tr>';
   // cabecera
   h += '<tr><td style="padding:24px 32px 14px;text-align:center;background:#faf6ef"><a href="' + esc(base) + '"><img src="' + esc(abs(cfg.logo || "logo.png")) + '" alt="PATRIAM" width="170" style="display:inline-block;width:170px;height:auto;border:0"></a>' +
-       '<p style="margin:8px 0 0;font:600 10px ' + F + ';letter-spacing:3px;color:' + T + '">' + esc(cfg.lema || "Dios · Patria · Justicia").toUpperCase() + "</p></td></tr>";
+       '<p style="margin:8px 0 0;font:600 10px ' + F + ';letter-spacing:3px;color:' + T + '">' + esc(lemaDe(cfg)).toUpperCase() + "</p></td></tr>";
   h += '<tr><td style="padding:0"><a href="' + esc(base) + '"><img src="' + esc(abs(cfg.banner || "banner-portada.jpg")) + '" alt="" width="600" style="display:block;width:100%;height:auto;border:0"></a></td></tr>';
   h += '<tr><td style="padding:22px 32px 20px;text-align:center;background:' + G + '">' +
        '<p style="margin:0;font:600 11px ' + F + ';letter-spacing:4px;color:#d9bd7a">' + esc((cfg.subtitulo || "Boletín de noticias").toUpperCase()) + "</p>" +
        '<p style="margin:6px 0 0;font:700 30px/1.15 ' + F + ';letter-spacing:1px;color:#ffffff">' + esc((cfg.cabecera || "Lo que hay que saber").toUpperCase()) + "</p>" +
        '<p style="margin:4px 0 0;font:italic 400 20px ' + F + ';color:#d9bd7a">' + esc(cfg.claim || "con criterio") + "</p>" +
        '<p style="margin:12px 0 0;font:600 12px ' + F + ';letter-spacing:2px;color:#ffffff">Nº ' + num + " · " + esc(fechaLarga(b.fecha).toUpperCase()) + "</p></td></tr>";
+  // «Este boletín»: sumario por secciones
+  const nsC = (b.noticias || []).filter(n => n.titular || n.url), gruposC = gruposNoticias(nsC);
+  const recsC = (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean);
+  const filaSum = (nombre, ts) => '<p style="margin:0 0 4px;font:600 11px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + O + '">' + esc(nombre) + "</p>" +
+    '<ul style="margin:0 0 14px;padding:0 0 0 18px">' + ts.map(t => '<li style="margin:0 0 3px;font:400 15px/1.45 ' + F + ";color:" + T + '">' + esc(t) + "</li>").join("") + "</ul>";
+  let sum = "";
+  if (ed.titulo) sum += filaSum("Editorial", [ed.titulo]);
+  const colsC = (b.colaboraciones || []).filter(c => c.titulo);
+  if (colsC.length) sum += filaSum("Firma invitada", colsC.map(c => c.titulo));
+  gruposC.forEach(g => sum += filaSum(g.sec.nombre, g.items.map(({ n }) => n.titular || n.url)));
+  gruposRecomendados(recsC).forEach(g => sum += filaSum(g.t, g.xs.map(x => x.titulo)));
+  if (sum) h += bloque(etiqueta("Este boletín") + sum + boton(base, "Entrar en el boletín"), "#faf6ef");
   // editorial
   if (ed.titulo) {
     const ps = String(ed.texto || "").split(/\n\s*\n/).map(x => x.trim()).filter(Boolean);
@@ -840,10 +939,9 @@ function renderCorreo(b, cfg, opciones) {
       boton(ir(enlaceColaboracion(c)), "Leer el texto"));
   });
   // noticias
-  const ns = (b.noticias || []).filter(n => n.titular || n.url);
-  if (ns.length) {
-    h += '<tr><td style="padding:26px 32px 0;background:#ffffff">' + etiqueta("Las noticias de la semana") + "</td></tr>";
-    ns.forEach((n, i) => {
+  gruposC.forEach(g => {
+    h += '<tr><td style="padding:26px 32px 0;background:#ffffff">' + etiqueta(esc(g.sec.nombre)) + "</td></tr>";
+    g.items.forEach(({ n }, i) => {
       const yt = idYoutube(n.url), foto = abs(n.imagen) || (yt ? "https://i.ytimg.com/vi/" + yt + "/hqdefault.jpg" : "");
       const sec = seccionDe(n), k = (b.noticias || []).indexOf(n);
       h += bloque((i ? '<div style="border-top:1px solid #e4d9c7;margin:-26px 0 22px"></div>' : "") +
@@ -854,7 +952,7 @@ function renderCorreo(b, cfg, opciones) {
           '<p style="margin:0;font:italic 400 15px/1.55 ' + F + ";color:" + T + '">' + txt(n.comentario) + "</p></div>" : "") +
         boton(yt ? ir("#/leer/" + encodeURIComponent(b.id) + "/" + k) : (abs(n.url) || ir("#/")), yt ? "Ver el vídeo" : n.formato === "Podcast" ? "Escuchar" : "Leer la noticia"));
     });
-  }
+  });
   // recomendados
   (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean).forEach(x => {
     const tipo = /podcast/i.test(x.tipo || "") ? "Podcast" : (x.tipo || "Recomendado"), yt = idYoutube(x.url) || idYoutube(((x.capitulos || [])[0] || {}).url);
@@ -904,7 +1002,9 @@ function renderApp(ruta, lista, cfg) {
       return m(b === ultimo ? "inicio" : "boletines", centroInicio(v, cfg, ls), v);
     }
     case "leer": return m("noticias", paginaLeer(ls, cfg, p[1], p[2]));
-    case "ver": { const x = itemBib(cfg, p[1]); return m(x && x.seccion === "Análisis" ? "analisis" : "historia", paginaVer(cfg, p[1], p[2])); }
+    case "ver": { const x = itemBib(cfg, p[1]) || {}; return m(ES_LIBRO(x.tipo) ? "libros" : ES_PODCAST(x.tipo) ? "podcasts" : (SECCIONES.find(z => z.nombre === x.seccion) || SECCIONES[1]).clave, paginaVer(cfg, p[1], p[2])); }
+    case "podcasts": return m("podcasts", paginaTipo(ls, cfg, "podcasts"));
+    case "libros": return m("libros", paginaTipo(ls, cfg, "libros"));
     case "editoriales": return m("editorial", paginaEditoriales(ls, cfg));
     case "editorial": return m("editorial", paginaEditorial(ls, cfg, p[1]));
     case "colaboraciones": return m("colaboraciones", paginaColaboraciones(ls, cfg));
@@ -922,12 +1022,12 @@ function renderApp(ruta, lista, cfg) {
 
 function pie(cfg) {
   cfg = cfg || {};
-  const web = cfg.web || "", lema = cfg.lema || "Dios · Patria · Justicia";
+  const web = cfg.web || "", lema = lemaDe(cfg);
   let h = '<footer class="bol-pie"><div class="ancho bol-pie-in"><div>';
   h += '<img src="' + esc(cfg.logoClaro || "logo-claro.png") + '" alt="PATRIAM">';
   h += '<div class="bol-pie-lema">' + esc(lema) + "</div><p>Acción ciudadana, cultural y social.</p></div>";
-  h += '<nav class="bol-pie-menu"><a href="#/">Esta semana</a><a href="#/editoriales">Editorial</a><a href="#/noticias">Noticias</a><a href="#/historia">Historia</a>' +
-       '<a href="#/analisis">Análisis</a><a href="#/colaboraciones">Colaboraciones</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
+  h += '<nav class="bol-pie-menu"><a href="#/">Este boletín</a><a href="#/editoriales">Editorial</a><a href="#/noticias">Actualidad</a><a href="#/historia">Historia</a>' +
+       '<a href="#/sociedad">Sociedad</a><a href="#/analisis">Análisis</a><a href="#/podcasts">Podcasts</a><a href="#/libros">Libros</a><a href="#/colaboraciones">Colaboraciones</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
   const rs = REDES.filter(r => urlSegura(perfil(cfg, r[0])));
   h += '<div class="bol-pie-der">';
   if (rs.length) h += '<div class="bol-pie-redes">' + rs.map(([k, n]) => '<a href="' + esc(perfil(cfg, k)) + '" target="_blank" rel="noopener" aria-label="' + n + '">' + icono(k) + "</a>").join("") + "</div>";
@@ -1010,7 +1110,7 @@ async function imagenInstagram(b, cfg, formato) {
   const barra = HIST ? 210 : 150;
   if (logo) { const h = HIST ? 92 : 78, w = logo.width * h / logo.height; x.drawImage(logo, W / 2 - w / 2, HIST ? 40 : 18, w, h); }
   x.fillStyle = TINTA; x.font = "600 " + (HIST ? 24 : 21) + "px Spectral"; esp(5);
-  centrado(String(cfg.lema || "Dios · Patria · Justicia").toUpperCase(), barra - (HIST ? 38 : 26)); esp(0);
+  centrado(String(lemaDe(cfg)).toUpperCase(), barra - (HIST ? 38 : 26)); esp(0);
   x.fillStyle = ACENTO; x.fillRect(0, barra - 6, W, 6);
 
   // Foto principal con el velo claro arriba
@@ -1183,7 +1283,7 @@ function renderComunicacion(c, aj, cfg, opciones) {
     '<tr><td style="padding:16px 32px 26px">' + saludo + estilo(maquetar(c.texto)) +
     (firma ? '<div style="margin-top:22px">' + firma + "</div>" : "") + "</td></tr>" +
     '<tr><td style="padding:14px 32px;background:#faf6ef;border-top:1px solid #e4d9c7;font:400 12px/1.5 ' + F + ';color:#6b5f58">' +
-    esc(cfg.lema || "Dios · Patria · Justicia") + " · Asociación PATRIAM · " + '<a href="https://movimientopatriam.es" style="color:' + G + '">movimientopatriam.es</a>' +
+    esc(lemaDe(cfg)) + " · Asociación PATRIAM · " + '<a href="https://movimientopatriam.es" style="color:' + G + '">movimientopatriam.es</a>' +
     '<!--BAJA--><br>Recibes este correo porque estás apuntado al boletín de PATRIAM. <a href="%%BAJA%%" style="color:' + G + '">Darme de baja</a><!--/BAJA-->' +
     "</td></tr></table></td></tr></table></body></html>";
 }
