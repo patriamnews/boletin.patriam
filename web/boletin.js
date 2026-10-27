@@ -459,15 +459,32 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
   const ed = b.editorial || {};
   const ir = (ancla, t, extra) => '<li><a href="#' + ancla + '" onclick="return entrarBoletin(\'' + ancla + '\')">' + esc(t) + "</a>" + (extra ? "<small>" + esc(extra) + "</small>" : "") + "</li>";
   const fuera = (href, t, extra) => '<li><a href="' + esc(href) + '">' + esc(t) + "</a>" + (extra ? "<small>" + esc(extra) + "</small>" : "") + "</li>";
-  const caja = (ico, titulo, n, lis, mas) => '<div class="sum-caja"><div class="sum-caja-cab">' + icono(ico) + "<b>" + esc(titulo) + "</b>" + (n ? "<span>" + n + "</span>" : "") + "</div><ul>" + lis + "</ul>" + (mas || "") + "</div>";
+  // Cada sección es una ficha horizontal a todo el ancho: su primera pieza en grande (con imagen) y el resto debajo
+  const fotoDe = x => urlSegura(x && x.imagen) || ((y => y ? "https://i.ytimg.com/vi/" + y + "/hqdefault.jpg" : "")(idYoutube(urlSegura(x && x.url))));
+  const caja = (ico, titulo, n, p, lis) => {
+    const enl = p.ancla ? ' href="#' + p.ancla + '" onclick="return entrarBoletin(\'' + p.ancla + '\')"' : ' href="' + esc(p.href) + '"';
+    return '<article class="sum-caja' + (p.img ? "" : " sin-foto") + '">' +
+      '<a class="sum-foto"' + enl + ' tabindex="-1" aria-hidden="true">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'vacia\');this.remove()">' : "") + icono(ico, "grande") + "</a>" +
+      '<div class="sum-cuerpo"><div class="sum-caja-cab">' + icono(ico) + "<b>" + esc(titulo) + "</b>" + (n > 1 ? "<span>" + n + "</span>" : "") + "</div>" +
+      '<h3><a' + enl + ">" + esc(p.t) + "</a></h3>" + (p.txt ? "<p>" + esc(recortar(textoPlano(p.txt), 190)) + "</p>" : "") + (p.sub ? '<small class="sum-firma">' + esc(p.sub) + "</small>" : "") +
+      (lis ? '<ul><li class="sum-ademas">Y además</li>' + lis + "</ul>" : "") + "</div></article>";
+  };
   const cajas = [];
-  if (ed.titulo) cajas.push(caja("editorial", "Editorial", 0, fuera("#/editorial/" + encodeURIComponent(b.id), ed.titulo, ed.firma || cfg.editor || "")));
-  if (cols.length) cajas.push(caja("colaboraciones", "Firma invitada", 0, cols.map(c => fuera(enlaceColaboracion(c), c.titulo, c.autor || "")).join("")));
-  grupos.forEach(g => cajas.push(caja(g.sec.clave === "actualidad" ? "noticias" : g.sec.clave, g.sec.nombre, g.items.length,
-    g.items.map(({ n, i }) => ir("n" + (i + 1), n.titular || n.url, [n.medio, n.formato && n.formato !== "Noticia" ? n.formato : ""].filter(Boolean).join(" · "))).join(""))));
-  gruposRecomendados(recs).forEach(g => cajas.push(caja(g.clave === "libros" ? "libros" : g.clave === "podcasts" ? "podcasts" : "historia", g.t, g.xs.length,
-    g.xs.map(x => ir("rec-" + g.clave, x.titulo, [x.tipo, x.medio].filter(Boolean).join(" · "))).join(""))));
-  if (evs.length) cajas.push(caja("iniciativas", "Agenda", evs.length, evs.slice(0, 4).map(e => fuera("#/iniciativas", e.titulo, [e.fecha ? fechaLarga(e.fecha) : "", e.lugar].filter(Boolean).join(" · "))).join("")));
+  if (ed.titulo) cajas.push(caja("editorial", "Editorial", 0, { href: "#/editorial/" + encodeURIComponent(b.id), t: ed.titulo, txt: primerParrafo(ed.texto), sub: ed.firma || cfg.editor || "", img: urlSegura(ed.imagen) }, ""));
+  if (cols.length) { const [c, ...r] = cols;
+    cajas.push(caja("colaboraciones", cols.length > 1 ? "Firmas invitadas" : "Firma invitada", cols.length, { href: enlaceColaboracion(c), t: c.titulo, txt: c.entradilla || primerParrafo(c.texto), sub: c.autor || "", img: urlSegura(c.imagen) },
+      r.map(x => fuera(enlaceColaboracion(x), x.titulo, x.autor || "")).join(""))); }
+  grupos.forEach(g => { const [{ n, i }, ...r] = g.items;
+    cajas.push(caja(g.sec.clave === "actualidad" ? "noticias" : g.sec.clave, g.sec.nombre, g.items.length,
+      { ancla: "n" + (i + 1), t: n.titular || n.url, txt: n.resumen, sub: [n.medio, n.formato && n.formato !== "Noticia" ? n.formato : ""].filter(Boolean).join(" · "), img: fotoDe(n) },
+      r.map(({ n, i }) => ir("n" + (i + 1), n.titular || n.url, [n.medio, n.formato && n.formato !== "Noticia" ? n.formato : ""].filter(Boolean).join(" · "))).join(""))); });
+  gruposRecomendados(recs).forEach(g => { const [x, ...r] = g.xs;
+    cajas.push(caja(g.clave === "libros" ? "libros" : g.clave === "podcasts" ? "podcasts" : "historia", g.t, g.xs.length,
+      { ancla: "rec-" + g.clave, t: x.titulo, txt: x.resumen || x.descripcion || "", sub: [x.tipo, x.medio].filter(Boolean).join(" · "), img: urlSegura(x.imagen) || fotoDe({ url: ((x.capitulos || [])[0] || x).url }) },
+      r.map(y => ir("rec-" + g.clave, y.titulo, [y.tipo, y.medio].filter(Boolean).join(" · "))).join(""))); });
+  if (evs.length) { const [e, ...r] = evs.slice(0, 4);
+    cajas.push(caja("iniciativas", "Agenda", evs.length, { href: "#/iniciativas", t: e.titulo, txt: e.descripcion || "", sub: [e.fecha ? fechaLarga(e.fecha) : "", e.lugar].filter(Boolean).join(" · "), img: urlSegura(e.imagen) },
+      r.map(x => fuera("#/iniciativas", x.titulo, [x.fecha ? fechaLarga(x.fecha) : "", x.lugar].filter(Boolean).join(" · "))).join(""))); }
   // Resumen en una línea: «1 editorial · 5 noticias · 1 podcast…»
   const total = grupos.reduce((t, g) => t + g.items.length, 0);
   const cuenta = [ed.titulo ? "editorial" : "", cols.length ? cols.length + (cols.length === 1 ? " firma invitada" : " firmas invitadas") : "",
