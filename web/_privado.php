@@ -16,7 +16,7 @@ if (!function_exists('privado')) {
   function privado() {
     static $d = null;
     if ($d) return $d;
-    foreach ([dirname(__DIR__, 2) . '/patriam-privado', dirname(__DIR__) . '/privado'] as $c) {
+    foreach ([dirname(__DIR__, 3) . '/patriam-privado', dirname(__DIR__, 2) . '/patriam-privado', dirname(__DIR__) . '/privado'] as $c) {
       if ((is_dir($c) || @mkdir($c, 0750, true)) && is_writable($c)) {
         if (!file_exists("$c/.htaccess")) @file_put_contents("$c/.htaccess", "Require all denied\nDeny from all\n");
         @mkdir("$c/img", 0750, true);
