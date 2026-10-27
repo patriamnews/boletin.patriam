@@ -454,51 +454,67 @@ function entrarBoletin(ancla) {
   window.scrollTo({ top: destino.getBoundingClientRect().top + window.scrollY - alto - 14, behavior: "smooth" });
   return false;
 }
-/* «Este boletín»: el sumario con todo lo que trae el número, por secciones */
+/* «Este boletín»: la portada del número, como la de un periódico digital
+   (la editorial ya va en la columna de la izquierda, así que aquí no se repite) */
 function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
-  const ed = b.editorial || {};
-  const ir = (ancla, t, extra) => '<li><a href="#' + ancla + '" onclick="return entrarBoletin(\'' + ancla + '\')">' + esc(t) + "</a>" + (extra ? "<small>" + esc(extra) + "</small>" : "") + "</li>";
-  const fuera = (href, t, extra) => '<li><a href="' + esc(href) + '">' + esc(t) + "</a>" + (extra ? "<small>" + esc(extra) + "</small>" : "") + "</li>";
-  // Cada sección es una ficha horizontal a todo el ancho: su primera pieza en grande (con imagen) y el resto debajo
   const fotoDe = x => urlSegura(x && x.imagen) || ((y => y ? "https://i.ytimg.com/vi/" + y + "/hqdefault.jpg" : "")(idYoutube(urlSegura(x && x.url))));
-  const caja = (ico, titulo, n, p, lis) => {
-    const enl = p.ancla ? ' href="#' + p.ancla + '" onclick="return entrarBoletin(\'' + p.ancla + '\')"' : ' href="' + esc(p.href) + '"';
-    return '<article class="sum-caja' + (p.img ? "" : " sin-foto") + '">' +
-      '<a class="sum-foto"' + enl + ' tabindex="-1" aria-hidden="true">' + (p.img ? '<img src="' + esc(p.img) + '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'vacia\');this.remove()">' : "") + icono(ico, "grande") + "</a>" +
-      '<div class="sum-cuerpo"><div class="sum-caja-cab">' + icono(ico) + "<b>" + esc(titulo) + "</b>" + (n > 1 ? "<span>" + n + "</span>" : "") + "</div>" +
-      '<h3><a' + enl + ">" + esc(p.t) + "</a></h3>" + (p.txt ? "<p>" + esc(recortar(textoPlano(p.txt), 190)) + "</p>" : "") + (p.sub ? '<small class="sum-firma">' + esc(p.sub) + "</small>" : "") +
-      (lis ? '<ul><li class="sum-ademas">Y además</li>' + lis + "</ul>" : "") + "</div></article>";
-  };
-  const cajas = [];
-  if (ed.titulo) cajas.push(caja("editorial", "Editorial", 0, { href: "#/editorial/" + encodeURIComponent(b.id), t: ed.titulo, txt: primerParrafo(ed.texto), sub: ed.firma || cfg.editor || "", img: urlSegura(ed.imagen) }, ""));
-  if (cols.length) { const [c, ...r] = cols;
-    cajas.push(caja("colaboraciones", cols.length > 1 ? "Firmas invitadas" : "Firma invitada", cols.length, { href: enlaceColaboracion(c), t: c.titulo, txt: c.entradilla || primerParrafo(c.texto), sub: c.autor || "", img: urlSegura(c.imagen) },
-      r.map(x => fuera(enlaceColaboracion(x), x.titulo, x.autor || "")).join(""))); }
-  grupos.forEach(g => { const [{ n, i }, ...r] = g.items;
-    cajas.push(caja(g.sec.clave === "actualidad" ? "noticias" : g.sec.clave, g.sec.nombre, g.items.length,
-      { ancla: "n" + (i + 1), t: n.titular || n.url, txt: n.resumen, sub: [n.medio, n.formato && n.formato !== "Noticia" ? n.formato : ""].filter(Boolean).join(" · "), img: fotoDe(n) },
-      r.map(({ n, i }) => ir("n" + (i + 1), n.titular || n.url, [n.medio, n.formato && n.formato !== "Noticia" ? n.formato : ""].filter(Boolean).join(" · "))).join(""))); });
-  gruposRecomendados(recs).forEach(g => { const [x, ...r] = g.xs;
-    cajas.push(caja(g.clave === "libros" ? "libros" : g.clave === "podcasts" ? "podcasts" : "historia", g.t, g.xs.length,
-      { ancla: "rec-" + g.clave, t: x.titulo, txt: x.resumen || x.descripcion || "", sub: [x.tipo, x.medio].filter(Boolean).join(" · "), img: urlSegura(x.imagen) || fotoDe({ url: ((x.capitulos || [])[0] || x).url }) },
-      r.map(y => ir("rec-" + g.clave, y.titulo, [y.tipo, y.medio].filter(Boolean).join(" · "))).join(""))); });
-  if (evs.length) { const [e, ...r] = evs.slice(0, 4);
-    cajas.push(caja("iniciativas", "Agenda", evs.length, { href: "#/iniciativas", t: e.titulo, txt: e.descripcion || "", sub: [e.fecha ? fechaLarga(e.fecha) : "", e.lugar].filter(Boolean).join(" · "), img: urlSegura(e.imagen) },
-      r.map(x => fuera("#/iniciativas", x.titulo, [x.fecha ? fechaLarga(x.fecha) : "", x.lugar].filter(Boolean).join(" · "))).join(""))); }
-  // Resumen en una línea: «1 editorial · 5 noticias · 1 podcast…»
+  const ancla = a => ' href="#' + a + '" onclick="return entrarBoletin(\'' + a + '\')"';
+  const foto = (img, enl, cls, ico) => '<a class="pt-foto ' + (cls || "") + (img ? "" : " vacia") + '"' + enl + ' tabindex="-1" aria-hidden="true">' +
+    (img ? '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'vacia\');this.remove()">' : "") + icono(ico || "historia", "grande") + "</a>";
+  const firma = (autor, cargo) => autor ? '<span class="pt-autor"><span class="bol-avatar">' + esc(autor.charAt(0).toUpperCase()) + "</span><span><b>" + esc(autor) + "</b>" + (cargo ? "<small>" + esc(cargo) + "</small>" : "") + "</span></span>" : "";
+  const extracto = (t, n) => t ? "<p>" + esc(recortar(textoPlano(t), n)) + "</p>" : "";
+
+  // Cabecera de la portada: número, fecha y lo que trae
   const total = grupos.reduce((t, g) => t + g.items.length, 0);
-  const cuenta = [ed.titulo ? "editorial" : "", cols.length ? cols.length + (cols.length === 1 ? " firma invitada" : " firmas invitadas") : "",
-    total ? total + (total === 1 ? " noticia" : " noticias") : "", recs.length ? recs.length + (recs.length === 1 ? " recomendación" : " recomendaciones") : "",
-    evs.length ? evs.length + (evs.length === 1 ? " cita en la agenda" : " citas en la agenda") : ""].filter(Boolean).join(" · ").replace(/^./, c => c.toUpperCase());
+  const cuenta = [cols.length ? cols.length + (cols.length === 1 ? " firma" : " firmas") : "", total ? total + (total === 1 ? " noticia" : " noticias") : "",
+    recs.length ? recs.length + (recs.length === 1 ? " recomendación" : " recomendaciones") : "", evs.length ? evs.length + (evs.length === 1 ? " cita" : " citas") : ""].filter(Boolean).join(" · ");
+  let h = '<section class="bol-sumario pt" id="sumario"><header class="pt-cab"><span>Nº ' + esc(dosCifras(b.numero)) + "</span><b>" + esc(fechaLarga(b.fecha)) + "</b><span>" + esc(cuenta) + "</span></header>";
   const temas = [...new Set(grupos.flatMap(g => g.items.map(({ n }) => (n.tema || "").trim())).filter(Boolean))];
-  let h = '<section class="bol-sumario" id="sumario"><div class="sum-cab"><div class="sum-eti"><i></i>Este boletín<i></i></div>' +
-    "<h2>Boletín Nº " + esc(dosCifras(b.numero)) + "<small>" + esc(fechaLarga(b.fecha)) + "</small></h2>" + (cuenta ? "<p>" + esc(cuenta) + "</p>" : "") + "</div>";
-  if (temas.length) h += '<div class="sum-temas"><span>Temas</span>' + temas.map(t => {
+  if (temas.length) h += '<div class="sum-temas"><span>En este número</span>' + temas.map(t => {
     const x = grupos.flatMap(g => g.items).find(({ n }) => (n.tema || "").trim() === t);
-    return '<a href="#n' + (x.i + 1) + '" onclick="return entrarBoletin(\'n' + (x.i + 1) + '\')">' + esc(t) + "</a>";
+    return "<a" + ancla("n" + (x.i + 1)) + ">" + esc(t) + "</a>";
   }).join("") + "</div>";
-  h += '<div class="sum-rejilla">' + cajas.join("") + "</div>";
-  h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Entrar en el boletín ' + icono("flecha") + "</a></div></section>";
+
+  // Apertura: la firma más reciente con imagen, a lo grande; el resto de firmas, al lado/debajo
+  const conFoto = cols.filter(c => urlSegura(c.imagen));
+  const ap = conFoto[conFoto.length - 1] || cols[0];
+  const otras = cols.filter(c => c !== ap);
+  if (ap) {
+    const enl = ' href="' + enlaceColaboracion(ap) + '"';
+    h += '<article class="pt-apertura">' + foto(urlSegura(ap.imagen), enl, "", "colaboraciones") +
+      '<div class="pt-ap-txt"><span class="pt-kicker">' + esc(ap.seccion || "Firma invitada") + (ap.tema ? " · " + esc(ap.tema) : "") + "</span>" +
+      "<h2><a" + enl + ">" + esc(ap.titulo) + "</a></h2>" + extracto(ap.entradilla || primerParrafo(ap.texto), 240) + firma(ap.autor, ap.cargo) + "</div></article>";
+  }
+  if (otras.length) h += '<div class="pt-firmas">' + otras.map(c => {
+    const enl = ' href="' + enlaceColaboracion(c) + '"', img = urlSegura(c.imagen);
+    return '<article class="pt-firma' + (img ? "" : " sin-foto") + '">' + (img ? foto(img, enl, "", "colaboraciones") : "") +
+      '<div><span class="pt-kicker">' + esc(c.seccion || "Firma invitada") + "</span><h3><a" + enl + ">" + esc(c.titulo) + "</a></h3>" +
+      extracto(c.entradilla || primerParrafo(c.texto), img ? 120 : 200) + firma(c.autor, c.cargo) + "</div></article>";
+  }).join("") + "</div>";
+
+  // Lo que hay que saber: una columna por sección, con su noticia principal y los demás titulares
+  if (grupos.length) {
+    h += '<div class="pt-rotulo"><span>Lo que hay que saber</span></div><div class="pt-secciones">';
+    grupos.forEach(g => {
+      const [{ n, i }, ...r] = g.items;
+      const ico = g.sec.clave === "actualidad" ? "noticias" : g.sec.clave;
+      h += '<article class="pt-sec"><a class="pt-sec-nom" href="#/' + g.sec.ruta + '">' + esc(g.sec.nombre) + "</a>" + foto(fotoDe(n), ancla("n" + (i + 1)), "apaisada", ico) +
+        "<h3><a" + ancla("n" + (i + 1)) + ">" + esc(n.titular || n.url) + "</a></h3>" + extracto(n.resumen, 140) +
+        (n.medio ? '<small class="pt-medio">' + esc(n.medio) + "</small>" : "") +
+        (r.length ? '<ul class="pt-mas">' + r.map(({ n, i }) => "<li><a" + ancla("n" + (i + 1)) + ">" + esc(n.titular || n.url) + "</a>" + (n.medio ? "<small>" + esc(n.medio) + "</small>" : "") + "</li>").join("") + "</ul>" : "") +
+        "</article>";
+    });
+    h += "</div>";
+  }
+
+  // Recomendados: una franja al final
+  const gr = gruposRecomendados(recs);
+  if (gr.length) h += '<div class="pt-recs">' + gr.map(g => g.xs.slice(0, 2).map(x =>
+    '<a class="pt-rec"' + ancla("rec-" + g.clave) + ">" + foto(urlSegura(x.imagen) || fotoDe({ url: ((x.capitulos || [])[0] || x).url }), "", "mini", g.clave === "libros" ? "libros" : "podcasts").replace(/^<a /, "<span ").replace(/<\/a>$/, "</span>") +
+    '<span><span class="pt-kicker">' + esc(g.clave === "libros" ? "Libro recomendado" : g.clave === "podcasts" ? "Recomendado · " + (x.tipo || "Podcast") : "Recomendado") + "</span><b>" + esc(x.titulo) + "</b>" +
+    (x.medio ? "<small>" + esc(x.medio) + "</small>" : "") + "</span></a>").join("")).join("") + "</div>";
+
+  h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Leer el boletín completo ' + icono("flecha") + "</a></div></section>";
   return h;
 }
 function centroInicio(b, cfg, todos) {
