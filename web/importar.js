@@ -27,3 +27,21 @@ window.PATRIAM_IMPORTAR = [
   "bio": ""
  }
 ];
+
+/* Recomendaciones preparadas: se publican directamente en el boletín que todavía no ha salido */
+window.PATRIAM_RECOMENDAR = [
+ {
+  "id": "lucy-2014",
+  "tipo": "Película",
+  "seccion": "Análisis",
+  "tema": "Cine",
+  "medio": "Luc Besson · 2014",
+  "logo": "",
+  "titulo": "Lucy",
+  "url": "https://www.filmaffinity.com/es/film429755.html",
+  "descripcion": "Una joven a la que obligan a hacer de correo de una droga experimental la absorbe por accidente y empieza a usar cada vez más capacidad de su cerebro: aprende, controla su cuerpo y la materia, y avanza hacia un conocimiento total. Con Scarlett Johansson y Morgan Freeman.",
+  "comenta": "LODLC",
+  "comentario": "Es una película moderna y rara, con una ciencia de chiste (lo de que solo usamos el 10 % del cerebro es un mito) y mucho tiro. Pero la idea de fondo merece la pena. Lucy va ganando capacidad hasta saberlo todo y, cuanto más sabe, menos humana es: deja de sentir dolor, miedo y cariño, y al final ya no está en ningún sitio porque está en todas partes. No es casual que se llame como la primera homínida, ni que en una escena las dos se rocen el dedo como en la Creación de Adán. La película no lo dice, pero lo deja caer: si el hombre superase todos sus límites, sería Dios. Y ahí está la trampa de siempre, la del «seréis como dioses». El ser humano es finito, y eso no es un defecto que haya que corregir: es lo que nos hace humanos. Para salir pensando en eso, merece la pena verla.",
+  "alta": "2026-10-27"
+ }
+];

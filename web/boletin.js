@@ -522,6 +522,13 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
   h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Leer el boletín completo ' + icono("flecha") + "</a></div></section>";
   return h;
 }
+/* En cada sección, la pieza principal (la primera con imagen) va en grande y el resto en pequeño, a dos columnas */
+function listaJerarquica(xs, tieneFoto, pinta, cls) {
+  if (xs.length < 2) return '<div class="' + cls + '">' + xs.map(pinta).join("") + "</div>";
+  const k = Math.max(0, xs.findIndex(x => tieneFoto(x)));
+  const resto = xs.filter((x, j) => j !== k);
+  return '<div class="' + cls + '"><div class="pieza-principal">' + pinta(xs[k]) + '</div><div class="piezas-menores">' + resto.map(pinta).join("") + "</div></div>";
+}
 function centroInicio(b, cfg, todos) {
   // Lo que ya sale abajo como recomendado (podcast, serie, libro…) no se repite en las noticias
   const urlsRec = new Set((b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean)
@@ -536,13 +543,13 @@ function centroInicio(b, cfg, todos) {
   h += sumarioBoletin(b, cfg, grupos, cols, recs, evs);
   // El boletín completo: plegado hasta pulsar «Entrar» (en la vista previa del editor se ve siempre)
   h += '<div class="bol-completo' + (editor ? "" : " plegado") + '" id="completo">';
-  if (cols.length) h += '<section class="bol-firmas" id="colaboraciones"><div class="bol-sec-cab"><h2 class="bol-tit-sec">Firma invitada</h2>' +
+  if (cols.length) h += '<section class="bol-firmas" id="colaboraciones"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + (cols.length > 1 ? "Firmas invitadas" : "Firma invitada") + '</h2>' +
                         (cols.length > 1 ? "" : '<a href="#/colaboraciones">Todas ' + icono("flecha") + "</a>") + "</div>" +
-                        '<div class="bol-firmas-lista">' + cols.map(c => tarjetaColaboracion(c, b)).join("") + "</div>" + notaColab(cfg) + "</section>";
+                        listaJerarquica(cols, c => urlSegura(c.imagen), c => tarjetaColaboracion(c, b), "bol-firmas-lista") + notaColab(cfg) + "</section>";
   grupos.forEach(g => {
     h += '<section class="bol-noticias" id="sec-' + g.sec.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(g.sec.nombre) + "</h2>" +
          '<a href="#/' + g.sec.ruta + '">Ver más en ' + esc(g.sec.menu) + " " + icono("flecha") + "</a></div>";
-    h += '<div class="bol-lista">' + g.items.map(({ n, i }) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1))).join("") + "</div></section>";
+    h += listaJerarquica(g.items, ({ n }) => urlSegura(n.imagen) || idYoutube(urlSegura(n.url)), ({ n, i }) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1)), "bol-lista") + "</section>";
   });
   // Un bloque por tipo: «Podcasts y vídeos recomendados», «Libros recomendados»…
   gruposRecomendados(recs).forEach(g => {
