@@ -11,6 +11,7 @@ export const almacen = () => getStore({ name: "boletin", consistency: "strong" }
 const FRASE_OCTUBRE = { fraseMes: "Que cualquiera que crea sin reserva se una a nuestras filas. Que el que tenga dudas permanezca al margen.", fraseMesAutor: "Corneliu Zelea Codreanu" };
 async function migrar(s) {
   await lemaSinFamilia(s);
+  await fechaNumero1(s);
   try { await importarAntiguo(s); } catch (e) { console.error("importarAntiguo", e); }
   await quitarPodcastDuplicado(s);
   if ((await s.get("migracion/frase-octubre")) !== null) return;
@@ -29,6 +30,16 @@ async function migrar(s) {
 }
 
 /* El lema queda en «Dios · Patria · Justicia» (sin «Familia»), en ajustes y en cada boletín */
+// El boletín nº 1 sale con fecha 30 de octubre de 2026 (una sola vez)
+async function fechaNumero1(s) {
+  if ((await s.get("migracion/fecha-numero-1")) !== null) return;
+  for (const pre of ["b/", "pub/"]) for (const { key } of (await s.list({ prefix: pre })).blobs) {
+    const b = await s.get(key, { type: "json" });
+    if (b && Number(b.numero) === 1 && b.fecha !== "2026-10-30") { b.fecha = "2026-10-30"; await s.setJSON(key, b); }
+  }
+  await s.set("migracion/fecha-numero-1", new Date().toISOString());
+}
+
 async function lemaSinFamilia(s) {
   if ((await s.get("migracion/lema-sin-familia")) !== null) return;
   const quitar = o => { if (o && typeof o.lema === "string" && /familia/i.test(o.lema)) { o.lema = o.lema.replace(/\s*[·,|-]?\s*familia\s*/i, "").trim(); return true; } return false; };

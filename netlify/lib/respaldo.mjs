@@ -116,7 +116,7 @@ export default {
   {
    "id": "b1",
    "numero": 1,
-   "fecha": "2026-10-21",
+   "fecha": "2026-10-30",
    "titulo": "",
    "portada": "",
    "editorial": {
