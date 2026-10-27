@@ -431,9 +431,14 @@ function lateral(b, cfg, ls) {
 
 /* ---------- centro de la portada ---------- */
 /* Noticias del boletín agrupadas por sección (Actualidad, Historia, Sociedad, Análisis), numeradas seguidas */
+/* Orden de lectura de cada número: primero lo de actualidad, luego el análisis y el fondo histórico, y al final la vida y las costumbres */
+const ORDEN_LECTURA = ["actualidad", "analisis", "historia", "sociedad"];
+const pesoLectura = clave => { const k = ORDEN_LECTURA.indexOf(clave); return k < 0 ? ORDEN_LECTURA.length : k; };
+function claveTexto(s) { return String(s || "actualidad").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+function ordenarFirmas(cols) { return cols.map((c, k) => ({ c, k })).sort((a, b) => pesoLectura(claveTexto(a.c.seccion)) - pesoLectura(claveTexto(b.c.seccion)) || a.k - b.k).map(x => x.c); }
 function gruposNoticias(ns) {
   let i = 0;
-  return SECCIONES.map(sec => ({ sec, items: ns.filter(n => claveSeccion(n) === sec.clave) })).filter(g => g.items.length)
+  return SECCIONES.slice().sort((a, b) => pesoLectura(a.clave) - pesoLectura(b.clave)).map(sec => ({ sec, items: ns.filter(n => claveSeccion(n) === sec.clave) })).filter(g => g.items.length)
     .map(g => ({ sec: g.sec, items: g.items.map(n => ({ n, i: i++ })) }));
 }
 /* Recomendados de la semana (biblioteca) por tipo: podcasts y vídeos, libros, otros */
@@ -476,8 +481,8 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
   }).join("") + "</div>";
 
   // Apertura: la firma más reciente con imagen, a lo grande; el resto de firmas, al lado/debajo
-  const conFoto = cols.filter(c => urlSegura(c.imagen));
-  const ap = conFoto[conFoto.length - 1] || cols[0];
+  // Apertura: la primera firma en orden de lectura que tenga imagen
+  const ap = cols.find(c => urlSegura(c.imagen)) || cols[0];
   const otras = cols.filter(c => c !== ap);
   if (ap) {
     const enl = ' href="' + enlaceColaboracion(ap) + '"';
@@ -522,7 +527,7 @@ function centroInicio(b, cfg, todos) {
   const urlsRec = new Set((b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean)
     .flatMap(x => [x.url].concat((x.capitulos || []).map(c => c.url))).filter(Boolean).map(u => String(u).trim()));
   const ns = (b.noticias || []).filter(n => (n.titular || n.url) && !urlsRec.has(String(n.url || "").trim()));
-  const cols = (b.colaboraciones || []).filter(c => c.titulo);
+  const cols = ordenarFirmas((b.colaboraciones || []).filter(c => c.titulo));
   const grupos = gruposNoticias(ns);
   const recs = (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean);
   const evs = todosEventos([b]).proximos;
