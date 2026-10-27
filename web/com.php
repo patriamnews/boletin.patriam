@@ -85,7 +85,8 @@ function servicios() {
   return ['correo' => !empty($k['brevo']), 'whatsapp' => !empty($k['waToken']) && !empty($k['waPhone']),
     'plantilla' => $k['waPlantilla'] ?? 'comunicacion_patriam', 'idioma' => $k['waIdioma'] ?? 'es',
     'brevo' => !empty($k['brevo']) ? '…' . substr($k['brevo'], -4) : '', 'waToken' => !empty($k['waToken']) ? '…' . substr($k['waToken'], -4) : '',
-    'waPhone' => $k['waPhone'] ?? '', 'stripe' => !empty($k['stripe']) ? (strpos($k['stripe'], '_test_') !== false ? 'prueba ' : 'real ') . '…' . substr($k['stripe'], -4) : ''];
+    'waPhone' => $k['waPhone'] ?? '', 'stripe' => !empty($k['stripe']) ? (strpos($k['stripe'], '_test_') !== false ? 'prueba ' : 'real ') . '…' . substr($k['stripe'], -4) : '',
+    'stripeWebhook' => !empty($k['stripeWebhook']) ? '…' . substr($k['stripeWebhook'], -4) : '', 'gelato' => !empty($k['gelato']) ? '…' . substr($k['gelato'], -4) : ''];
 }
 /* La firma subida (data:image/…) se guarda como archivo y queda su dirección */
 function sacarImagenes(&$v, &$mapa) {
@@ -144,7 +145,7 @@ if ($accion === 'guardar') {
 
 if ($accion === 'claves') {
   $k = claves();
-  foreach (['brevo', 'waToken', 'waPhone', 'waPlantilla', 'waIdioma', 'stripe'] as $c) {
+  foreach (['brevo', 'waToken', 'waPhone', 'waPlantilla', 'waIdioma', 'stripe', 'stripeWebhook', 'gelato'] as $c) {
     if (!isset($cuerpo[$c])) continue;
     $v = trim((string)$cuerpo[$c]);
     if ($v === '-') unset($k[$c]); elseif ($v !== '') $k[$c] = $v;
