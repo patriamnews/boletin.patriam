@@ -564,6 +564,16 @@
 </div></div>
 
 <script src="boletines.js"></script>
+<script>
+/* Fuera las piezas de ejemplo de la plantilla (noticias a ejemplo.com, «Evento/Iniciativa de ejemplo»). */
+(function(){
+  var ej = function(t){ return /\bde ejemplo\b|ejemplo\.com/i.test(String(t||"")); };
+  (window.BOLETINES||[]).forEach(function(b){
+    if (Array.isArray(b.noticias)) b.noticias = b.noticias.filter(function(n){ return !(ej(n.url) || ej(n.medio) || /^Aquí va el resumen/.test(n.resumen||"")); });
+    if (Array.isArray(b.eventos)) b.eventos = b.eventos.filter(function(e){ return !ej(e.titulo) && !/^Breve descripción/.test(e.descripcion||""); });
+  });
+})();
+</script>
 <script src="boletin.js"></script>
 <script src="importar.js"></script>
 <script>
