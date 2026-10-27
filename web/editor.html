@@ -1590,7 +1590,8 @@ async function importarPendientes() {
   for (const it of lista) {
     if (!it || !it.id || CFG.importados.includes(it.id)) continue;   // ya entró una vez (aunque luego lo hayan quitado)
     if (datos.some(b => (b.colaboraciones || []).some(c => c.id === it.id))) { CFG.importados.push(it.id); continue; }
-    let b = ordenar(datos).find(x => x.estado !== "aprobado");
+    // Va al boletín que todavía no ha salido (su fecha es hoy o futura), aunque ya esté aprobado; si no hay, al primero sin aprobar
+    let b = ordenar(datos).find(x => x.fecha && x.fecha >= hoy()) || ordenar(datos).find(x => x.estado !== "aprobado");
     if (!b) { $("btnNuevo").click(); b = actual; }
     b.colaboraciones = b.colaboraciones || [];
     b.colaboraciones.push(JSON.parse(JSON.stringify(it)));
@@ -1666,6 +1667,7 @@ async function cargar() {
     cfgEtag = d.cfgEtag; cfgGuardado = huella(CFG);
     if (CFG.lema && /familia/i.test(CFG.lema)) CFG.lema = lemaDe(CFG);   // el lema ya no lleva «Familia»: se corrige y se guarda solo
     datos = d.boletines || [];
+    datos.forEach(b => { if (Number(b.numero) === 1 && b.fecha === "2026-10-21") b.fecha = "2026-10-30"; });   // el nº 1 sale el 30 de octubre
     datos.forEach(b => { etags[b.id] = b._etag; guardados[b.id] = huella(b); });
     document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");
     $("cfgComentaristas").value = (CFG.comentaristas || []).join(", ");
