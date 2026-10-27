@@ -280,9 +280,6 @@
         <p class="nota" style="margin-top:8px">Se guardan en el servidor de Hostinger, fuera de la web y de GitHub. Una vez guardadas no se vuelven a enseñar: solo sus últimas letras. Para cambiar una, escribe la nueva y guarda.</p>
         <label>Clave de la API de Brevo <small>(Brevo → SMTP &amp; API → API Keys)</small></label><input type="password" id="clBrevo" autocomplete="off" placeholder="xkeysib-…">
         <label>Token de WhatsApp <small>(Meta → tu app → WhatsApp; mejor el permanente de «Usuarios del sistema»)</small></label><input type="password" id="clWaToken" autocomplete="off" placeholder="EAA…">
-        <label>Clave secreta de Stripe <small>(Stripe → Desarrolladores → Claves de API → Clave secreta; «sk_live_…» para cobrar de verdad, «sk_test_…» para pruebas). La usa la web de PATRIAM para cobrar cuotas, donativos y pedidos con tarjeta</small></label><input type="password" id="clStripe" autocomplete="off" placeholder="sk_live_…">
-        <label>Secreto del webhook de Stripe <small>(Stripe → Desarrolladores → Webhooks → añadir destino con la dirección https://movimientopatriam.es/api/stripe-webhook.php y el evento «checkout.session.completed» → «Secreto de firma», empieza por whsec_). Sirve para mandar a Gelato los pedidos ya pagados</small></label><input type="password" id="clStripeWh" autocomplete="off" placeholder="whsec_…">
-        <label>Clave de la API de Gelato <small>(Gelato → Developer → API keys). Con ella los pedidos pagados de camisetas y tazas le llegan solos a Gelato</small></label><input type="password" id="clGelato" autocomplete="off" placeholder="…">
         <div class="fila"><div><label>Identificador del número <small>(Phone number ID, no el teléfono)</small></label><input type="text" id="clWaPhone" autocomplete="off" placeholder="1234567890…"></div>
           <div><label>Nombre de la plantilla</label><input type="text" id="clWaPlantilla" placeholder="comunicacion_patriam"></div></div>
         <button class="btn" id="btnClaves" style="margin-top:10px;background:var(--acento);color:#fff;border-color:var(--acento);font-weight:700">Guardar claves</button>
@@ -1395,7 +1392,7 @@ async function abrirComunicaciones() {
   pintarComServicios(); pintarComContactos(); pintarComLista();
 }
 function pintarComServicios() {
-  $("clEstado").textContent = "Guardado: Stripe " + (comServ.stripe || "—") + " · webhook " + (comServ.stripeWebhook || "—") + " · Gelato " + (comServ.gelato || "—") + " · Brevo " + (comServ.brevo || "—") + " · token WhatsApp " + (comServ.waToken || "—") + " · número " + (comServ.waPhone || "—") + " · plantilla " + (comServ.plantilla || "comunicacion_patriam");
+  $("clEstado").textContent = "Guardado: Brevo " + (comServ.brevo || "—") + " · token WhatsApp " + (comServ.waToken || "—") + " · número " + (comServ.waPhone || "—") + " · plantilla " + (comServ.plantilla || "comunicacion_patriam");
   $("clWaPlantilla").value = comServ.plantilla || "";
   $("comServicios").innerHTML = '<div class="com-serv"><span class="' + (comServ.correo ? "si" : "") + '">' + (comServ.correo ? "✔ Correo conectado (Brevo)" : "Correo: falta la clave de Brevo") + "</span>" +
     '<span class="' + (comServ.whatsapp ? "si" : "") + '">' + (comServ.whatsapp ? "✔ WhatsApp conectado (API)" : "WhatsApp API: falta conectar · mientras, se manda uno a uno") + "</span></div>";
@@ -1586,12 +1583,8 @@ async function enviarCom(c, canal, boton, f) {
   alert((bien ? "Enviado a " + bien + (bien === 1 ? " persona." : " personas.") : "No se ha enviado a nadie.") + (fallos.length ? "\n\nNo ha podido ser:\n" + fallos.slice(0, 15).join("\n") + (fallos.length > 15 ? "\n…" : "") : ""));
 }
 $("btnClaves").onclick = async () => {
-  const st = $("clStripe").value.trim();
-  if (st && !/^(sk|rk)_(live|test)_/.test(st)) { alert("La clave de Stripe debe empezar por sk_live_ (o sk_test_ para pruebas). No uses la clave publicable (pk_…)."); return; }
-  const wh = $("clStripeWh").value.trim();
-  if (wh && !/^whsec_/.test(wh)) { alert("El secreto del webhook de Stripe empieza por whsec_."); return; }
-  const c = { brevo: $("clBrevo").value, waToken: $("clWaToken").value, waPhone: $("clWaPhone").value, waPlantilla: $("clWaPlantilla").value, stripe: st, stripeWebhook: wh, gelato: $("clGelato").value.trim() };
-  try { const d = await api("com-claves", c); comServ = d.servicios; ["clBrevo", "clWaToken", "clWaPhone", "clStripe", "clStripeWh", "clGelato"].forEach(i => $(i).value = ""); pintarComServicios(); pintarComLista(); alert("Claves guardadas."); }
+  const c = { brevo: $("clBrevo").value, waToken: $("clWaToken").value, waPhone: $("clWaPhone").value, waPlantilla: $("clWaPlantilla").value };
+  try { const d = await api("com-claves", c); comServ = d.servicios; ["clBrevo", "clWaToken", "clWaPhone"].forEach(i => $(i).value = ""); pintarComServicios(); pintarComLista(); alert("Claves guardadas."); }
   catch (err) { if (err.status !== 401) alert(err.message); }
 };
 $("btnComNueva").onclick = () => {
