@@ -788,3 +788,9 @@ mark.pendiente { background: #fbe9b6; color: #6b4a00; padding: 0 .2em; border-ra
 .bol-noticias + .bol-noticias, .bol-noticias + .bol-recomendados, .bol-firmas + .bol-noticias { margin-top: 2.4rem; }
 @media (min-width: 761px) { .bol-menu a .ico { display: none; } .bol-menu a { padding: .9rem .55rem; } .bol-buscar input { width: 54px; } }
 @media (max-width: 980px) { .lat-cal { flex: none; } }
+
+/* Firma invitada dentro de una sección (Sociedad, Historia…) */
+.bib-lista .bol-colab-sec .bol-colab { grid-template-columns: 40% 1fr; border-top: 4px solid var(--gualda); }
+.bib-lista .bol-colab-sec .bol-colab-img { min-height: 240px; }
+.bib-lista .bol-colab-sec .bol-colab-txt h3 { font-size: 1.5rem; }
+@media (max-width: 760px) { .bib-lista .bol-colab-sec .bol-colab { grid-template-columns: 1fr; } .bib-lista .bol-colab-sec .bol-colab-img { min-height: 160px; } }

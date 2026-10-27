@@ -9,6 +9,7 @@ $NETLIFY = getenv('BOLETIN_ORIGEN') ?: 'https://boletinpatriam.netlify.app';   /
 $API_BREVO = getenv('COM_URL_BREVO') ?: 'https://api.brevo.com';
 $API_META = getenv('COM_URL_META') ?: 'https://graph.facebook.com';
 $WEB = 'https://boletin.movimientopatriam.es';
+require_once __DIR__ . '/_privado.php';   // enlaces con seguimiento y estadísticas
 
 function salir($datos, $codigo = 200) {
   http_response_code($codigo);
@@ -172,16 +173,20 @@ if ($accion === 'enviar') {
   $bajas = [];
   foreach ($SUS as $s) if (!empty($s['email'])) $bajas[strtolower($s['email'])] = preg_replace('#^https?://[^/]+#', $GLOBALS['WEB'], (string)($s['enlaceBaja'] ?? ''));
 
-  $res = [];
+  $res = []; $pers = [];
   foreach (array_slice($cuerpo['para'] ?? [], 0, 25) as $p) {
     $nombre = trim(mb_substr((string)($p['nombre'] ?? ''), 0, 80));
-    $id = $p['id'] ?? '';
+    $id = (string)($p['id'] ?? '');
+    // Código de la persona: va en sus enlaces para saber qué abre (estadísticas del editor)
+    $pc = codigoPersona($id);
+    $pers[$pc] = ['nombre' => trim(mb_substr((string)($p['completo'] ?? $nombre), 0, 120)) ?: $nombre, 'tipo' => strncmp($id, 's:', 2) === 0 ? 'Suscriptor' : 'Otro destinatario'];
     if ($canal === 'correo') {
       $email = strtolower(trim((string)($p['email'] ?? '')));
       if (!correoValido($email)) { $res[] = ['id' => $id, 'ok' => false, 'motivo' => 'Correo no válido']; continue; }
       $baja = $bajas[$email] ?? '';
       $h = $baja ? $html : preg_replace('/<!--BAJA-->[\s\S]*?<!--\/BAJA-->/', '', $html);
       $t = $texto;
+      $h = seguirEnlacesHtml($h, $pc, $com['id']); $t = seguirEnlacesTexto($t, $pc, $com['id']);
       if ($nombre === '') { $h = str_replace(', %%NOMBRE%%', '', $h); $t = str_replace(', %%NOMBRE%%', '', $t); }
       $h = str_replace(['%%NOMBRE%%', '%%BAJA%%'], [htmlspecialchars($nombre, ENT_QUOTES), htmlspecialchars($baja, ENT_QUOTES)], $h);
       $t = str_replace('%%NOMBRE%%', $nombre, $t) . ($baja ? "\n\nPara dejar de recibir correos: " . $baja : '');
@@ -197,7 +202,7 @@ if ($accion === 'enviar') {
       if (!$m) { $res[] = ['id' => $id, 'ok' => false, 'motivo' => 'Móvil no válido']; continue; }
       // WhatsApp no deja saltos de línea dentro de un hueco de la plantilla: los párrafos se unen con «—»
       $parr = array_filter(array_map(fn($x) => trim(preg_replace('/\s*\n\s*/', ' ', $x)), preg_split('/\n\s*\n/', str_replace("\r", '', (string)($cuerpo['textoWa'] ?? '')))));
-      $txt = mb_substr(preg_replace('/ {4,}/', '   ', str_replace("\t", ' ', implode(' — ', $parr))), 0, 1000) ?: '.';
+      $txt = mb_substr(seguirEnlacesTexto(preg_replace('/ {4,}/', '   ', str_replace("\t", ' ', implode(' — ', $parr))), $pc, $com['id']), 0, 1000) ?: '.';
       $msg = ['messaging_product' => 'whatsapp', 'to' => $m, 'type' => 'template', 'template' => [
         'name' => $sv['plantilla'], 'language' => ['code' => $sv['idioma']],
         'components' => [['type' => 'body', 'parameters' => [['type' => 'text', 'text' => $nombre ?: 'amigo'], ['type' => 'text', 'text' => $txt]]]]]];
@@ -208,6 +213,7 @@ if ($accion === 'enviar') {
       $res[] = ['id' => $id, 'clave' => $m, 'ok' => $ok, 'motivo' => $ok ? '' : (($er['error_data']['details'] ?? '') ?: ($er['message'] ?? '') ?: ($e ?: 'WhatsApp respondió ' . $c))];
     }
   }
+  guardarPersonas($pers);
   // Se anota quién lo ha enviado, cuándo y a quién (para no repetir)
   $fp = fopen(privado() . '/com.lock', 'c'); flock($fp, LOCK_EX);
   [$d] = leer();

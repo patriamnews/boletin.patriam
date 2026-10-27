@@ -136,8 +136,17 @@ function enlaceParaCompartir(cfg, destino) {
   const am = ((cfg && cfg.alMomento) || []).find(x => x.estado === "aprobado" && x.destino === destino && x.slug);
   return am ? base + "a/" + encodeURIComponent(am.slug) : base + destino;   // el de «Al momento» lleva su propia imagen
 }
+/* Estadísticas: lo que comparte un lector lleva su código (?c=…), para saber cuánta gente entra por cada reenvío.
+   Solo en la web publicada (en el editor no hay código y el enlace queda igual). */
+function conCodigo(u) {
+  const c = typeof window !== "undefined" && window.__codigoLector;
+  u = String(u || "");
+  if (!c || !/^https?:/i.test(u)) return u;
+  const [antes, hash] = u.split("#");
+  return antes + (antes.includes("?") ? "&" : "?") + "c=" + c + (hash !== undefined ? "#" + hash : "");
+}
 function barraLector(rotulo, titulo, url) {
-  const t = String(titulo || ""), u = String(url || "");
+  const t = String(titulo || ""), u = conCodigo(url);
   return '<div class="bol-compartir bol-compartir-lector"><span>' + esc(rotulo) + "</span><div>" +
     '<a class="bol-comp wa" href="https://wa.me/?text=' + encodeURIComponent(t + "\n" + u) + '" target="_blank" rel="noopener">' + icono("whatsapp") + "WhatsApp</a>" +
     '<a class="bol-comp xx" href="https://x.com/intent/post?text=' + encodeURIComponent(t) + "&url=" + encodeURIComponent(u) + '" target="_blank" rel="noopener">' + icono("x") + "X</a>" +
@@ -708,7 +717,11 @@ function paginaListado(titulo, texto, items) {
   return h + '</div><p class="bol-vacio" id="sin-resultados" hidden>No hay resultados. Prueba con otra palabra o quita algún filtro.</p></div>';
 }
 function paginaSeccion(lista, cfg, s) {
-  return paginaListado(s.menu, s.texto, itemsListado(lista, cfg, biblioteca(cfg, s.nombre).slice().reverse(), todasNoticias(lista, s.clave)));
+  // Las firmas invitadas que se han marcado para esta sección salen también aquí, las primeras
+  const colabs = todasColaboraciones(lista).filter(({ c }) => sinAcentos(c.seccion || "") === s.clave).map(({ c, b }) => ({
+    tema: (c.tema || "").trim() || "Otros temas", tipo: "Artículo", texto: [c.titulo, c.autor, c.entradilla, c.tema, textoPlano(c.texto)].join(" "),
+    html: '<div class="bol-colab-sec">' + tarjetaColaboracion(c, b) + "</div>" }));
+  return paginaListado(s.menu, s.texto, colabs.concat(itemsListado(lista, cfg, biblioteca(cfg, s.nombre).slice().reverse(), todasNoticias(lista, s.clave))));
 }
 /* Podcasts (y vídeos) y libros, de cualquier sección */
 function paginaTipo(lista, cfg, cual) {
@@ -1050,7 +1063,7 @@ function etiquetasRed(cfg) {
 }
 function datosCompartir(b, cfg) {
   const ed = b.editorial || {};
-  return { url: enlaceBoletin(b, cfg), n: dosCifras(b.numero), fecha: fechaLarga(b.fecha), titulo: ed.titulo || "Lo que hay que saber",
+  return { url: conCodigo(enlaceBoletin(b, cfg)), n: dosCifras(b.numero), fecha: fechaLarga(b.fecha), titulo: ed.titulo || "Lo que hay que saber",
     resumen: recortar(textoPlano(primerParrafo(ed.texto || "")), 220), firma: ed.firma || "" };
 }
 function textoX(b, cfg) {

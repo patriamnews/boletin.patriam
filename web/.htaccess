@@ -1,5 +1,9 @@
 # Boletín PATRIAM en Hostinger
 Options -Indexes
+# Piezas internas de PHP: no se abren desde fuera
+<FilesMatch "^_">
+  Require all denied
+</FilesMatch>
 RewriteEngine On
 # Pasa la cabecera Authorization a PHP
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

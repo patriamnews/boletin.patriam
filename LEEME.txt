@@ -23,3 +23,10 @@ Comunicaciones personales (pestaña «Comunicaciones» del editor, solo administ
 - Las claves (Brevo, WhatsApp) se ponen desde el editor: pestaña Comunicaciones → «Claves de envío».
 - Plantilla de WhatsApp «comunicacion_patriam»: «Buenos días, {{1}}:\n\n{{2}}\n\nUn saludo,\nPATRIAM»
 - Sin la API de WhatsApp, «WhatsApp uno a uno» abre cada chat con el mensaje ya escrito.
+
+Estadísticas (botón «Estadísticas» del editor, solo administradores)
+- web/est.php: la página del boletín avisa de cada visita, clic en un enlace y vez que se comparte.
+  Sin cookies y sin guardar la IP (huella anónima que cambia cada día). Se guardan 13 meses en patriam-privado/est.
+- Reenvíos: lo que comparte un lector lleva su código (?c=…), así se ve cuánta gente entra por cada reenvío.
+- Comunicaciones personales: cada enlace pasa por web/ir.php con el código de la persona: se ve quién pincha qué.
+- web/importar.js: textos preparados que entran solos como firma invitada del próximo boletín al abrir el editor.

@@ -49,6 +49,19 @@
     const a = r.match(/^#\/al\/([^/]+)/), am = a && ((CFG.alMomento) || []).find(x => x.id === decodeURIComponent(a[1]) || x.slug === decodeURIComponent(a[1]));
     return am && am.slug ? "/a/" + encodeURIComponent(am.slug) : "/";
   }
+  /* ---------- estadísticas (sin cookies): visitas, clics y compartidos ----------
+     Cada visita tiene un código; lo que comparte esta persona lo lleva (?c=…) y así se ve cuánta gente entra por cada reenvío. */
+  const PARAM = new URLSearchParams(location.search);
+  const CODIGO = Math.random().toString(36).slice(2, 10).padEnd(8, "0");
+  window.__codigoLector = CODIGO;
+  let primera = true;
+  function medir(ev) {
+    try {
+      const b = JSON.stringify(Object.assign({ cod: CODIGO }, ev));
+      if (navigator.sendBeacon) navigator.sendBeacon("/est.php", new Blob([b], { type: "text/plain" }));
+      else fetch("/est.php", { method: "POST", body: b, keepalive: true });
+    } catch (e) {}
+  }
   let ruta = "#/";
   const viejo = new URLSearchParams(location.search).get("n");
   const porDireccion = location.pathname.match(/^\/boletin\/([^/]+)/), porMomento = location.pathname.match(/^\/a\/([^/.]+)/);
@@ -63,6 +76,8 @@
 
   function pintar(r, arriba) {
     ruta = r || "#/";
+    medir(primera ? { t: "visita", r: ruta, e: 1, c: PARAM.get("c") || "", p: PARAM.get("p") || "", ref: document.referrer || "" } : { t: "visita", r: ruta });
+    primera = false;
     document.getElementById("app").innerHTML = renderApp(ruta, LISTA, CFG);
     const sec = ruta.slice(2).split("/")[0];
     document.title = (CFG.cabecera || "Lo que hay que saber") + (TITULOS[sec] ? " · " + TITULOS[sec] : " · Boletín de PATRIAM");
@@ -83,6 +98,16 @@
     a.href = location.origin + "/" + destino; a.target = "_blank"; a.rel = "noopener";
     document.body.appendChild(a); a.click(); a.remove();
   }
+  // Clics en enlaces de fuera (noticias, vídeos, podcasts…) y en los botones de compartir
+  const RED = { wa: "whatsapp", xx: "x", fb: "facebook", ig: "instagram", en: "enlace" };
+  document.addEventListener("click", e => {
+    const comp = e.target.closest(".bol-comp");
+    if (comp) { const k = Object.keys(RED).find(c => comp.classList.contains(c)); medir({ t: "compartir", r: ruta, red: RED[k] || "otro" }); return; }
+    const a = e.target.closest("a[href]");
+    if (!a) return;
+    const h = a.getAttribute("href") || "";
+    if (/^https?:/i.test(h) && !h.startsWith(location.origin)) medir({ t: "clic", r: ruta, d: a.href, l: (a.getAttribute("aria-label") || a.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120) });
+  }, true);
   document.addEventListener("click", e => {
     const a = e.target.closest("a[href^='#/']");
     if (!a || e.ctrlKey || e.metaKey || e.shiftKey) return;

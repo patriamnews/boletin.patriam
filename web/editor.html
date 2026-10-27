@@ -169,6 +169,18 @@
   .com-contacto input { margin: 0; }
   @media (max-width: 700px) { .com-contacto { grid-template-columns: 1fr 1fr; } }
   #panelCom .am-estado.enviado { background: #e3f1da; color: #2f6b1f; }
+  .est-cifras { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin: 14px 0; }
+  .est-cifras div { background: #faf6ef; border: 1px solid #eadfcd; border-radius: 8px; padding: 10px 12px; }
+  .est-cifras b { display: block; font: 700 26px Georgia, serif; color: var(--acento); }
+  .est-cifras span { font-size: 12px; color: #6b5f58; }
+  .est-barras { display: flex; align-items: flex-end; gap: 2px; height: 90px; padding: 6px; background: #faf6ef; border-radius: 6px; }
+  .est-barras i { flex: 1; background: var(--acento); min-height: 1px; border-radius: 2px 2px 0 0; }
+  .est-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; } @media (max-width: 700px) { .est-cols { grid-template-columns: 1fr; } }
+  #modalEst h4 { margin: 18px 0 6px; color: var(--acento); font: 700 15px system-ui, sans-serif; } #modalEst h4 small { font-weight: 400; color: #8a7f74; }
+  #modalEst table { width: 100%; border-collapse: collapse; font-size: 13px; } #modalEst td, #modalEst th { padding: 5px 6px; border-bottom: 1px solid #eee3d2; text-align: left; vertical-align: top; }
+  #modalEst .n { text-align: right; white-space: nowrap; } #modalEst td small { color: #8a7f74; }
+  #modalEst td a { color: var(--acento); word-break: break-word; }
+  #estCuerpo { max-height: 72vh; overflow: auto; }
 </style>
 </head>
 <body>
@@ -210,6 +222,7 @@
   <button id="btnCorreo" title="Ver cómo llegará el boletín por correo electrónico">Vista correo</button>
   <button id="btnUsuarios" hidden>Usuarios</button>
   <button id="btnSuscriptores" hidden title="Personas apuntadas al boletín (solo administradores)">Suscriptores</button>
+  <button id="btnEst" hidden title="Visitas, clics y reenvíos del boletín (solo administradores)">Estadísticas</button>
   <button id="btnClave">Mi contraseña</button>
   <button id="btnAyuda" title="Cómo se usa el editor">? Instrucciones</button>
   <button id="btnSalir">Salir</button>
@@ -538,6 +551,12 @@
   <button class="btn" onclick="document.getElementById('modal').classList.remove('abierto')">Entendido</button>
 </div></div>
 
+<div class="modal" id="modalEst"><div class="modal-caja" style="max-width:900px">
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h3 style="margin:0;flex:1">Estadísticas del boletín</h3>
+    <select class="campo" id="estDias" style="width:auto;margin:0"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 3 meses</option><option value="365">Último año</option></select>
+    <button class="btn" type="button" onclick="document.getElementById('modalEst').classList.remove('abierto')">Cerrar</button></div>
+  <div id="estCuerpo"></div>
+</div></div>
 <div class="modal" id="modalSus"><div class="modal-caja" style="max-width:760px">
   <h3>Suscriptores del boletín</h3>
   <div id="susPestanas" style="margin-bottom:8px"></div>
@@ -551,6 +570,7 @@
 
 <script src="boletines.js"></script>
 <script src="boletin.js"></script>
+<script src="importar.js"></script>
 <script>
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
@@ -908,6 +928,9 @@ function pintarColaboraciones() {
     '<div class="fila"><div><label>Autor</label><input type="text" data-k="autor"></div><div><label>Cargo o profesión</label><input type="text" data-k="cargo"></div></div>' +
     '<label>Título</label><input type="text" data-k="titulo">' +
     '<label>Entradilla <small>(una frase que resuma el texto)</small></label><input type="text" data-k="entradilla">' +
+    '<div class="fila"><div><label>¿Sale también en una sección? <small>(además de Colaboraciones)</small></label><select class="campo" data-k="seccion"><option value="">No, solo en Colaboraciones</option>' +
+      SECCIONES.map(s => '<option value="' + esc(s.nombre) + '">' + esc(s.menu) + "</option>").join("") + '</select></div>' +
+      '<div><label>Tema <small>(opcional)</small></label><input type="text" data-k="tema" list="temasLista" placeholder="Educación, Familia…"></div></div>' +
     "<label>Imagen</label>" + HTML_IMG +
     '<label>Texto</label><div class="herramientas">' +
       '<button type="button" data-f="h2">Subtítulo</button><button type="button" data-f="cita">Cita destacada</button>' +
@@ -1114,6 +1137,7 @@ function trasEntrar() {
   $("btnUsuarios").hidden = !adm;
   $("btnMomentoBoletin").hidden = !adm;
   $("btnSuscriptores").hidden = !adm;
+  $("btnEst").hidden = !adm;
   $("pestCom").hidden = !adm;
   $("btnPublicar").hidden = !adm;
   $("btnEnviar").hidden = adm;
@@ -1546,7 +1570,7 @@ async function enviarCom(c, canal, boton, f) {
   try {
     for (let i = 0; i < pendientes.length; i += 20) {
       boton.textContent = "Enviando " + Math.min(i + 20, pendientes.length) + " de " + pendientes.length + "…";
-      const lote = pendientes.slice(i, i + 20).map(p => ({ id: p.id, nombre: nombreSaludo(p), email: p.email, movil: p.movil }));
+      const lote = pendientes.slice(i, i + 20).map(p => ({ id: p.id, nombre: nombreSaludo(p), completo: p.nombre, email: p.email, movil: p.movil }));
       const d = await api("com-enviar", { id: c.id, canal, para: lote, html, texto, textoWa, por: usuario.nombre || "" });
       d.resultados.forEach(r => { if (r.ok) bien++; else fallos.push((pendientes.find(p => p.id === r.id) || {}).nombre + ": " + r.motivo); });
       c.enviados = d.enviados; c.envios = d.envios; c.estado = "enviado"; comEtag = d.etag; comGuardado = huella(COM);
@@ -1567,6 +1591,74 @@ $("btnComNueva").onclick = () => {
   COM.lista.unshift({ id: nuevoId("k"), fecha: hoy(), asunto: "", saludo: "", texto: "", sel: [], estado: "borrador", enviados: { correo: [], whatsapp: [] }, envios: [] });
   comGuardarLuego(); pintarComLista(); $("comLista").firstElementChild.scrollIntoView({ behavior: "smooth" });
 };
+
+/* ---------- textos preparados (importar.js): entran solos como firma invitada del próximo boletín ---------- */
+async function importarPendientes() {
+  if (!esAdmin()) return;
+  const lista = window.PATRIAM_IMPORTAR || [], hechos = [];
+  CFG.importados = CFG.importados || [];
+  for (const it of lista) {
+    if (!it || !it.id || CFG.importados.includes(it.id)) continue;   // ya entró una vez (aunque luego lo hayan quitado)
+    if (datos.some(b => (b.colaboraciones || []).some(c => c.id === it.id))) { CFG.importados.push(it.id); continue; }
+    let b = ordenar(datos).find(x => x.estado !== "aprobado");
+    if (!b) { $("btnNuevo").click(); b = actual; }
+    b.colaboraciones = b.colaboraciones || [];
+    b.colaboraciones.push(JSON.parse(JSON.stringify(it)));
+    CFG.importados.push(it.id); hechos.push({ it, b });
+  }
+  if (!hechos.length) return;
+  await guardarAhora();
+  const b = hechos[hechos.length - 1].b;
+  actual = b; pintarSelector(); cargarFormulario();
+  avisar("He añadido " + hechos.map(h => "«" + esc(h.it.titulo) + "» (" + esc(h.it.autor || "") + ")").join(", ") +
+    " como <b>firma invitada</b> del boletín Nº " + String(b.numero).padStart(2, "0") + ". Revísalo en el apartado 4 y, cuando esté listo, apruébalo para publicarlo.");
+}
+
+/* ---------- estadísticas (solo administradores) ---------- */
+const NOMBRE_RED = { whatsapp: "WhatsApp", x: "X", facebook: "Facebook", instagram: "Instagram", enlace: "Copiar enlace", otro: "Otro" };
+function nombrePagina(r) {
+  r = String(r || "#/");
+  if (r === "#/") return "Portada";
+  const [, sec, id] = r.split("/");
+  const b = id && datos.find(x => x.id === decodeURIComponent(id) || String(x.numero) === decodeURIComponent(id));
+  if (sec === "boletin") return "Boletín Nº " + (b ? String(b.numero).padStart(2, "0") : decodeURIComponent(id || ""));
+  if (sec === "editorial") return "Editorial" + (b && b.editorial && b.editorial.titulo ? ": " + b.editorial.titulo : "");
+  if (sec === "colaboracion") { for (const x of datos) { const c = (x.colaboraciones || []).find(y => y.id === decodeURIComponent(id)); if (c) return "Firma invitada: " + c.titulo; } }
+  if (sec === "al") { const a = (CFG.alMomento || []).find(x => x.slug === decodeURIComponent(id) || x.id === decodeURIComponent(id)); if (a) return "Al momento: " + a.titulo; }
+  return sec.charAt(0).toUpperCase() + sec.slice(1) + (id ? " · " + decodeURIComponent(id) : "");
+}
+function fechaCorta(f) { return f ? new Date(f).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; }
+async function cargarEst() {
+  const dias = $("estDias").value;
+  $("estCuerpo").innerHTML = '<p class="nota">Cargando…</p>';
+  let d;
+  try {
+    const r = await fetch("/est.php?accion=resumen&dias=" + dias, { headers: { Authorization: "Bearer " + TOKEN } });
+    d = await r.json().catch(() => ({}));
+    if (r.status === 401) { caducada(); return; }
+    if (!r.ok) throw new Error(d.error || "Error " + r.status);
+  } catch (err) { $("estCuerpo").innerHTML = '<p class="acceso-error">No se han podido cargar: ' + esc(err.message) + "</p>"; return; }
+  const T = d.totales, fila = (a, b) => "<tr><td>" + a + '</td><td class="n">' + b + "</td></tr>";
+  const max = Math.max(1, ...d.porDia.map(x => x.visitas));
+  let h = '<div class="est-cifras">' +
+    [["Visitas", T.visitas], ["Lectores", T.lectores], ["Veces compartido", T.compartidos], ["Visitas por reenvíos", T.porReenvio], ["Clics en enlaces", T.clics], ["Clics de comunicaciones", T.deComunicaciones]]
+      .map(([a, b]) => "<div><b>" + b + "</b><span>" + a + "</span></div>").join("") + "</div>";
+  h += '<h4>Visitas por día</h4><div class="est-barras">' + d.porDia.map(x => '<i title="' + esc(x.dia) + ": " + x.visitas + " visitas, " + x.lectores + ' lectores" style="height:' + Math.round(x.visitas / max * 100) + '%"></i>').join("") + "</div>";
+  h += '<div class="est-cols"><div><h4>Cómo llegan</h4><table>' + (d.origen.map(x => fila(esc(x.origen), x.visitas)).join("") || fila("Todavía no hay datos", "")) + "</table></div>" +
+       "<div><h4>Dónde lo comparten</h4><table>" + (d.redes.map(x => fila(esc(NOMBRE_RED[x.red] || x.red), x.veces)).join("") || fila("Nadie lo ha compartido todavía", "")) + "</table></div></div>";
+  h += "<h4>Reenvíos <small>cada vez que un lector lo comparte, y cuánta gente entra por su enlace</small></h4>" + (d.reenvios.length ? '<table class="est-tabla"><tr><th>Cuándo</th><th>Qué</th><th>Por</th><th class="n">Visitas</th><th class="n">Lectores</th><th class="n">Lo vuelven a compartir</th></tr>' +
+    d.reenvios.map(x => "<tr><td>" + esc(fechaCorta(x.fecha)) + "</td><td>" + esc(nombrePagina(x.pagina)) + "</td><td>" + esc(x.redes.map(r => NOMBRE_RED[r] || r).join(", ") || "—") + '</td><td class="n">' + x.visitas + '</td><td class="n">' + x.lectores + '</td><td class="n">' + x.loVolvieronACompartir + "</td></tr>").join("") + "</table>" : '<p class="nota">Todavía no hay reenvíos.</p>');
+  h += "<h4>Lo más visto</h4><table class=\"est-tabla\">" + (d.paginas.map(x => fila(esc(nombrePagina(x.pagina)), x.visitas)).join("") || fila("Todavía no hay datos", "")) + "</table>";
+  h += "<h4>En qué pinchan <small>noticias, vídeos y enlaces de fuera</small></h4>" + (d.clics.length ? '<table class="est-tabla"><tr><th>Enlace</th><th class="n">Clics</th><th class="n">Lectores</th></tr>' +
+    d.clics.map(x => '<tr><td><a href="' + esc(x.enlace) + '" target="_blank" rel="noopener">' + esc(x.texto || x.enlace) + '</a></td><td class="n">' + x.veces + '</td><td class="n">' + x.lectores + "</td></tr>").join("") + "</table>" : '<p class="nota">Todavía no hay clics.</p>');
+  h += "<h4>Quién pincha en las comunicaciones personales</h4>" + (d.quien.length ? '<table class="est-tabla"><tr><th>Cuándo</th><th>Quién</th><th>Comunicación</th><th>Qué abrió</th></tr>' +
+    d.quien.map(x => "<tr><td>" + esc(fechaCorta(x.fecha)) + "</td><td>" + esc(x.nombre) + (x.como ? " <small>" + esc(x.como) + "</small>" : "") + "</td><td>" + esc(x.comunicacion || "—") + '</td><td><a href="' + esc(x.enlace) + '" target="_blank" rel="noopener">' + esc(recortar(x.enlace.replace(/^https?:\/\/(www\.)?/, ""), 60)) + "</a></td></tr>").join("") + "</table>" : '<p class="nota">Nadie ha pinchado todavía en un enlace de una comunicación.</p>');
+  if (d.reenviosComunicacion.length) h += '<p class="nota"><b>Posibles reenvíos de comunicaciones:</b> ' + d.reenviosComunicacion.map(x => esc(x.nombre) + " (abierto en " + x.dispositivos + " dispositivos distintos)").join(", ") + "</p>";
+  h += '<p class="nota" style="margin-top:14px">Sin cookies y sin guardar la IP: los lectores del boletín son anónimos. Solo se sabe <b>quién</b> pincha en los enlaces de las comunicaciones personales, porque cada persona recibe los suyos. Los datos se guardan 13 meses.</p>';
+  $("estCuerpo").innerHTML = h;
+}
+$("btnEst").onclick = () => { $("modalEst").classList.add("abierto"); cargarEst(); };
+$("estDias").onchange = cargarEst;
 
 /* ---------- instrucciones ---------- */
 $("btnAyuda").onclick = () => $("modalAyuda").classList.add("abierto");
@@ -1597,6 +1689,7 @@ async function cargar() {
     if (esAdmin() && pend.length) avisar("Hay " + (pend.length === 1 ? "un boletín pendiente" : pend.length + " boletines pendientes") + " de aprobación: Nº " +
       pend.map(b => String(b.numero).padStart(2, "0")).join(", ") + ". Elígelo arriba, revísalo y pulsa «Aprobar y publicar».");
     else if (!(esAdmin() && pendAM)) ocultarAviso();
+    await importarPendientes();
   } catch (err) {
     if (err.status !== 401) avisar("No se han podido cargar los boletines: " + esc(err.message) + ' <button class="btn" onclick="location.reload()">Reintentar</button>');
   }
