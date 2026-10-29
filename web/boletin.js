@@ -666,9 +666,10 @@ function tarjetaBib(x, cfg, destacada) {
   const esLibro = /libro/i.test(x.tipo || "");
   const n = { medio: x.medio, logoMedio: x.logo };
   const at = d.fuera ? ' target="_blank" rel="noopener"' : "";
-  let h = '<article class="bib' + (esLibro ? " bib-libro" : "") + (destacada ? " destacada" : "") + '" data-tipo="' + esc(x.tipo || "") + '">';
+  let h = '<article class="bib' + (esLibro ? " bib-libro" : "") + (ES_PELI(x.tipo) && img ? " bib-con-peli" : "") + (destacada ? " destacada" : "") + '" data-tipo="' + esc(x.tipo || "") + '">';
   h += '<a class="bib-img" href="' + esc(d.href || "#/") + '"' + at + ' tabindex="-1" aria-hidden="true">';
-  if (esLibro) h += img ? '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '<span class="bib-sinimg">' + icono("historia", "grande") + "</span>";
+  if (ES_PELI(x.tipo) && img) h += '<img class="bib-peli" src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">';
+  else if (esLibro) h += img ? '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '<span class="bib-sinimg">' + icono("historia", "grande") + "</span>";
   else h += '<span class="pod-sello"><img src="' + esc(cfg.logoClaro || "logo-claro.png") + '" alt=""><b>' + esc(x.tipo || "Recomendado") + "</b><small>recomendado por PATRIAM</small></span>" +
             (img ? '<span class="pod-mini"><img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">' +
             (ytCap ? '<span class="bol-play"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg></span>' : "") + "</span>" : "");
