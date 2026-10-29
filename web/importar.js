@@ -66,3 +66,8 @@ window.PATRIAM_RECOMENDAR = [
   "alta": "2026-10-29"
  }
 ];
+
+/* Correcciones de noticias ya publicadas (por número y comienzo del titular) */
+window.PATRIAM_AJUSTES = [
+ { "numero": 1, "titular": "El español como arma geopolítica", "seccion": "Actualidad" }
+];

@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Editor · Lo que hay que saber</title>
 <link rel="icon" href="logo.png">
-<link rel="stylesheet" href="boletin.css?v=20261029r">
+<link rel="stylesheet" href="boletin.css?v=20261029s">
 <style>
   body { background: #efe8dc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.5; }
   .ed-barra { position: sticky; top: 0; z-index: 50; background: var(--acento); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
@@ -574,8 +574,8 @@
   });
 })();
 </script>
-<script src="boletin.js?v=20261029r"></script>
-<script src="importar.js?v=20261029r"></script>
+<script src="boletin.js?v=20261029s"></script>
+<script src="importar.js?v=20261029s"></script>
 <script>
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
@@ -1114,7 +1114,7 @@ function abrirVista(movil) {
   const base = location.href.replace(/[^/]*$/, "");
   w.document.open();
   w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="' + base + '">' +
-    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261029r">' +
+    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261029s">' +
     '<style>.vp-aviso{position:sticky;top:0;z-index:999;background:#a8873a;color:#fff;font:600 13px system-ui,sans-serif;text-align:center;padding:6px 10px;letter-spacing:.04em}</style></head><body>' +
     '<div class="vp-aviso">VISTA PREVIA · Boletín Nº ' + String(actual.numero).padStart(2, "0") + ' · todavía no está publicado</div>' + renderBoletin(actual, CFG, datos) +
     '<script>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a&&a.getAttribute("href")&&a.getAttribute("href").charAt(0)==="#"){e.preventDefault();}});<\/script></body></html>');
@@ -1704,6 +1704,7 @@ async function cargar() {
     if (CFG.lema && /familia/i.test(CFG.lema)) CFG.lema = lemaDe(CFG);   // el lema ya no lleva «Familia»: se corrige y se guarda solo
     datos = d.boletines || [];
     if (window.prepararCriticas) prepararCriticas(datos, CFG);
+    (window.PATRIAM_AJUSTES || []).forEach(a => datos.forEach(b => { if (Number(b.numero) === Number(a.numero)) (b.noticias || []).forEach(n => { if (String(n.titular || "").startsWith(a.titular) && a.seccion) n.seccion = a.seccion; }); }));
     datos.forEach(b => { if (Number(b.numero) === 1 && b.fecha === "2026-10-21") b.fecha = "2026-10-30"; });   // el nº 1 sale el 30 de octubre
     datos.forEach(b => { etags[b.id] = b._etag; guardados[b.id] = huella(b); });
     document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");
