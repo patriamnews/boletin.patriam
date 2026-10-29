@@ -28,12 +28,12 @@
 <meta name="apple-mobile-web-app-title" content="Lo que hay que saber, con criterio · Boletín de noticias de PATRIAM">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="icon" href="icono-192.png">
-<link rel="stylesheet" href="boletin.css?v=20261029u">
+<link rel="stylesheet" href="boletin.css?v=20261029w">
 </head>
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
-<script src="importar.js?v=20261029u"></script>
+<script src="importar.js?v=20261029w"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -68,6 +68,10 @@
       if (dr && !L.some(function(b){ return (b.recomendados || []).indexOf(x.id) >= 0; })) { dr.recomendados = dr.recomendados || []; dr.recomendados.push(x.id); }
     });
   }
+  /* Direcciones buenas: la web en movimientopatriam.es y el boletín en boletin.movimientopatriam.es (no las antiguas de Netlify) */
+  if (C) { if (!C.web || /netlify\.app/i.test(C.web)) C.web = "https://movimientopatriam.es/";
+           if (!C.direccion || /netlify\.app/i.test(C.direccion)) C.direccion = "https://boletin.movimientopatriam.es/";
+           if (!C.tienda) C.tienda = "https://movimientopatriam.es/tienda"; }
   if (C && C.lema && /familia/i.test(C.lema)) C.lema = "Dios · Patria · Justicia";
 })();
 /* Fuera las piezas de ejemplo de la plantilla (noticias a ejemplo.com, «Evento/Iniciativa de ejemplo»). */
@@ -79,8 +83,8 @@
   });
 })();
 </script>
-<script src="legales.js?v=20261029u"></script>
-<script src="boletin.js?v=20261029u"></script>
+<script src="legales.js?v=20261029w"></script>
+<script src="boletin.js?v=20261029w"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.

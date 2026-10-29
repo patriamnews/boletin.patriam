@@ -873,3 +873,16 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 .qeq-ficha small { display: block; color: #7a6d66; font-size: .78rem; }
 .qeq-ficha p { margin: .5rem 0 0; font-size: .92rem; line-height: 1.45; }
 .qeq-pend { font-style: italic; color: #8a7d76; }
+
+/* ---------- Menú en el móvil: carrusel que se desliza con el dedo ---------- */
+@media (max-width: 900px) {
+  .bol-menu { position: relative; }
+  .bol-menu-in { display: flex; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden;
+    scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin-left: 0; margin-right: 0; padding: 0 28px 0 6px; }
+  .bol-menu-in::-webkit-scrollbar { display: none; }
+  .bol-menu-in > a { flex: none; scroll-snap-align: start; white-space: nowrap; }
+  .bol-menu-in > .bol-buscar { flex: none; margin: 0 6px; }
+  /* sombra a la derecha para que se vea que hay más */
+  .bol-menu::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 34px; pointer-events: none;
+    background: linear-gradient(90deg, rgba(123,28,44,0), var(--acento) 85%); }
+}
