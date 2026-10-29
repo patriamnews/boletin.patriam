@@ -863,3 +863,13 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 .crit-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.2rem; padding-bottom: .8rem; border-bottom: 1px solid rgba(123,28,44,.2); }
 .crit-tabs a { padding: .4rem .95rem; border: 1px solid rgba(123,28,44,.3); border-radius: 999px; font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--acento); text-decoration: none; background: #fff; }
 .crit-tabs a.activo, .crit-tabs a:hover { background: var(--acento); color: #fff; }
+
+/* Quién es quién */
+.qeq { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.6rem; }
+.qeq-ficha { display: grid; grid-template-columns: 64px 1fr; gap: 1rem; padding: 1rem 1.1rem; background: #fff; border: 1px solid rgba(123,28,44,.14); border-top: 3px solid var(--acento); border-radius: 4px; }
+.qeq-foto { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; }
+.qeq-avatar { width: 56px !important; height: 56px !important; font-size: 1.4rem !important; }
+.qeq-ficha h3 { margin: 0; font-size: 1.15rem; }
+.qeq-ficha small { display: block; color: #7a6d66; font-size: .78rem; }
+.qeq-ficha p { margin: .5rem 0 0; font-size: .92rem; line-height: 1.45; }
+.qeq-pend { font-style: italic; color: #8a7d76; }

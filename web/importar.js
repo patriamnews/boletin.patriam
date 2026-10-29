@@ -90,3 +90,25 @@ window.PATRIAM_RECOMENDAR = [
 window.PATRIAM_AJUSTES = [
  { "numero": 1, "titular": "El español como arma geopolítica", "seccion": "Actualidad" }
 ];
+
+/* Quién es quién: una ficha por colaborador. «firma» tiene que ser igual que como firma sus textos. */
+window.PATRIAM_COLABORADORES = [
+ {
+  "firma": "Isabel O.C.",
+  "cargo": "Abogada · Gobierno corporativo",
+  "bio": "Abogada, con más de veinticinco años de experiencia en el ámbito jurídico y de gobierno corporativo. Ha sido jefa de gabinete (*chief of staff*) y responsable de gobierno corporativo de una de las principales gestoras de fondos inmobiliarios de España, donde llevó durante años las áreas jurídica, de cumplimiento normativo, mercado de capitales, tesorería, recursos humanos, operaciones y comunicación, y la parte societaria de la salida a bolsa de varias SOCIMI.\n\nLicenciada en Derecho, con el Máster de Acceso a la Abogacía, y licenciada en Filología Inglesa. Formada también en Londres, es bilingüe en español e inglés.\n\nEn el boletín escribe sobre derecho, sociedad y cultura, y firma la crítica de cine de «Criterio».",
+  "foto": ""
+ },
+ {
+  "firma": "Carlos Rubio",
+  "cargo": "Secretario y tesorero de PATRIAM",
+  "bio": "",
+  "foto": ""
+ },
+ {
+  "firma": "LODLC",
+  "cargo": "",
+  "bio": "",
+  "foto": ""
+ }
+];

@@ -126,10 +126,35 @@ function tarjetaColaboracion(c, b) {
     "<h3>" + esc(c.titulo) + "</h3>" + (c.entradilla ? "<p>" + esc(recortar(c.entradilla, 150)) + "</p>" : "<p>" + esc(recortar(textoPlano(primerParrafo(c.texto)), 150)) + "</p>") +
     '<span class="bol-colab-autor"><span class="bol-avatar">' + esc((c.autor || "?").charAt(0).toUpperCase()) + "</span><span><b>" + esc(c.autor || "") + "</b>" + (c.cargo ? "<small>" + esc(c.cargo) + "</small>" : "") + "</span></span></div></a>";
 }
+/* Sección de una firma: la que tenga marcada; si no tiene, Actualidad */
+function claveColab(c) { const k = sinAcentos(c.seccion || ""); return SECCIONES.some(x => x.clave === k) ? k : "actualidad"; }
+/* Fichas de los colaboradores («quién es quién»): vienen de importar.js (PATRIAM_COLABORADORES) o de los ajustes */
+function fichasColaboradores(cfg) {
+  return ((typeof window !== "undefined" && window.PATRIAM_COLABORADORES) || []).concat((cfg && cfg.colaboradores) || []);
+}
 function paginaColaboraciones(lista, cfg) {
-  const cs = todasColaboraciones(lista);
-  return '<div class="bol-pagina">' + cabPagina("Colaboraciones", "Textos de nuestros colaboradores y firmas invitadas.", cs.length) + notaColab(cfg) +
-    (cs.length ? '<div class="bol-colab-rejilla">' + cs.map(({ c, b }) => tarjetaColaboracion(c, b)).join("") + "</div>" : '<p class="bol-vacio">Todavía no hay colaboraciones.</p>') + "</div>";
+  const cs = todasColaboraciones(lista), fichas = fichasColaboradores(cfg);
+  const autores = [...new Set(cs.map(({ c }) => (c.autor || "").trim()).filter(Boolean))];
+  fichas.forEach(f => { if (f.firma && !autores.includes(f.firma)) autores.push(f.firma); });
+  let h = '<div class="bol-pagina">' + cabPagina("Colaboraciones y quién es quién", "Quiénes escriben en el boletín y todo lo que han firmado.", cs.length) + notaColab(cfg);
+  if (autores.length) {
+    h += '<div class="pt-rotulo"><span>Quién es quién</span></div><div class="qeq">';
+    autores.forEach(a => {
+      const f = fichas.find(x => x.firma === a) || {};
+      const suyos = cs.filter(({ c }) => (c.autor || "").trim() === a);
+      const cargo = f.cargo || (suyos.find(({ c }) => c.cargo) || { c: {} }).c.cargo || "";
+      const foto = urlSegura(f.foto);
+      h += '<article class="qeq-ficha" id="quien-' + esc(sinAcentos(a).replace(/[^a-z0-9]+/g, "-")) + '">' +
+        (foto ? '<img class="qeq-foto" src="' + esc(foto) + '" alt="">' : '<span class="bol-avatar qeq-avatar">' + esc(a.charAt(0).toUpperCase()) + "</span>") +
+        '<div><h3>' + esc(a) + "</h3>" + (cargo ? "<small>" + esc(cargo) + "</small>" : "") +
+        (f.bio ? parrafosRicos(f.bio) : '<p class="qeq-pend">Pronto, su presentación.</p>') +
+        (suyos.length ? '<ul class="pt-mas">' + suyos.map(({ c }) => '<li><a href="' + enlaceColaboracion(c) + '">' + esc(c.titulo) + "</a><small>" + esc((SECCIONES.find(x => x.clave === claveColab(c)) || {}).nombre || "") + "</small></li>").join("") + "</ul>" : "") +
+        "</div></article>";
+    });
+    h += "</div>";
+  }
+  h += '<div class="pt-rotulo"><span>Todas las colaboraciones</span></div>';
+  return h + (cs.length ? '<div class="bol-colab-rejilla">' + cs.map(({ c, b }) => tarjetaColaboracion(c, b)).join("") + "</div>" : '<p class="bol-vacio">Todavía no hay colaboraciones.</p>') + "</div>";
 }
 /* Para que cada lector lo comparta en SU propio WhatsApp, X, Facebook o Instagram */
 function enlaceParaCompartir(cfg, destino) {
@@ -239,7 +264,7 @@ function cabecera(cfg, b, activo) {
   // Menú
   const op = [["inicio", "#/", "Este boletín"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
               ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"],
-              ["colaboraciones", "#/colaboraciones", "Colaboraciones"], ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"],
+              ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"],
               ["tienda", (cfg && cfg.tienda) || "https://movimientopatriam.es/tienda", "Tienda"]];
   h += '<nav class="bol-menu" aria-label="Secciones del boletín"><div class="bol-menu-in">';
   const ICO_MENU = { criterio: "analisis" };
@@ -795,7 +820,7 @@ function paginaListado(titulo, texto, items) {
 }
 function paginaSeccion(lista, cfg, s) {
   // Las firmas invitadas que se han marcado para esta sección salen también aquí, las primeras
-  const colabs = todasColaboraciones(lista).filter(({ c }) => sinAcentos(c.seccion || "") === s.clave).map(({ c, b }) => ({
+  const colabs = todasColaboraciones(lista).filter(({ c }) => claveColab(c) === s.clave).map(({ c, b }) => ({
     tema: (c.tema || "").trim() || "Otros temas", tipo: "Artículo", texto: [c.titulo, c.autor, c.entradilla, c.tema, textoPlano(c.texto)].join(" "),
     html: '<div class="bol-colab-sec">' + tarjetaColaboracion(c, b) + "</div>" }));
   return paginaListado(s.menu, s.texto, colabs.concat(itemsListado(lista, cfg, biblioteca(cfg, s.nombre).slice().reverse(), todasNoticias(lista, s.clave))));
@@ -1106,7 +1131,8 @@ function renderApp(ruta, lista, cfg) {
     case "editoriales": return m("editorial", paginaEditoriales(ls, cfg));
     case "editorial": return m("editorial", paginaEditorial(ls, cfg, p[1]));
     case "colaboraciones": return m("colaboraciones", paginaColaboraciones(ls, cfg));
-    case "colaboracion": return m("colaboraciones", paginaColaboracion(ls, p[1], cfg));
+    case "colaboracion": { const x = todasColaboraciones(ls).find(y => y.c.id === p[1]); const k = x ? claveColab(x.c) : "colaboraciones";
+      return m(k === "actualidad" ? "noticias" : k === "analisis" ? "criterio" : k, paginaColaboracion(ls, p[1], cfg)); }
     case "iniciativas": case "eventos": return m("iniciativas", paginaIniciativas(ls));
     case "boletines": return m("boletines", paginaBoletines(ls));
     case "al": return m("", p[1] ? paginaAlMomento(cfg, p[1]) : paginaAlMomentoLista(cfg));
@@ -1125,7 +1151,7 @@ function pie(cfg) {
   h += '<img src="' + esc(cfg.logoClaro || "logo-claro.png") + '" alt="PATRIAM">';
   h += '<div class="bol-pie-lema">' + esc(lema) + "</div><p>Acción ciudadana, cultural y social.</p></div>";
   h += '<nav class="bol-pie-menu"><a href="#/">Este boletín</a><a href="#/editoriales">Editorial</a><a href="#/noticias">Actualidad</a><a href="#/historia">Historia</a>' +
-       '<a href="#/sociedad">Sociedad</a><a href="#/criterio">Criterio</a><a href="#/colaboraciones">Colaboraciones</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="' + esc((cfg && cfg.tienda) || "https://movimientopatriam.es/tienda") + '" target="_blank" rel="noopener">Tienda</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
+       '<a href="#/sociedad">Sociedad</a><a href="#/criterio">Criterio</a><a href="#/colaboraciones">Colaboraciones y quién es quién</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="' + esc((cfg && cfg.tienda) || "https://movimientopatriam.es/tienda") + '" target="_blank" rel="noopener">Tienda</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
   const rs = REDES.filter(r => urlSegura(perfil(cfg, r[0])));
   h += '<div class="bol-pie-der">';
   if (rs.length) h += '<div class="bol-pie-redes">' + rs.map(([k, n]) => '<a href="' + esc(perfil(cfg, k)) + '" target="_blank" rel="noopener" aria-label="' + n + '">' + icono(k) + "</a>").join("") + "</div>";
