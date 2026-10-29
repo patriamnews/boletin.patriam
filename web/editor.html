@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Editor · Lo que hay que saber</title>
 <link rel="icon" href="logo.png">
-<link rel="stylesheet" href="boletin.css?v=20261029k">
+<link rel="stylesheet" href="boletin.css?v=20261029l">
 <style>
   body { background: #efe8dc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.5; }
   .ed-barra { position: sticky; top: 0; z-index: 50; background: var(--acento); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
@@ -574,8 +574,8 @@
   });
 })();
 </script>
-<script src="boletin.js?v=20261029k"></script>
-<script src="importar.js?v=20261029k"></script>
+<script src="boletin.js?v=20261029l"></script>
+<script src="importar.js?v=20261029l"></script>
 <script>
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
@@ -898,7 +898,9 @@ function pintarBiblioteca() {
     '<label>Imagen <small>(portada del libro; en vídeos de YouTube se usa la del vídeo)</small></label>' + HTML_IMG +
     '<label>Descripción</label>' + BAR + '<textarea data-k="descripcion" style="min-height:70px"></textarea>' +
     '<label>¿Quién comenta?</label><select class="campo" data-k="comenta">' + quien + '</select>' +
-    '<label>Comentario</label>' + BAR + '<textarea data-k="comentario"></textarea>' +
+    '<label>Comentario <small>(sale en el boletín de esta semana: sin destripar el final)</small></label>' + BAR + '<textarea data-k="comentario"></textarea>' +
+    '<label>Título de la crítica completa <small>(opcional)</small></label><input type="text" data-k="tituloCritica" placeholder="Lucy: la tentación de saberlo todo">' +
+    '<label>Crítica completa, con el final <small>(sale sola en el boletín siguiente, como firma; no hay que acordarse)</small></label>' + BAR + '<textarea data-k="critica" style="min-height:120px"></textarea>' +
     '<label>Capítulos <small>(solo para series: uno por línea → año o número | título | enlace)</small></label>' +
     '<textarea class="caps" style="min-height:90px;font-family:ui-monospace,monospace;font-size:12px" placeholder="1930 | El primer golpe de Estado republicano | https://www.youtube.com/watch?v=…"></textarea>',
     (f, x) => {
@@ -1047,7 +1049,7 @@ $("btnNuevo").onclick = () => {
     noticias: [{ seccion: "Actualidad", formato: "Noticia", titular: "", medio: "", url: "", imagen: "", resumen: "", comenta: "", comentario: "" }],
     colaboraciones: [], recomendados: [], estado: "borrador",
     eventos: ult ? JSON.parse(JSON.stringify((ult.eventos || []).filter(e => !e.fecha || e.fecha >= hoy()))) : [] };
-  datos.push(actual); pintarSelector(); cargarFormulario(); guardarBorrador();
+  datos.push(actual); prepararCriticas(datos, CFG); pintarSelector(); cargarFormulario(); guardarBorrador();
 };
 $("btnBorrar").onclick = async () => {
   if (!actual || !confirm("¿Eliminar el boletín Nº " + actual.numero + "?" + (actual.estado === "aprobado" ? " Desaparecerá también de la web." : ""))) return;
@@ -1112,7 +1114,7 @@ function abrirVista(movil) {
   const base = location.href.replace(/[^/]*$/, "");
   w.document.open();
   w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="' + base + '">' +
-    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261029k">' +
+    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261029l">' +
     '<style>.vp-aviso{position:sticky;top:0;z-index:999;background:#a8873a;color:#fff;font:600 13px system-ui,sans-serif;text-align:center;padding:6px 10px;letter-spacing:.04em}</style></head><body>' +
     '<div class="vp-aviso">VISTA PREVIA · Boletín Nº ' + String(actual.numero).padStart(2, "0") + ' · todavía no está publicado</div>' + renderBoletin(actual, CFG, datos) +
     '<script>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a&&a.getAttribute("href")&&a.getAttribute("href").charAt(0)==="#"){e.preventDefault();}});<\/script></body></html>');
@@ -1690,6 +1692,7 @@ async function cargar() {
     cfgEtag = d.cfgEtag; cfgGuardado = huella(CFG);
     if (CFG.lema && /familia/i.test(CFG.lema)) CFG.lema = lemaDe(CFG);   // el lema ya no lleva «Familia»: se corrige y se guarda solo
     datos = d.boletines || [];
+    if (window.prepararCriticas) prepararCriticas(datos, CFG);
     datos.forEach(b => { if (Number(b.numero) === 1 && b.fecha === "2026-10-21") b.fecha = "2026-10-30"; });   // el nº 1 sale el 30 de octubre
     datos.forEach(b => { etags[b.id] = b._etag; guardados[b.id] = huella(b); });
     document.querySelectorAll("[data-cfg]").forEach(i => i.value = CFG[i.dataset.cfg] || "");

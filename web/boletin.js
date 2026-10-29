@@ -645,6 +645,26 @@ function biblioteca(cfg, seccion) {
   if (!b.length && cfg.series) b = cfg.series.map((x, i) => Object.assign({ id: "s" + i, tipo: "Serie de podcast" }, x));
   return seccion ? b.filter(x => (x.seccion || "Historia") === seccion) : b;
 }
+/* Críticas con final: la recomendación lleva un adelanto sin destripar («comentario») y la crítica completa («critica»).
+   La crítica completa entra SOLA en el boletín siguiente, como firma, sin que nadie tenga que acordarse. */
+function prepararCriticas(lista, cfg) {
+  (lista || []).forEach(b => {
+    const prev = (lista || []).find(x => Number(x.numero) === Number(b.numero) - 1);
+    if (!prev) return;
+    (prev.recomendados || []).forEach(id => {
+      const x = itemBib(cfg, id), cid = "crit-" + id;
+      if (!x || !String(x.critica || "").trim()) return;
+      if ((lista || []).some(bb => (bb.colaboraciones || []).some(c => c.id === cid))) return;
+      const ficha = /^\*\*/.test(primerParrafo(x.descripcion)) ? primerParrafo(x.descripcion) + "\n\n" : "";
+      b.colaboraciones = b.colaboraciones || [];
+      b.colaboraciones.push({ id: cid, autor: x.comenta || (cfg && cfg.editor) || "LODLC", cargo: "", titulo: x.tituloCritica || ("La crítica: " + x.titulo),
+        entradilla: "La recomendamos en el boletín anterior. Aquí va la crítica completa" + (x.tipo ? " de la " + String(x.tipo).toLowerCase() : "") + ".",
+        imagen: x.imagen || "", seccion: "Análisis", tema: x.tema || "Cine",
+        texto: "*Atención: este texto cuenta el final.*\n\n**" + x.titulo + "**" + (x.medio ? " (" + x.medio + ")" : "") + "\n\n" + ficha + x.critica, bio: "" });
+    });
+  });
+  return lista;
+}
 function itemBib(cfg, id) { return biblioteca(cfg).find(x => x.id === id); }
 function urlItem(x) {
   const u = urlSegura(x.url), yt = idYoutube(u);
@@ -680,6 +700,7 @@ function tarjetaBib(x, cfg, destacada) {
   if (x.descripcion) h += '<div class="bol-resumen">' + parrafosRicos(x.descripcion) + "</div>";
   h += bloqueComentario(x, cfg);
   if (d.href) h += '<a class="bol-leer" href="' + esc(d.href) + '"' + at + ">" + verboItem(x) + (d.fuera ? " ↗" : " " + icono("flecha")) + "</a>";
+  if (destacada && String(x.critica || "").trim()) h += '<p class="bib-aviso-critica">La crítica completa, con el final, en el próximo boletín.</p>';
   return h + "</div></article>";
 }
 function bloqueBiblioteca(cfg, seccion) {
