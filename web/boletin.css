@@ -858,3 +858,8 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 /* Carteles verticales: se ven enteros */
 .bib-con-peli .bib-img .bib-peli[src*="cartel"] { object-fit: contain; background: #0d0d0d; }
 .pt-foto img[src*="cartel"] { object-fit: contain; background: #0d0d0d; }
+
+/* Pestañas de «Criterio» */
+.crit-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1.2rem; padding-bottom: .8rem; border-bottom: 1px solid rgba(123,28,44,.2); }
+.crit-tabs a { padding: .4rem .95rem; border: 1px solid rgba(123,28,44,.3); border-radius: 999px; font-size: .8rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--acento); text-decoration: none; background: #fff; }
+.crit-tabs a.activo, .crit-tabs a:hover { background: var(--acento); color: #fff; }

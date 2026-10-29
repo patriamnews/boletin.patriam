@@ -28,12 +28,12 @@
 <meta name="apple-mobile-web-app-title" content="Lo que hay que saber, con criterio · Boletín de noticias de PATRIAM">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="icon" href="icono-192.png">
-<link rel="stylesheet" href="boletin.css?v=20261029q">
+<link rel="stylesheet" href="boletin.css?v=20261029r">
 </head>
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
-<script src="importar.js?v=20261029q"></script>
+<script src="importar.js?v=20261029r"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -57,6 +57,7 @@
     C.biblioteca = C.biblioteca || []; destino.recomendados = destino.recomendados || [];
     (window.PATRIAM_RECOMENDAR || []).forEach(function(x){
       if (!x || !x.id) return;
+      if (x.numero && !L.some(function(b){ return Number(b.numero) === Number(x.numero); })) return;   // no se ve hasta que salga su boletín
       var ya = C.biblioteca.filter(function(y){ return y.id === x.id; })[0];
       if (ya) Object.assign(ya, JSON.parse(JSON.stringify(x))); else C.biblioteca.push(JSON.parse(JSON.stringify(x)));
       var dr = x.numero ? L.filter(function(b){ return Number(b.numero) === Number(x.numero); })[0] : destino;
@@ -74,8 +75,8 @@
   });
 })();
 </script>
-<script src="legales.js?v=20261029q"></script>
-<script src="boletin.js?v=20261029q"></script>
+<script src="legales.js?v=20261029r"></script>
+<script src="boletin.js?v=20261029r"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.

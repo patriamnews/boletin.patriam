@@ -96,6 +96,7 @@ const ICONOS = {
   whatsapp: '<path d="M4 20l1.3-4A8 8 0 1 1 8.4 19z"/><path d="M9.2 8.6c.2 2.6 2.6 5 5.2 5.2l1.1-1.2-1.6-.9-.8.7c-.9-.4-1.9-1.4-2.3-2.3l.7-.8-.9-1.6z"/>',
   sociedad: '<path d="M3.5 20V10l8.5-6 8.5 6v10"/><path d="M9.5 20v-5.5h5V20M3 20h18"/>',
   podcasts: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
+  tienda: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
   libros: '<path d="M4 4h4v16H4zM9.5 4h4v16h-4z"/><path d="m15 5.2 3.8-1 3.2 15.6-3.8 1z"/>',
   colaboraciones: '<path d="M4 20l1.2-4.6L15.8 4.8a2 2 0 0 1 2.9 0l.5.5a2 2 0 0 1 0 2.9L8.6 18.8z"/><path d="M13.8 6.8l3.4 3.4M4 20h7"/>'
 };
@@ -236,11 +237,13 @@ function cabecera(cfg, b, activo) {
   h += "</div></div></header>";
 
   // Menú
-  const op = [["inicio", "#/", "Este boletín"], ["editorial", "#/editoriales", "Editorial"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
-              ["sociedad", "#/sociedad", "Sociedad"], ["analisis", "#/analisis", "Análisis"], ["podcasts", "#/podcasts", "Podcasts"], ["libros", "#/libros", "Libros"],
-              ["colaboraciones", "#/colaboraciones", "Colaboraciones"], ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"]];
+  const op = [["inicio", "#/", "Este boletín"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
+              ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"],
+              ["colaboraciones", "#/colaboraciones", "Colaboraciones"], ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"],
+              ["tienda", (cfg && cfg.tienda) || "https://movimientopatriam.es/tienda", "Tienda"]];
   h += '<nav class="bol-menu" aria-label="Secciones del boletín"><div class="bol-menu-in">';
-  op.forEach(o => h += '<a href="' + o[1] + '"' + (o[0] === activo ? ' class="activo" aria-current="page"' : "") + ">" + icono(o[0]) + "<span>" + o[2] + "</span></a>");
+  const ICO_MENU = { criterio: "analisis" };
+  op.forEach(o => h += '<a href="' + o[1] + '"' + (/^https?:/.test(o[1]) ? ' target="_blank" rel="noopener"' : "") + (o[0] === activo ? ' class="activo" aria-current="page"' : "") + ">" + icono(ICO_MENU[o[0]] || o[0]) + "<span>" + o[2] + "</span></a>");
   h += '<form class="bol-buscar" role="search" onsubmit="return buscarDesde(this.q)"><input name="q" type="search" placeholder="Buscar…" aria-label="Buscar en el boletín"><button aria-label="Buscar">' + icono("buscar") + "</button></form>";
   h += "</div></nav>";
   return h;
@@ -447,7 +450,7 @@ const ES_PELI = t => /pel[ií]cula|cine|serie de tv|serie de televisi/i.test(t |
 const TIPOS_REC = [
   { t: "Podcast o vídeo", clave: "podcasts", ruta: "#/podcasts", ico: "podcasts", es: x => ES_PODCAST(x.tipo) && !ES_PELI(x.tipo) },
   { t: "Libro", clave: "libros", ruta: "#/libros", ico: "libros", es: x => ES_LIBRO(x.tipo) },
-  { t: "Película", clave: "peliculas", ruta: "", ico: "podcasts", es: x => ES_PELI(x.tipo) }
+  { t: "Película", clave: "peliculas", ruta: "#/peliculas", ico: "podcasts", es: x => ES_PELI(x.tipo) }
 ];
 function tipoRec(x) { return TIPOS_REC.find(g => g.es(x)) || { t: "Recomendado", clave: "recomendado", ruta: "", ico: "historia" }; }
 function gruposRecomendados(recs) {
@@ -798,8 +801,14 @@ function paginaSeccion(lista, cfg, s) {
   return paginaListado(s.menu, s.texto, colabs.concat(itemsListado(lista, cfg, biblioteca(cfg, s.nombre).slice().reverse(), todasNoticias(lista, s.clave))));
 }
 /* Podcasts (y vídeos) y libros, de cualquier sección */
+/* «Criterio»: Análisis, Podcasts y vídeos, Libros y Películas juntos, con pestañas */
+const PESTANAS_CRITERIO = [["analisis", "Análisis"], ["podcasts", "Podcasts y vídeos"], ["libros", "Libros"], ["peliculas", "Películas"]];
+function conPestanas(cual, html) {
+  return '<nav class="crit-tabs" aria-label="Criterio">' + PESTANAS_CRITERIO.map(([k, t]) => '<a href="#/' + k + '"' + (k === cual ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>" + html;
+}
 function paginaTipo(lista, cfg, cual) {
-  const es = cual === "libros" ? ES_LIBRO : ES_PODCAST;
+  if (cual === "peliculas") return paginaListado("Películas", "Películas que recomendamos, con su crítica.", itemsListado(lista, cfg, biblioteca(cfg).filter(x => ES_PELI(x.tipo)).reverse(), []));
+  const es = cual === "libros" ? ES_LIBRO : (t => ES_PODCAST(t) && !ES_PELI(t));
   const bib = biblioteca(cfg).filter(x => es(x.tipo)).reverse();
   const ns = cual === "libros" ? [] : todasNoticias(lista).filter(({ n }) => ES_PODCAST(n.formato) || idYoutube(urlSegura(n.url)));
   return cual === "libros"
@@ -1081,7 +1090,7 @@ function renderApp(ruta, lista, cfg) {
   const p = ruta.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
   const m = (activo, centro, b) => marco(cfg, b || ultimo, ls, activo, centro);
   const s = SECCIONES.find(x => x.ruta === p[0]);
-  if (s) return m(s.clave === "actualidad" ? "noticias" : s.clave, paginaSeccion(ls, cfg, s));
+  if (s) return s.clave === "analisis" ? m("criterio", conPestanas("analisis", paginaSeccion(ls, cfg, s))) : m(s.clave === "actualidad" ? "noticias" : s.clave, paginaSeccion(ls, cfg, s));
   switch (p[0]) {
     case "boletin": {
       const b = ls.find(x => x.id === p[1]) || ls.find(x => String(x.numero) === p[1]) || ultimo;
@@ -1090,8 +1099,10 @@ function renderApp(ruta, lista, cfg) {
     }
     case "leer": return m("noticias", paginaLeer(ls, cfg, p[1], p[2]));
     case "ver": { const x = itemBib(cfg, p[1]) || {}; return m(ES_LIBRO(x.tipo) ? "libros" : ES_PODCAST(x.tipo) ? "podcasts" : (SECCIONES.find(z => z.nombre === x.seccion) || SECCIONES[1]).clave, paginaVer(cfg, p[1], p[2])); }
-    case "podcasts": return m("podcasts", paginaTipo(ls, cfg, "podcasts"));
-    case "libros": return m("libros", paginaTipo(ls, cfg, "libros"));
+    case "criterio": return m("criterio", conPestanas("analisis", paginaSeccion(ls, cfg, SECCIONES.find(z => z.clave === "analisis"))));
+    case "podcasts": return m("criterio", conPestanas("podcasts", paginaTipo(ls, cfg, "podcasts")));
+    case "libros": return m("criterio", conPestanas("libros", paginaTipo(ls, cfg, "libros")));
+    case "peliculas": return m("criterio", conPestanas("peliculas", paginaTipo(ls, cfg, "peliculas")));
     case "editoriales": return m("editorial", paginaEditoriales(ls, cfg));
     case "editorial": return m("editorial", paginaEditorial(ls, cfg, p[1]));
     case "colaboraciones": return m("colaboraciones", paginaColaboraciones(ls, cfg));
@@ -1114,7 +1125,7 @@ function pie(cfg) {
   h += '<img src="' + esc(cfg.logoClaro || "logo-claro.png") + '" alt="PATRIAM">';
   h += '<div class="bol-pie-lema">' + esc(lema) + "</div><p>Acción ciudadana, cultural y social.</p></div>";
   h += '<nav class="bol-pie-menu"><a href="#/">Este boletín</a><a href="#/editoriales">Editorial</a><a href="#/noticias">Actualidad</a><a href="#/historia">Historia</a>' +
-       '<a href="#/sociedad">Sociedad</a><a href="#/analisis">Análisis</a><a href="#/podcasts">Podcasts</a><a href="#/libros">Libros</a><a href="#/colaboraciones">Colaboraciones</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
+       '<a href="#/sociedad">Sociedad</a><a href="#/criterio">Criterio</a><a href="#/colaboraciones">Colaboraciones</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="' + esc((cfg && cfg.tienda) || "https://movimientopatriam.es/tienda") + '" target="_blank" rel="noopener">Tienda</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
   const rs = REDES.filter(r => urlSegura(perfil(cfg, r[0])));
   h += '<div class="bol-pie-der">';
   if (rs.length) h += '<div class="bol-pie-redes">' + rs.map(([k, n]) => '<a href="' + esc(perfil(cfg, k)) + '" target="_blank" rel="noopener" aria-label="' + n + '">' + icono(k) + "</a>").join("") + "</div>";
