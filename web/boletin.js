@@ -441,12 +441,19 @@ function gruposNoticias(ns) {
   return SECCIONES.slice().sort((a, b) => pesoLectura(a.clave) - pesoLectura(b.clave)).map(sec => ({ sec, items: ns.filter(n => claveSeccion(n) === sec.clave) })).filter(g => g.items.length)
     .map(g => ({ sec: g.sec, items: g.items.map(n => ({ n, i: i++ })) }));
 }
-/* Recomendados de la semana (biblioteca) por tipo: podcasts y vídeos, libros, otros */
+/* Recomendados de la semana: UNA por tipo (podcast o vídeo, libro, película y otros).
+   Si se marcan varias del mismo tipo, va la última que se marcó. */
+const ES_PELI = t => /pel[ií]cula|cine|serie de tv|serie de televisi/i.test(t || "");
+const TIPOS_REC = [
+  { t: "Podcast o vídeo", clave: "podcasts", ruta: "#/podcasts", ico: "podcasts", es: x => ES_PODCAST(x.tipo) && !ES_PELI(x.tipo) },
+  { t: "Libro", clave: "libros", ruta: "#/libros", ico: "libros", es: x => ES_LIBRO(x.tipo) },
+  { t: "Película", clave: "peliculas", ruta: "", ico: "podcasts", es: x => ES_PELI(x.tipo) }
+];
+function tipoRec(x) { return TIPOS_REC.find(g => g.es(x)) || { t: "Recomendado", clave: "recomendado", ruta: "", ico: "historia" }; }
 function gruposRecomendados(recs) {
-  const g = [{ t: "Podcasts y vídeos", clave: "podcasts", ruta: "#/podcasts", xs: recs.filter(x => ES_PODCAST(x.tipo)) },
-             { t: "Libros", clave: "libros", ruta: "#/libros", xs: recs.filter(x => ES_LIBRO(x.tipo)) }];
-  g.push({ t: "Recomendado", clave: "recomendado", ruta: "", xs: recs.filter(x => !ES_PODCAST(x.tipo) && !ES_LIBRO(x.tipo)) });
-  return g.filter(x => x.xs.length);
+  const orden = TIPOS_REC.map(g => g.clave).concat("recomendado"), uno = {};
+  recs.forEach(x => { uno[tipoRec(x).clave] = x; });
+  return orden.filter(k => uno[k]).map(k => { const g = tipoRec(uno[k]); return { t: g.t, clave: g.clave, ruta: g.ruta, ico: g.ico, xs: [uno[k]] }; });
 }
 function enEditor() { return typeof location !== "undefined" && location.pathname.indexOf("editor") >= 0; }
 /* «Entrar en el boletín»: se abre el boletín completo y baja hasta lo elegido */
@@ -514,9 +521,9 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
 
   // Recomendados: una franja al final
   const gr = gruposRecomendados(recs);
-  if (gr.length) h += '<div class="pt-recs">' + gr.map(g => g.xs.slice(0, 2).map(x =>
-    '<a class="pt-rec"' + ancla("rec-" + g.clave) + ">" + foto(urlSegura(x.imagen) || fotoDe({ url: ((x.capitulos || [])[0] || x).url }), "", "mini", g.clave === "libros" ? "libros" : "podcasts").replace(/^<a /, "<span ").replace(/<\/a>$/, "</span>") +
-    '<span><span class="pt-kicker">' + esc(g.clave === "libros" ? "Libro recomendado" : g.clave === "podcasts" ? "Recomendado · " + (x.tipo || "Podcast") : "Recomendado") + "</span><b>" + esc(x.titulo) + "</b>" +
+  if (gr.length) h += '<div class="pt-recs">' + gr.map(g => g.xs.map(x =>
+    '<a class="pt-rec"' + ancla("rec-" + g.clave) + ">" + foto(urlSegura(x.imagen) || fotoDe({ url: ((x.capitulos || [])[0] || x).url }), "", "mini", g.ico).replace(/^<a /, "<span ").replace(/<\/a>$/, "</span>") +
+    '<span><span class="pt-kicker">' + esc(g.clave === "recomendado" ? "Recomendado" : g.t + " de la semana" + (x.tipo && x.tipo !== g.t ? " · " + x.tipo : "")) + "</span><b>" + esc(x.titulo) + "</b>" +
     (x.medio ? "<small>" + esc(x.medio) + "</small>" : "") + "</span></a>").join("")).join("") + "</div>";
 
   h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Leer el boletín completo ' + icono("flecha") + "</a></div></section>";
@@ -553,7 +560,7 @@ function centroInicio(b, cfg, todos) {
   });
   // Un bloque por tipo: «Podcasts y vídeos recomendados», «Libros recomendados»…
   gruposRecomendados(recs).forEach(g => {
-    const titulo = g.clave === "recomendado" ? "Recomendado esta semana" : g.t + " recomendados esta semana";
+    const titulo = g.clave === "recomendado" ? "Recomendado esta semana" : g.t + " de la semana";
     h += '<section class="bol-recomendados" id="rec-' + g.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(titulo) + "</h2>" +
          (g.ruta ? '<a href="' + g.ruta + '">Ver todos ' + icono("flecha") + "</a>" : "") + "</div>" +
          '<div class="bib-lista">' + g.xs.map(x => tarjetaBib(x, cfg, true)).join("") + "</div></section>";
