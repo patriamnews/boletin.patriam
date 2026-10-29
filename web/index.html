@@ -28,12 +28,12 @@
 <meta name="apple-mobile-web-app-title" content="Lo que hay que saber, con criterio · Boletín de noticias de PATRIAM">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="icon" href="icono-192.png">
-<link rel="stylesheet" href="boletin.css?v=20261029l">
+<link rel="stylesheet" href="boletin.css?v=20261029m">
 </head>
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
-<script src="importar.js?v=20261029l"></script>
+<script src="importar.js?v=20261029m"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -59,7 +59,8 @@
       if (!x || !x.id) return;
       var ya = C.biblioteca.filter(function(y){ return y.id === x.id; })[0];
       if (ya) Object.assign(ya, JSON.parse(JSON.stringify(x))); else C.biblioteca.push(JSON.parse(JSON.stringify(x)));
-      if (!L.some(function(b){ return (b.recomendados || []).indexOf(x.id) >= 0; })) destino.recomendados.push(x.id);
+      var dr = x.numero ? L.filter(function(b){ return Number(b.numero) === Number(x.numero); })[0] : destino;
+      if (dr && !L.some(function(b){ return (b.recomendados || []).indexOf(x.id) >= 0; })) { dr.recomendados = dr.recomendados || []; dr.recomendados.push(x.id); }
     });
   }
   if (C && C.lema && /familia/i.test(C.lema)) C.lema = "Dios · Patria · Justicia";
@@ -73,8 +74,8 @@
   });
 })();
 </script>
-<script src="legales.js?v=20261029l"></script>
-<script src="boletin.js?v=20261029l"></script>
+<script src="legales.js?v=20261029m"></script>
+<script src="boletin.js?v=20261029m"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.

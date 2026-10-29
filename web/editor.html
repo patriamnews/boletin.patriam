@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Editor · Lo que hay que saber</title>
 <link rel="icon" href="logo.png">
-<link rel="stylesheet" href="boletin.css?v=20261029l">
+<link rel="stylesheet" href="boletin.css?v=20261029m">
 <style>
   body { background: #efe8dc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.5; }
   .ed-barra { position: sticky; top: 0; z-index: 50; background: var(--acento); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
@@ -574,8 +574,8 @@
   });
 })();
 </script>
-<script src="boletin.js?v=20261029l"></script>
-<script src="importar.js?v=20261029l"></script>
+<script src="boletin.js?v=20261029m"></script>
+<script src="importar.js?v=20261029m"></script>
 <script>
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
@@ -1114,7 +1114,7 @@ function abrirVista(movil) {
   const base = location.href.replace(/[^/]*$/, "");
   w.document.open();
   w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="' + base + '">' +
-    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261029l">' +
+    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261029m">' +
     '<style>.vp-aviso{position:sticky;top:0;z-index:999;background:#a8873a;color:#fff;font:600 13px system-ui,sans-serif;text-align:center;padding:6px 10px;letter-spacing:.04em}</style></head><body>' +
     '<div class="vp-aviso">VISTA PREVIA · Boletín Nº ' + String(actual.numero).padStart(2, "0") + ' · todavía no está publicado</div>' + renderBoletin(actual, CFG, datos) +
     '<script>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a&&a.getAttribute("href")&&a.getAttribute("href").charAt(0)==="#"){e.preventDefault();}});<\/script></body></html>');
@@ -1621,6 +1621,17 @@ async function importarPendientes() {
     b.colaboraciones = b.colaboraciones || [];
     b.colaboraciones.push(JSON.parse(JSON.stringify(it)));
     CFG.importados.push(it.id); hechos.push({ it, b });
+  }
+  CFG.biblioteca = CFG.biblioteca || [];
+  for (const x of (window.PATRIAM_RECOMENDAR || [])) {
+    if (!x || !x.id || CFG.importados.includes("rec:" + x.id)) continue;
+    const b = x.numero ? datos.find(y => Number(y.numero) === Number(x.numero)) : (ordenar(datos).find(y => y.fecha && y.fecha >= hoy()) || ordenar(datos).find(y => y.estado !== "aprobado"));
+    if (!b) continue;   // espera a que exista su boletín
+    const it = JSON.parse(JSON.stringify(x)); delete it.numero;
+    const ya = CFG.biblioteca.find(y => y.id === x.id);
+    if (ya) Object.assign(ya, it); else CFG.biblioteca.push(it);
+    if (!datos.some(y => (y.recomendados || []).includes(x.id))) { b.recomendados = b.recomendados || []; b.recomendados.push(x.id); }
+    CFG.importados.push("rec:" + x.id); hechos.push({ it: { titulo: x.titulo, autor: (x.tipo || "recomendación") }, b });
   }
   if (!hechos.length) return;
   await guardarAhora();
