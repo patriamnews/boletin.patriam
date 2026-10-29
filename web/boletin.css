@@ -855,3 +855,6 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 .bib-con-peli .bib-img { position: relative; padding: 0; min-height: 240px; background: #1d0609; }
 .bib-con-peli .bib-img .bib-peli { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .bib-aviso-critica { margin: .8rem 0 0; padding: .55rem .8rem; border-left: 3px solid var(--gualda); background: var(--crema, #faf5ec); font-weight: 700; font-size: .92rem; color: var(--acento); }
+/* Carteles verticales: se ven enteros */
+.bib-con-peli .bib-img .bib-peli[src*="cartel"] { object-fit: contain; background: #0d0d0d; }
+.pt-foto img[src*="cartel"] { object-fit: contain; background: #0d0d0d; }
