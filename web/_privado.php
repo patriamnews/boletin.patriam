@@ -58,6 +58,16 @@ function comprobarAdmin() {
   return json_decode($r, true)['suscriptores'] ?? [];
 }
 
+/* Cualquier usuario del editor con la sesión abierta (no hace falta ser administrador) */
+function comprobarSesion() {
+  $token = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+  if (!$token) salir(['error' => 'sesion'], 401);
+  [$c, $r] = pedir(origenBoletin() . '/api/datos', ['Authorization: ' . $token, 'Accept: application/json']);
+  if ($c === 401) salir(['error' => 'sesion'], 401);
+  if ($c !== 200) salir(['error' => 'No se ha podido comprobar la sesión (' . $c . ').'], 502);
+  return true;
+}
+
 /* ---------- estadísticas ---------- */
 /* Visitante anónimo: una huella que cambia cada día. No se guarda la IP ni se usan cookies. */
 function visitante() {

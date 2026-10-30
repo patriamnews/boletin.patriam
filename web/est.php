@@ -1,7 +1,7 @@
 <?php
 /* Estadísticas del boletín, en Hostinger.
    - POST (público): la página del boletín avisa de cada visita, de cada clic en un enlace y de cada vez que alguien lo comparte.
-   - GET ?accion=resumen&dias=30 (solo administradores): el resumen para el editor.
+   - GET ?accion=resumen&dias=30 (todos los usuarios del editor): el resumen para el editor.
    Sin cookies y sin guardar la IP: cada lector es una huella anónima que cambia cada día.
    Los enlaces que comparte un lector llevan un código (c), y así se sabe cuánta gente entra por cada reenvío. */
 require __DIR__ . '/_privado.php';
@@ -27,8 +27,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   http_response_code(204); exit;
 }
 
-/* ---------- resumen para los administradores ---------- */
-comprobarAdmin();
+/* ---------- resumen para todos los usuarios del editor ---------- */
+comprobarSesion();
 $dias = max(1, min(400, (int)($_GET['dias'] ?? 30)));
 $desde = gmdate('c', time() - $dias * 86400);
 $ev = [];
