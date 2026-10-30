@@ -1,5 +1,12 @@
 # Boletín PATRIAM en Hostinger
 Options -Indexes
+# Las páginas (editor, boletín) no se guardan en caché: así cada cambio se ve al momento.
+# Los .js y .css ya llevan versión (?v=…) en el enlace.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|php)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
 # Piezas internas de PHP: no se abren desde fuera
 <FilesMatch "^_">
   Require all denied
