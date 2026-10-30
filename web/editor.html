@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>Editor · Lo que hay que saber</title>
 <link rel="icon" href="logo.png">
-<link rel="stylesheet" href="boletin.css?v=20261030a">
+<link rel="stylesheet" href="boletin.css?v=20261030b">
 <style>
   body { background: #efe8dc; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: 15px; line-height: 1.5; }
   .ed-barra { position: sticky; top: 0; z-index: 50; background: var(--acento); color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
@@ -548,7 +548,7 @@
 
 <div class="modal" id="modalEst"><div class="modal-caja" style="max-width:900px">
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><h3 style="margin:0;flex:1">Estadísticas del boletín</h3>
-    <select class="campo" id="estDias" style="width:auto;margin:0"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 3 meses</option><option value="365">Último año</option></select>
+    <select class="campo" id="estDias" style="width:auto;margin:0"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="90">Últimos 3 meses</option><option value="365">Último año</option></select> <label style="margin:0;display:flex;gap:6px;align-items:center;font-size:13px">o un día: <input type="date" id="estDia" class="campo" style="width:auto;margin:0"></label>
     <button class="btn" type="button" onclick="document.getElementById('modalEst').classList.remove('abierto')">Cerrar</button></div>
   <div id="estCuerpo"></div>
 </div></div>
@@ -574,8 +574,8 @@
   });
 })();
 </script>
-<script src="boletin.js?v=20261030a"></script>
-<script src="importar.js?v=20261030a"></script>
+<script src="boletin.js?v=20261030b"></script>
+<script src="importar.js?v=20261030b"></script>
 <script>
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
@@ -1114,7 +1114,7 @@ function abrirVista(movil) {
   const base = location.href.replace(/[^/]*$/, "");
   w.document.open();
   w.document.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><base href="' + base + '">' +
-    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261030a">' +
+    '<title>Vista previa · Boletín PATRIAM</title><link rel="stylesheet" href="boletin.css?v=20261030b">' +
     '<style>.vp-aviso{position:sticky;top:0;z-index:999;background:#a8873a;color:#fff;font:600 13px system-ui,sans-serif;text-align:center;padding:6px 10px;letter-spacing:.04em}</style></head><body>' +
     '<div class="vp-aviso">VISTA PREVIA · Boletín Nº ' + String(actual.numero).padStart(2, "0") + ' · todavía no está publicado</div>' + renderBoletin(actual, CFG, datos) +
     '<script>document.addEventListener("click",function(e){var a=e.target.closest("a");if(a&&a.getAttribute("href")&&a.getAttribute("href").charAt(0)==="#"){e.preventDefault();}});<\/script></body></html>');
@@ -1656,11 +1656,11 @@ function nombrePagina(r) {
 }
 function fechaCorta(f) { return f ? new Date(f).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""; }
 async function cargarEst() {
-  const dias = $("estDias").value;
+  const dias = $("estDias").value, unDia = $("estDia").value;
   $("estCuerpo").innerHTML = '<p class="nota">Cargando…</p>';
   let d;
   try {
-    const r = await fetch("/est.php?accion=resumen&dias=" + dias, { headers: { Authorization: "Bearer " + TOKEN } });
+    const r = await fetch("/est.php?accion=resumen&dias=" + dias + (unDia ? "&dia=" + unDia : ""), { headers: { Authorization: "Bearer " + TOKEN } });
     d = await r.json().catch(() => ({}));
     if (r.status === 401) { caducada(); return; }
     if (!r.ok) throw new Error(d.error || "Error " + r.status);
@@ -1668,14 +1668,17 @@ async function cargarEst() {
   const T = d.totales, fila = (a, b) => "<tr><td>" + a + '</td><td class="n">' + b + "</td></tr>";
   const max = Math.max(1, ...d.porDia.map(x => x.visitas));
   let h = '<div class="est-cifras">' +
-    [["Visitas", T.visitas], ["Lectores", T.lectores], ["Veces compartido", T.compartidos], ["Visitas por reenvíos", T.porReenvio], ["Clics en enlaces", T.clics], ["Clics de comunicaciones", T.deComunicaciones]]
+    [["Entradas al boletín", T.entradas || 0], ["Páginas vistas", T.visitas], [d.dia ? "Lectores" : "Lectores (uno por día)", T.lectores], ["Veces compartido", T.compartidos], ["Visitas por reenvíos", T.porReenvio], ["Clics en enlaces", T.clics], ["Clics de comunicaciones", T.deComunicaciones]]
       .map(([a, b]) => "<div><b>" + b + "</b><span>" + a + "</span></div>").join("") + "</div>";
-  h += '<h4>Visitas por día</h4><div class="est-barras">' + d.porDia.map(x => '<i title="' + esc(x.dia) + ": " + x.visitas + " visitas, " + x.lectores + ' lectores" style="height:' + Math.round(x.visitas / max * 100) + '%"></i>').join("") + "</div>";
+  h = (d.dia ? '<p class="nota" style="font-size:14px"><b>Solo el ' + esc(new Date(d.dia + "T12:00:00").toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })) + '</b> (hora de España). <a href="#" onclick="$(\'estDia\').value=\'\';cargarEst();return false">Ver el periodo completo</a></p>' : "") + h;
+  h += '<h4>' + (d.porHoras ? "Páginas vistas por hora" : 'Páginas vistas por día <small>pulsa en una barra para ver ese día</small>') + '</h4><div class="est-barras">' + d.porDia.map(x => '<i title="' + esc(x.dia) + ": " + x.visitas + " páginas vistas, " + x.lectores + ' lectores"' + (d.porHoras ? "" : ' onclick="$(\'estDia\').value=\'' + x.dia + '\';cargarEst()" ') + ' style="cursor:' + (d.porHoras ? "default" : "pointer") + ';height:' + Math.round(x.visitas / max * 100) + '%"></i>').join("") + "</div>" +
+    (d.porHoras ? '<div class="nota" style="display:flex;justify-content:space-between;font-size:11px"><span>0 h</span><span>6 h</span><span>12 h</span><span>18 h</span><span>23 h</span></div>' : "");
   h += '<div class="est-cols"><div><h4>Cómo llegan</h4><table>' + (d.origen.map(x => fila(esc(x.origen), x.visitas)).join("") || fila("Todavía no hay datos", "")) + "</table></div>" +
        "<div><h4>Dónde lo comparten</h4><table>" + (d.redes.map(x => fila(esc(NOMBRE_RED[x.red] || x.red), x.veces)).join("") || fila("Nadie lo ha compartido todavía", "")) + "</table></div></div>";
   h += "<h4>Reenvíos <small>cada vez que un lector lo comparte, y cuánta gente entra por su enlace</small></h4>" + (d.reenvios.length ? '<table class="est-tabla"><tr><th>Cuándo</th><th>Qué</th><th>Por</th><th class="n">Visitas</th><th class="n">Lectores</th><th class="n">Lo vuelven a compartir</th></tr>' +
     d.reenvios.map(x => "<tr><td>" + esc(fechaCorta(x.fecha)) + "</td><td>" + esc(nombrePagina(x.pagina)) + "</td><td>" + esc(x.redes.map(r => NOMBRE_RED[r] || r).join(", ") || "—") + '</td><td class="n">' + x.visitas + '</td><td class="n">' + x.lectores + '</td><td class="n">' + x.loVolvieronACompartir + "</td></tr>").join("") + "</table>" : '<p class="nota">Todavía no hay reenvíos.</p>');
-  h += "<h4>Lo más visto</h4><table class=\"est-tabla\">" + (d.paginas.map(x => fila(esc(nombrePagina(x.pagina)), x.visitas)).join("") || fila("Todavía no hay datos", "")) + "</table>";
+  h += "<h4>Por página <small>cuántas veces se abre cada página y cuántos clics se hacen desde ella</small></h4>" + ((d.porPagina || []).length ? '<table class="est-tabla"><tr><th>Página</th><th class="n">Vistas</th><th class="n">Clics</th><th class="n">Lectores que pinchan</th></tr>' +
+    d.porPagina.map(x => "<tr><td>" + esc(nombrePagina(x.pagina)) + '</td><td class="n">' + x.visitas + '</td><td class="n">' + x.clics + '</td><td class="n">' + x.lectoresClic + "</td></tr>").join("") + "</table>" : '<p class="nota">Todavía no hay datos.</p>');
   h += "<h4>En qué pinchan <small>noticias, vídeos y enlaces de fuera</small></h4>" + (d.clics.length ? '<table class="est-tabla"><tr><th>Enlace</th><th class="n">Clics</th><th class="n">Lectores</th></tr>' +
     d.clics.map(x => '<tr><td><a href="' + esc(x.enlace) + '" target="_blank" rel="noopener">' + esc(x.texto || x.enlace) + '</a></td><td class="n">' + x.veces + '</td><td class="n">' + x.lectores + "</td></tr>").join("") + "</table>" : '<p class="nota">Todavía no hay clics.</p>');
   h += "<h4>Quién pincha en las comunicaciones personales</h4>" + (d.quien.length ? '<table class="est-tabla"><tr><th>Cuándo</th><th>Quién</th><th>Comunicación</th><th>Qué abrió</th></tr>' +
@@ -1685,7 +1688,8 @@ async function cargarEst() {
   $("estCuerpo").innerHTML = h;
 }
 $("btnEst").onclick = () => { $("modalEst").classList.add("abierto"); cargarEst(); };
-$("estDias").onchange = cargarEst;
+$("estDias").onchange = () => { $("estDia").value = ""; cargarEst(); };
+$("estDia").onchange = cargarEst;
 
 /* ---------- instrucciones ---------- */
 $("btnAyuda").onclick = () => $("modalAyuda").classList.add("abierto");

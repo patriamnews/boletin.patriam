@@ -31,12 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 /* ---------- resumen para todos los usuarios del editor ---------- */
 if (($_GET['de'] ?? '') === 'web') comprobarEquipoWeb(); else comprobarSesion();   // desde Publicar, con el usuario de la web
 $dias = max(1, min(400, (int)($_GET['dias'] ?? 30)));
-$desde = gmdate('c', time() - $dias * 86400);
+$zona = new DateTimeZone('Europe/Madrid');
+/* Un día concreto (hora de España): ?dia=2026-10-30 */
+$diaSolo = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string)($_GET['dia'] ?? '')) ? $_GET['dia'] : '';
+if ($diaSolo) {
+  $ini = (new DateTime($diaSolo . ' 00:00:00', $zona))->getTimestamp();
+  $fin = (new DateTime($diaSolo . ' 00:00:00', $zona))->modify('+1 day')->getTimestamp();
+  $dias = 1;
+} else { $fin = time() + 60; $ini = time() - $dias * 86400; }
+$desde = gmdate('c', $ini); $hasta = gmdate('c', $fin);
 $ev = [];
-for ($m = 0; $m <= ceil($dias / 28) + 1; $m++) {
-  $f = privado() . '/est/' . gmdate('Y-m', strtotime("first day of -$m months")) . '.jsonl';
+$meses = [];
+for ($t = $ini; $t <= $fin + 86400; $t += 86400 * 20) $meses[gmdate('Y-m', $t)] = 1;
+$meses[gmdate('Y-m', $fin)] = 1;
+foreach (array_keys($meses) as $mes) {
+  $f = privado() . '/est/' . $mes . '.jsonl';
   if (!is_file($f)) continue;
-  foreach (file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $l) { $x = json_decode($l, true); if ($x && ($x['f'] ?? '') >= $desde) $ev[] = $x; }
+  foreach (file($f, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $l) { $x = json_decode($l, true); if ($x && ($x['f'] ?? '') >= $desde && ($x['f'] ?? '') < $hasta) $ev[] = $x; }
 }
 usort($ev, fn($a, $b) => strcmp($a['f'], $b['f']));
 
@@ -44,10 +55,10 @@ $personas = is_file(privado() . '/personas.json') ? (json_decode(file_get_conten
 $com = is_file(privado() . '/com.json') ? (json_decode(file_get_contents(privado() . '/com.json'), true) ?: []) : [];
 $asuntos = [];
 foreach ($com['lista'] ?? [] as $x) $asuntos[$x['id'] ?? ''] = $x['asunto'] ?? '';
-$dia = fn($f) => substr($f, 0, 10);
+$dia = fn($f) => (new DateTime($f))->setTimezone($zona)->format($diaSolo ? 'H' : 'Y-m-d');
 
 $tot = ['visitas' => 0, 'lectores' => 0, 'clics' => 0, 'compartidos' => 0, 'porReenvio' => 0, 'deComunicaciones' => 0];
-$lectores = []; $porDia = []; $paginas = []; $clics = []; $redes = []; $origen = []; $compartidos = []; $llegadas = []; $quien = []; $huellasP = [];
+$lectores = []; $porDia = []; $clicsPag = []; $entradas = 0; $paginas = []; $clics = []; $redes = []; $origen = []; $compartidos = []; $llegadas = []; $quien = []; $huellasP = [];
 foreach ($ev as $x) {
   $v = $x['v'] ?? ''; $d = $dia($x['f']);
   $porDia[$d] = $porDia[$d] ?? ['visitas' => 0, 'lectores' => []];
@@ -55,12 +66,14 @@ foreach ($ev as $x) {
     $tot['visitas']++; $lectores[$v] = 1; $porDia[$d]['visitas']++; $porDia[$d]['lectores'][$v] = 1;
     $paginas[$x['r']] = ($paginas[$x['r']] ?? 0) + 1;
     if (!empty($x['e'])) {
+      $entradas++;
       $o = !empty($x['c']) ? 'Enlace reenviado por otro lector' : (!empty($x['p']) ? 'Comunicación personal' : (!empty($x['ref']) ? $x['ref'] : 'Directo, WhatsApp o correo'));
       $origen[$o] = ($origen[$o] ?? 0) + 1;
     }
     if (!empty($x['c'])) { $tot['porReenvio']++; $llegadas[$x['c']][] = $x; }
   } elseif ($x['t'] === 'clic') {
     $tot['clics']++;
+    $pc = $x['r'] ?? ''; $clicsPag[$pc] = $clicsPag[$pc] ?? ['clics' => 0, 'lectores' => []]; $clicsPag[$pc]['clics']++; $clicsPag[$pc]['lectores'][$v] = 1;
     if (!empty($x['p'])) {
       $tot['deComunicaciones']++; $huellasP[$x['p']][$v] = 1;
       $quien[] = ['fecha' => $x['f'], 'nombre' => $personas[$x['p']]['nombre'] ?? '(persona sin nombre)', 'como' => $personas[$x['p']]['tipo'] ?? '',
@@ -100,9 +113,14 @@ unset($c);
 usort($clics, fn($a, $b) => $b['veces'] <=> $a['veces']);
 ksort($porDia);
 $serie = [];
-for ($i = $dias - 1; $i >= 0; $i--) { $d = gmdate('Y-m-d', time() - $i * 86400); $serie[] = ['dia' => $d, 'visitas' => $porDia[$d]['visitas'] ?? 0, 'lectores' => count($porDia[$d]['lectores'] ?? [])]; }
-
-salir(['dias' => $dias, 'totales' => $tot, 'porDia' => $serie,
+if ($diaSolo) { for ($h = 0; $h < 24; $h++) { $k = sprintf('%02d', $h); $serie[] = ['dia' => $k . ':00', 'visitas' => $porDia[$k]['visitas'] ?? 0, 'lectores' => count($porDia[$k]['lectores'] ?? [])]; } }
+else for ($i = $dias - 1; $i >= 0; $i--) { $d = (new DateTime('@' . (time() - $i * 86400)))->setTimezone($zona)->format('Y-m-d'); $serie[] = ['dia' => $d, 'visitas' => $porDia[$d]['visitas'] ?? 0, 'lectores' => count($porDia[$d]['lectores'] ?? [])]; }
+$porPagina = [];
+foreach ($paginas as $k => $n) $porPagina[$k] = ['pagina' => $k, 'visitas' => $n, 'clics' => 0, 'lectoresClic' => 0];
+foreach ($clicsPag as $k => $c) { $porPagina[$k] = $porPagina[$k] ?? ['pagina' => $k, 'visitas' => 0, 'clics' => 0, 'lectoresClic' => 0]; $porPagina[$k]['clics'] = $c['clics']; $porPagina[$k]['lectoresClic'] = count($c['lectores']); }
+usort($porPagina, fn($a, $b) => $b['visitas'] <=> $a['visitas'] ?: $b['clics'] <=> $a['clics']);
+$tot['entradas'] = $entradas;
+salir(['dias' => $dias, 'dia' => $diaSolo, 'porHoras' => (bool)$diaSolo, 'totales' => $tot, 'porDia' => $serie, 'porPagina' => array_slice($porPagina, 0, 40),
   'paginas' => array_slice(array_map(fn($k, $n) => ['pagina' => $k, 'visitas' => $n], array_keys($paginas), $paginas), 0, 25),
   'origen' => array_map(fn($k, $n) => ['origen' => $k, 'visitas' => $n], array_keys($origen), $origen),
   'redes' => array_map(fn($k, $n) => ['red' => $k, 'veces' => $n], array_keys($redes), $redes),
