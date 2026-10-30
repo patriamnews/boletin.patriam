@@ -58,6 +58,33 @@ function comprobarAdmin() {
   return json_decode($r, true)['suscriptores'] ?? [];
 }
 
+/* Equipo de la web (publicar.movimientopatriam.es): sesión de Supabase de un miembro activo del equipo.
+   La dirección y la clave anon de Supabase son públicas; lo que se comprueba es la sesión de la persona. */
+const SUPABASE_URL = 'https://igrjdsfcecbwnawwgdop.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlncmpkc2ZjZWNid25hd3dnZG9wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1MzAwMzcsImV4cCI6MjEwODEwNjAzN30.HCT6LM_Xly-s-Z2KLlBDgxVzDWAwKKkMXzSjFub5qBc';
+function comprobarEquipoWeb() {
+  $token = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+  if (!$token) salir(['error' => 'sesion'], 401);
+  $cab = ['Authorization: ' . $token, 'apikey: ' . SUPABASE_ANON, 'Accept: application/json'];
+  [$c, $r] = pedir(SUPABASE_URL . '/auth/v1/user', $cab);
+  $id = $c === 200 ? (json_decode($r, true)['id'] ?? '') : '';
+  if (!preg_match('/^[0-9a-f-]{36}$/', $id)) salir(['error' => 'sesion'], 401);
+  [$c, $r] = pedir(SUPABASE_URL . '/rest/v1/perfiles?select=activo,rol&id=eq.' . $id, $cab);
+  $p = $c === 200 ? (json_decode($r, true)[0] ?? null) : null;
+  if (!$p || empty($p['activo']) || in_array($p['rol'] ?? '', ['pendiente', 'cliente'], true)) salir(['error' => 'Solo para el equipo de PATRIAM.'], 403);
+  return true;
+}
+/* Publicar está en otro subdominio: se le deja leer las estadísticas */
+function permitirPublicar() {
+  $o = $_SERVER['HTTP_ORIGIN'] ?? '';
+  if (!preg_match('#^https://([a-z0-9-]+\.)?movimientopatriam\.(es|com|org|net)$#', $o)) return;
+  header('Access-Control-Allow-Origin: ' . $o);
+  header('Vary: Origin');
+  header('Access-Control-Allow-Headers: Authorization, Content-Type');
+  header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+  if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+}
+
 /* Cualquier usuario del editor con la sesión abierta (no hace falta ser administrador) */
 function comprobarSesion() {
   $token = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');

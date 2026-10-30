@@ -5,6 +5,7 @@
    Sin cookies y sin guardar la IP: cada lector es una huella anónima que cambia cada día.
    Los enlaces que comparte un lector llevan un código (c), y así se sabe cuánta gente entra por cada reenvío. */
 require __DIR__ . '/_privado.php';
+permitirPublicar();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   header('Cache-Control: no-store');
@@ -28,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 /* ---------- resumen para todos los usuarios del editor ---------- */
-comprobarSesion();
+if (($_GET['de'] ?? '') === 'web') comprobarEquipoWeb(); else comprobarSesion();   // desde Publicar, con el usuario de la web
 $dias = max(1, min(400, (int)($_GET['dias'] ?? 30)));
 $desde = gmdate('c', time() - $dias * 86400);
 $ev = [];
