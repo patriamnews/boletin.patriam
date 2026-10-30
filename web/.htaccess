@@ -12,6 +12,8 @@ Options -Indexes
   Require all denied
 </FilesMatch>
 RewriteEngine On
+# sitemap.xml para Google (se genera al pedirlo)
+RewriteRule ^sitemap\.xml$ sitemap.php [L]
 # Pasa la cabecera Authorization a PHP
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 # Comunicaciones personales: en Hostinger (com.php), sin pasar por Netlify
