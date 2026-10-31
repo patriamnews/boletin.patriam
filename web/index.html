@@ -28,12 +28,12 @@
 <meta name="apple-mobile-web-app-title" content="Lo que hay que saber, con criterio · Boletín de noticias de PATRIAM">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="icon" href="icono-192.png">
-<link rel="stylesheet" href="boletin.css?v=20261030c">
+<link rel="stylesheet" href="boletin.css?v=20261031a">
 </head>
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
-<script src="importar.js?v=20261030c"></script>
+<script src="importar.js?v=20261031a"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -45,7 +45,10 @@
   if (destino) {
     destino.colaboraciones = destino.colaboraciones || [];
     (window.PATRIAM_IMPORTAR || []).forEach(function(it){
-      if (!it || !it.id || L.some(function(b){ return (b.colaboraciones || []).some(function(c){ return c.id === it.id; }); })) return;
+      if (!it || !it.id) return;
+      // Si ya está en el boletín, se usa el texto corregido de importar.js
+      var ya = null; L.forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c.id === it.id) ya = c; }); });
+      if (ya) { var nuevo = JSON.parse(JSON.stringify(it)); delete nuevo.numero; Object.assign(ya, nuevo); return; }
       var d = it.numero ? L.filter(function(b){ return Number(b.numero) === Number(it.numero); })[0] : destino;   // «numero»: para un boletín concreto
       if (!d) return;
       d.colaboraciones = d.colaboraciones || [];
@@ -83,8 +86,8 @@
   });
 })();
 </script>
-<script src="legales.js?v=20261030c"></script>
-<script src="boletin.js?v=20261030c"></script>
+<script src="legales.js?v=20261031a"></script>
+<script src="boletin.js?v=20261031a"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
