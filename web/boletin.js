@@ -135,14 +135,16 @@ function fichasColaboradores(cfg) {
 }
 function paginaColaboraciones(lista, cfg) {
   const cs = todasColaboraciones(lista), fichas = fichasColaboradores(cfg);
-  const autores = [...new Set(cs.map(({ c }) => (c.autor || "").trim()).filter(Boolean))];
+  // Una misma persona puede firmar de dos formas («Carlos Rubio» y «Carlos R.»): «alias» en su ficha las junta
+  const canon = a => { a = (a || "").trim(); const f = fichas.find(x => (x.alias || []).includes(a)); return f ? f.firma : a; };
+  const autores = [...new Set(cs.map(({ c }) => canon(c.autor)).filter(Boolean))];
   fichas.forEach(f => { if (f.firma && !autores.includes(f.firma)) autores.push(f.firma); });
   let h = '<div class="bol-pagina">' + cabPagina("Colaboraciones y quién es quién", "Quiénes escriben en el boletín y todo lo que han firmado.", cs.length) + notaColab(cfg);
   if (autores.length) {
     h += '<div class="pt-rotulo"><span>Quién es quién</span></div><div class="qeq">';
     autores.forEach(a => {
       const f = fichas.find(x => x.firma === a) || {};
-      const suyos = cs.filter(({ c }) => (c.autor || "").trim() === a);
+      const suyos = cs.filter(({ c }) => canon(c.autor) === a);
       const cargo = f.cargo || (suyos.find(({ c }) => c.cargo) || { c: {} }).c.cargo || "";
       const foto = urlSegura(f.foto);
       h += '<article class="qeq-ficha" id="quien-' + esc(sinAcentos(a).replace(/[^a-z0-9]+/g, "-")) + '">' +

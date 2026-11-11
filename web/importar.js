@@ -184,7 +184,8 @@ window.PATRIAM_COLABORADORES = [
   "foto": ""
  },
  {
-  "firma": "Carlos Rubio",
+  "firma": "Carlos R.",
+  "alias": ["Carlos Rubio"],
   "cargo": "Secretario y tesorero de PATRIAM",
   "bio": "",
   "foto": ""
