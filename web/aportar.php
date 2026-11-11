@@ -26,7 +26,10 @@ if ($acc === 'js') {
   $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1]), 'creado' => $x['creado'] ?? ''], $items);
   // Cambios a lo preparado en importar.js: datos aprobados y piezas quitadas (lo pendiente no sale)
   $cambios = [];
-  foreach ($d['cambios'] ?? [] as $id => $c) { $o = []; if (!empty($c['datos'])) $o['datos'] = $c['datos']; if (!empty($c['quitado'])) $o['quitado'] = true; if ($o) $cambios[$id] = $o; }
+  foreach ($d['cambios'] ?? [] as $id => $c) { $o = []; if (!empty($c['datos']) && !empty($c['aprobado'])) $o['datos'] = $c['datos']; if (!empty($c['quitado'])) $o['quitado'] = true; if ($o) $cambios[$id] = $o; }
+  // Lo preparado para un boletín que todavía no ha salido no se ve hasta que alguien lo aprueba
+  foreach ($d['boletines'] as $b) if (($b['fecha'] ?? '') >= $hoy) foreach (piezasImportar() as $x)
+    if ((int)($x['numero'] ?? 0) === (int)$b['numero'] && empty($d['cambios'][$x['id']]['aprobado'])) $cambios[$x['id']] = ['quitado' => true, 'sinAprobar' => true];
   echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items, 'cambios' => (object)$cambios], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
   exit;
 }
@@ -131,7 +134,7 @@ function preparados($d, $num) {
     if (!empty($c['quitado'])) continue;
     $datos = $c['datos'] ?? $x['datos'];
     $res[] = ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => (int)$num, 'datos' => !empty($c['propuesta']) ? $c['propuesta'] : $datos,
-      'estado' => !empty($c['propuesta']) ? 'pendiente' : 'aprobado', 'origen' => 'preparado', 'autor' => $datos['autor'] ?? ($datos['comenta'] ?? ''),
+      'estado' => (!empty($c['propuesta']) || empty($c['aprobado'])) ? 'pendiente' : 'aprobado', 'origen' => 'preparado', 'autor' => $datos['autor'] ?? ($datos['comenta'] ?? ''),
       'mio' => true, 'propuestaDe' => $c['propuestaDe'] ?? ''];
   }
   return $res;
@@ -214,8 +217,8 @@ switch ($acc) {
       guardarAp($FICHERO, $d);
       salir(estado($d, $hoy, $yo) + ['nuevo' => $id, 'recamara' => true]);
     }
-    $d['items'][] = ['id' => $id, 'tipo' => $tipo, 'numero' => $e['abierto']['numero'], 'datos' => $datos, 'estado' => $yo['puedeAprobar'] ? 'aprobado' : 'pendiente',
-      'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => $yo['puedeAprobar'] ? ($yo['nombre'] ?? '') : ''];
+    $d['items'][] = ['id' => $id, 'tipo' => $tipo, 'numero' => $e['abierto']['numero'], 'datos' => $datos, 'estado' => 'pendiente',
+      'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];
     guardarAp($FICHERO, $d);
     salir(estado($d, $hoy, $yo) + ['nuevo' => $id]);
   }
@@ -288,15 +291,14 @@ switch ($acc) {
       $p = piezaPreparada($id); if (!$p) salir(['error' => 'No se encuentra.'], 404);
       $c = $d['cambios'][$id] ?? [];
       $nuevo = datosLimpios($p['tipo'], $x, $c['datos'] ?? $p['datos']);
-      if ($yo['puedeAprobar']) { $c['datos'] = $nuevo; unset($c['propuesta'], $c['propuestaDe']); }
-      else { $c['propuesta'] = $nuevo; $c['propuestaDe'] = $yo['nombre'] ?? ''; }
+      $c['propuesta'] = $nuevo; $c['propuestaDe'] = $yo['nombre'] ?? '';   // nada sale hasta que alguien pulse «Aprobar»
       $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
     } else {
       $ok = false;
       foreach ($d['items'] as &$it) if ($it['id'] === $id) {
         if (!$yo['puedeAprobar'] && ($it['autor_id'] ?? '') !== $yo['id']) salir(['error' => 'Solo puede cambiarlo quien lo subió o quien aprueba.'], 403);
         $it['datos'] = datosLimpios($it['tipo'], $x, $it['datos'] ?? []);
-        if (!$yo['puedeAprobar'] && ($it['estado'] ?? '') === 'aprobado') $it['estado'] = 'pendiente';
+        $it['estado'] = 'pendiente'; $it['aprobado_por'] = '';   // nada sale hasta que alguien pulse «Aprobar»
         $it['cambiado'] = gmdate('c'); $ok = true;
       }
       unset($it);
@@ -311,7 +313,8 @@ switch ($acc) {
     if (esPreparado($id)) {   // lo preparado: aprobar el cambio propuesto, rechazarlo, o quitar la pieza del boletín
       if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden hacerlo Carlos e Isabel.'], 403);
       $c = $d['cambios'][$id] ?? [];
-      if ($acc === 'aprobar' && !empty($c['propuesta'])) $c['datos'] = $c['propuesta'];
+      if ($acc === 'aprobar') { if (!empty($c['propuesta'])) $c['datos'] = $c['propuesta']; $c['aprobado'] = true; $c['aprobado_por'] = $yo['nombre'] ?? ''; }
+      if ($acc === 'rechazar' && empty($c['propuesta']) && empty($c['aprobado'])) $c['quitado'] = true;   // «No publicar» algo que nunca se aprobó
       if ($acc !== 'borrar') unset($c['propuesta'], $c['propuestaDe']); else $c['quitado'] = true;
       $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
       guardarAp($FICHERO, $d);
@@ -344,8 +347,8 @@ switch ($acc) {
     if (!$e['abierto']) salir(['error' => 'Primero hay que abrir el boletín de esta semana.'], 409);
     $ok = false;
     foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['estado'] ?? '') === 'recamara') {
-      $x['numero'] = $e['abierto']['numero']; $x['estado'] = $yo['puedeAprobar'] ? 'aprobado' : 'pendiente';
-      $x['aprobado_por'] = $yo['puedeAprobar'] ? ($yo['nombre'] ?? '') : ''; $x['cambiado'] = gmdate('c'); $ok = true;
+      $x['numero'] = $e['abierto']['numero']; $x['estado'] = 'pendiente';
+      $x['aprobado_por'] = ''; $x['cambiado'] = gmdate('c'); $ok = true;
     }
     unset($x);
     if (!$ok) salir(['error' => 'No está en la recámara.'], 404);
