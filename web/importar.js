@@ -4,6 +4,7 @@
 window.PATRIAM_IMPORTAR = [
  {
   "id": "c-cole-de-monjas",
+  "numero": 2,
   "autor": "Isabel O.C.",
   "cargo": "",
   "titulo": "Yo fui a un cole de monjas",
@@ -16,6 +17,7 @@ window.PATRIAM_IMPORTAR = [
  },
  {
   "id": "c-orgullo-espanol",
+  "numero": 2,
   "autor": "Carlos Rubio",
   "cargo": "",
   "titulo": "Orgullo español",

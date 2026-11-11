@@ -28,13 +28,13 @@
 <meta name="apple-mobile-web-app-title" content="Lo que hay que saber, con criterio · Boletín de noticias de PATRIAM">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="icon" href="icono-192.png">
-<link rel="stylesheet" href="boletin.css?v=20261111n">
+<link rel="stylesheet" href="boletin.css?v=20261111o">
 </head>
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
 <script>document.write('<script src="espana-al-dia.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
-<script src="importar.js?v=20261111j"></script>
+<script src="importar.js?v=20261111k"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -42,16 +42,20 @@
   var L = window.BOLETINES || [], hoy = new Date().toISOString().slice(0, 10);
   L.forEach(function(b){ if (Number(b.numero) === 1 && b.fecha === "2026-10-21") b.fecha = "2026-10-30"; });
   var orden = L.slice().sort(function(a, b){ return (a.numero || 0) - (b.numero || 0); });
-  var destino = orden.filter(function(b){ return b.fecha && b.fecha >= hoy; })[0] || orden[orden.length - 1];
-  if (destino) {
-    destino.colaboraciones = destino.colaboraciones || [];
+  // Lo nuevo va al próximo boletín sin publicar; NUNCA a uno ya cerrado y publicado (los boletines no se mezclan).
+  // Si ese próximo boletín aún no está aquí (se abre desde Publicar y llega con aportaciones.js), espera a que llegue.
+  var destino = orden.filter(function(b){ return b.fecha && b.fecha >= hoy; })[0] || null;
+  var siguiente = (orden.length ? Number(orden[orden.length - 1].numero) || 0 : 0) + 1;
+  if (true) {
+    if (destino) destino.colaboraciones = destino.colaboraciones || [];
     (window.PATRIAM_IMPORTAR || []).forEach(function(it){
       if (!it || !it.id) return;
       // Si ya está en el boletín, se usa el texto corregido de importar.js
       var ya = null; L.forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c.id === it.id) ya = c; }); });
       if (ya) { var nuevo = JSON.parse(JSON.stringify(it)); delete nuevo.numero; Object.assign(ya, nuevo); return; }
       var d = it.numero ? L.filter(function(b){ return Number(b.numero) === Number(it.numero); })[0] : destino;   // «numero»: para un boletín concreto
-      if (!d) { (window.PATRIAM_IMPORTAR_ESPERA = window.PATRIAM_IMPORTAR_ESPERA || []).push(it); return; }   // su boletín puede abrirse desde Publicar
+      if (!d) { var e = JSON.parse(JSON.stringify(it)); if (!e.numero) e.numero = siguiente;
+                (window.PATRIAM_IMPORTAR_ESPERA = window.PATRIAM_IMPORTAR_ESPERA || []).push(e); return; }   // su boletín puede abrirse desde Publicar
       d.colaboraciones = d.colaboraciones || [];
       d.colaboraciones.push(JSON.parse(JSON.stringify(it)));
     });
@@ -119,13 +123,13 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   (window.BOLETINES || []).forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c && !c.imagen && A[c.id]) c.imagen = A[c.id]; }); }); })();
 </script>
 <script src="legales.js?v=20261031a"></script>
-<script src="boletin.js?v=20261111s"></script>
+<script src="boletin.js?v=20261111t"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
      Los enlaces que llegan con #/... (por ejemplo, el de un colaborador) se abren y la dirección se limpia. */
   const CFG = window.PATRIAM_CONFIG || {};
-  const TITULOS = { "espana-al-dia": "España al día", criterio: "Criterio", peliculas: "Películas", noticias: "Actualidad", historia: "Historia", sociedad: "Sociedad", podcasts: "Podcasts y vídeos", libros: "Libros", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
+  const TITULOS = { "espana-al-dia": "España semana a semana", criterio: "Criterio", peliculas: "Películas", noticias: "Actualidad", historia: "Historia", sociedad: "Sociedad", podcasts: "Podcasts y vídeos", libros: "Libros", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
   /* Cada boletín tiene su dirección: /boletin/2. El resto de páginas se ven sin cambiar la dirección. */
   const LISTA = (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado");
   /* Páginas con dirección propia (boletin.movimientopatriam.es/historia, /colaboracion/…): se pueden compartir y Google las encuentra */

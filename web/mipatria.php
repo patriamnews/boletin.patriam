@@ -1,6 +1,6 @@
 <?php
 /* «España al día» como página propia y newsletter diaria: boletin.movimientopatriam.es/mipatriaaldia
-   - GET: la página (se genera en el servidor, con su tarjeta para WhatsApp y las noticias de la semana, hoy primero).
+   - GET: la página (se genera en el servidor, con su tarjeta para WhatsApp y las noticias de hoy; la semana entera va en el boletín, «España semana a semana»).
    - POST ?accion=alta {email}: alta en la newsletter diaria (se confirma con un enlace que llega por correo).
    - ?accion=confirmar / ?accion=baja: con enlace firmado.
    - Envío diario: lo lanza el cron de Hostinger por consola («php mipatria.php enviar»), no se puede lanzar desde fuera.
@@ -10,6 +10,7 @@ require __DIR__ . '/_privado.php';
 
 const WEB_MP = 'https://boletin.movimientopatriam.es';
 const URL_MP = WEB_MP . '/mipatriaaldia';
+const URL_SEMANA = WEB_MP . '/#/espana-al-dia';   // la semana entera va en el boletín: «España semana a semana»
 $CLI = PHP_SAPI === 'cli';
 $acc = $CLI ? ($argv[1] ?? '') : ($_GET['accion'] ?? '');
 
@@ -140,10 +141,10 @@ if ($acc === 'enviar') {
       . '<div style="text-align:center"><img src="' . WEB_MP . '/logo.png" alt="PATRIAM" style="height:52px"><p style="margin:14px 0 0;font:600 12px ' . $F . ';letter-spacing:4px;color:' . $G . '">CLIPPING DIARIO</p>'
       . '<h1 style="margin:4px 0 0;font:800 34px ' . $F . ';color:' . $G . '">ESPAÑA AL DÍA</h1><p style="margin:6px 0 18px;font:italic 400 16px ' . $F . ';color:#5b4f49">Noticias políticas y económicas de España · ' . e(mb_strtolower($fecha) === 'hoy' ? 'hoy' : $fecha) . '</p></div>'
       . $filas
-      . '<p style="text-align:center;margin:22px 0 8px"><a href="' . URL_MP . '" style="display:inline-block;background:' . $G . ';color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font:700 14px ' . $F . '">Toda la semana en la web →</a></p>'
+      . '<p style="text-align:center;margin:22px 0 8px"><a href="' . URL_MP . '" style="display:inline-block;background:' . $G . ';color:#fff;padding:12px 24px;border-radius:999px;text-decoration:none;font:700 14px ' . $F . '">Ver todas las de hoy en la web →</a></p>'
       . '<p style="text-align:center;font:400 12px ' . $F . ';color:#8a7d75;margin:18px 0 0">Recibes este correo porque te apuntaste a «España al día» de PATRIAM. <a href="' . e($baja) . '" style="color:#8a7d75">Darme de baja</a></p>'
       . '</div></div>';
-    $texto = "ESPAÑA AL DÍA · $fecha\n\n" . implode("\n\n", array_map(fn($x) => $x['titulo'] . "\n" . implode(' · ', array_map(fn($m) => $m['medio'] . ': ' . $m['url'], $x['medios'])), $g)) . "\n\nToda la semana: " . URL_MP . "\nDarme de baja: $baja";
+    $texto = "ESPAÑA AL DÍA · $fecha\n\n" . implode("\n\n", array_map(fn($x) => $x['titulo'] . "\n" . implode(' · ', array_map(fn($m) => $m['medio'] . ': ' . $m['url'], $x['medios'])), $g)) . "\n\nTodas las de hoy: " . URL_MP . "\nToda la semana (España semana a semana): " . URL_SEMANA . "\nDarme de baja: $baja";
     [$ok, $motivo] = brevo($email, 'España al día · ' . $g[0]['titulo'], $html, $texto, $baja);
     if ($ok) $env++; else $mal[] = "$email: $motivo";
   }
@@ -160,6 +161,13 @@ if ($filtro === 'politica') $g = array_values(array_filter($g, fn($x) => ($x['te
 if ($filtro === 'economia') $g = array_values(array_filter($g, fn($x) => ($x['tema'] ?? '') === 'Economía'));
 foreach ($g as &$x) $x['tema'] = ($x['tema'] ?? '') === 'Economía' ? 'Economía' : 'Política';
 unset($x);
+// España al día son las noticias DEL DÍA (la semana entera está en el boletín, «España semana a semana»).
+// A primera hora, si aún no hay nada de hoy, lo último de las 24 horas anteriores.
+$hoyMad = (new DateTime('now', new DateTimeZone('Europe/Madrid')))->format('Y-m-d');
+$titHoy = 'Hoy';
+$soloHoy = array_values(array_filter($g, fn($x) => dia2($x['fecha']) === $hoyMad));
+if (!$soloHoy) { $soloHoy = array_values(array_filter($g, fn($x) => strtotime($x['fecha']) >= time() - 24 * 3600)); $titHoy = 'Lo último'; }
+$g = $soloHoy;
 // Mini panel: de qué se habla en las últimas 48 horas
 $hace48 = time() - 48 * 3600; $panel = []; $n48 = 0; $medios48 = [];
 foreach ($g as $x) {
@@ -182,9 +190,9 @@ function tarjeta($x, &$primera) {
   return $h;
 }
 $titulo = 'España al día · Clipping de noticias políticas y económicas de España';
-$desc = 'Clipping diario de noticias políticas y económicas de España, con toda la semana. Se actualiza cada 3 horas. Por PATRIAM.';
+$desc = 'Clipping diario de noticias políticas y económicas de España, las de hoy. Se actualiza cada 3 horas. Por PATRIAM.';
 $img = WEB_MP . '/espana-al-dia-og.jpg?v=2';
-$wa = 'https://wa.me/?text=' . rawurlencode("*España al día* · Clipping diario de noticias políticas y económicas de España, con toda la semana.\n👉 " . URL_MP);
+$wa = 'https://wa.me/?text=' . rawurlencode("*España al día* · Clipping diario de noticias políticas y económicas de España, las de hoy.\n👉 " . URL_MP);
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 ?><!doctype html>
@@ -261,7 +269,7 @@ footer a{color:var(--g);font-weight:600}
   <a href="https://boletin.movimientopatriam.es/"><img src="/logo.png" alt="PATRIAM"></a>
   <small>CLIPPING DIARIO</small>
   <h1>ESPAÑA AL DÍA</h1>
-  <p>Noticias políticas y económicas de España, con toda la semana.</p>
+  <p>Noticias políticas y económicas de España, las de hoy.</p>
   <?php if (!empty($d['actualizado'])): ?><p class="act">Actualizado: <?= e(mb_strtolower(dia($d['actualizado']))) ?> a las <?= e(hora($d['actualizado'])) ?></p><?php endif; ?>
 </header>
 <main>
@@ -280,7 +288,7 @@ footer a{color:var(--g);font-weight:600}
   </section>
 <?php if ($panel): ?>
   <section class="panel" aria-label="De qué se habla">
-    <div class="pcab"><b>De qué se habla</b><span>Últimas 48 horas</span></div>
+    <div class="pcab"><b>De qué se habla</b><span><?= $titHoy === 'Hoy' ? 'Hoy' : 'Últimas 24 horas' ?></span></div>
     <div class="cifras">
       <div><strong><?= $n48 ?></strong><span>noticias</span></div>
       <div><strong><?= count(array_filter(array_keys($panel), fn($k) => $k !== 'Otros')) ?></strong><span>asuntos</span></div>
@@ -301,7 +309,7 @@ $primera = true;
 if ($asunto !== '') {
   // Un asunto: todas sus noticias, por días y, dentro de cada día, Economía y luego Política
   $g = array_values(array_filter($g, fn($x) => $x['asunto'] === $asunto));
-  echo '<p class="volver"><a href="' . e($enlaceMP($filtro, '')) . '">← Todos los asuntos</a></p><h2 class="asunto">' . e($asunto) . ' <small>' . count($g) . ' noticias en la semana</small></h2>';
+  echo '<p class="volver"><a href="' . e($enlaceMP($filtro, '')) . '">← Todos los asuntos</a></p><h2 class="asunto">' . e($asunto) . ' <small>' . count($g) . ' noticias ' . ($titHoy === 'Hoy' ? 'hoy' : 'en las últimas 24 horas') . '</small></h2>';
   $porDia = [];
   foreach ($g as $x) $porDia[dia($x['fecha'])][$x['tema']][] = $x;
   foreach ($porDia as $dd => $temas) {
@@ -322,9 +330,7 @@ if ($asunto !== '') {
     $deHoy = array_values(array_filter($g, fn($x) => strtotime($x['fecha']) >= time() - 24 * 3600));
     $titHoy = 'Lo último';
   }
-  $idsHoy = array_map(fn($x) => $x['titulo'] . '|' . $x['fecha'], $deHoy);
-  $semana = array_values(array_filter($g, fn($x) => !in_array($x['titulo'] . '|' . $x['fecha'], $idsHoy, true)));
-  // Cada parte: Economía y luego Política; dentro de cada una, los asuntos de los que más se habla
+    // Cada parte: Economía y luego Política; dentro de cada una, los asuntos de los que más se habla
   $pintar = function ($lista, $pref, $maxA, $maxO) use (&$primera, $panel, $enlaceMP, $filtro) {
     foreach (['Economía', 'Política'] as $tm) {
       $del = array_values(array_filter($lista, fn($x) => $x['tema'] === $tm));
@@ -347,10 +353,7 @@ if ($asunto !== '') {
     echo '<h2 class="bloque" id="hoy">' . $titHoy . ' <small>' . e($titHoy === 'Hoy' ? diaLargo() : 'últimas 24 horas') . ' · ' . count($deHoy) . ' noticias</small></h2>';
     $pintar($deHoy, 'hoy-', 4, 6);
   }
-  if ($semana) {
-    echo '<h2 class="bloque" id="semana">El resto de la semana <small>' . count($semana) . ' noticias</small></h2>';
-    $pintar($semana, '', 6, 9);
-  }
+  echo '<p class="vermas semana"><a href="' . URL_SEMANA . '">Toda la semana, por asuntos: España semana a semana, en el boletín →</a></p>';
 }
 ?>
 </main>

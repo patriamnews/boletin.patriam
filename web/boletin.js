@@ -266,7 +266,7 @@ function cabecera(cfg, b, activo) {
 
   // Menú
   const op = [["inicio", "#/", "Este boletín"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
-              ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"], ["espana", "#/espana-al-dia", "España al día"],
+              ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"], ["espana", "#/espana-al-dia", "España semana a semana"],
               ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"],
               ["tienda", (cfg && cfg.tienda) || "https://movimientopatriam.es/tienda", "Tienda"]];
   h += '<nav class="bol-menu" aria-label="Secciones del boletín"><div class="bol-menu-in">';
@@ -376,12 +376,47 @@ function tarjetaEditorial(ed, b, cfg) {
     '<span class="bol-mas">' + esc(ed.firma || editor) + " · Leer editorial " + icono("flecha") + "</span></div></a>";
 }
 
+function imagenBoletin(x) {
+  // La imagen de cada boletín: la de su portada o su editorial; si no, la de su primera firma o noticia
+  const p = x.portada && typeof x.portada === "object" ? x.portada.imagen : "";
+  const c = (x.colaboraciones || []).find(y => y && y.imagen), n = (x.noticias || []).find(y => y && y.imagen);
+  return urlSegura(p || (x.editorial || {}).imagen || (c && c.imagen) || (n && n.imagen) || "");
+}
 function tarjetaBoletin(x, actual) {
-  const ns = (x.noticias || []).filter(n => n.titular || n.url).length;
-  return '<a class="bol-arch' + (actual ? " actual" : "") + '" href="#/boletin/' + encodeURIComponent(x.id) + '">' +
+  const ns = (x.noticias || []).filter(n => n.titular || n.url).length, fs = (x.colaboraciones || []).length, img = imagenBoletin(x);
+  return '<a class="bol-arch' + (actual ? " actual" : "") + (img ? " con-img" : "") + '" id="bol-' + esc(x.id) + '" href="#/boletin/' + encodeURIComponent(x.id) + '">' +
+    (img ? '<span class="bol-arch-img" style="background-image:url(\'' + esc(img) + '\')"></span>' : "") +
     '<span class="bol-arch-n"><small>Nº</small>' + esc(dosCifras(x.numero)) + "</span>" +
     "<span><em>" + esc(fechaLarga(x.fecha)) + "</em><b>" + esc((x.editorial || {}).titulo || x.titulo || "Boletín nº " + (x.numero || "")) + "</b>" +
-    "<small>" + ns + (ns === 1 ? " noticia" : " noticias") + "</small></span></a>";
+    "<small>" + ns + (ns === 1 ? " noticia" : " noticias") + (fs ? " · " + fs + (fs === 1 ? " firma" : " firmas") : "") + "</small></span></a>";
+}
+/* Calendario de boletines: un mes, con cada boletín en su día; ‹ › para moverse (#/boletines/AAAA-MM) */
+function calendarioBoletines(ls, mesPedido) {
+  const conFecha = ls.filter(b => /^\d{4}-\d{2}-\d{2}/.test(b.fecha || ""));
+  const hoyMes = new Date().toISOString().slice(0, 7);
+  const meses = [...new Set(conFecha.map(b => b.fecha.slice(0, 7)).concat(hoyMes))].sort();
+  const mes = /^\d{4}-\d{2}$/.test(mesPedido || "") ? mesPedido : (conFecha[0] ? conFecha[0].fecha.slice(0, 7) : hoyMes);
+  const [y, m] = mes.split("-").map(Number);
+  const dias = {}; conFecha.forEach(b => { if (b.fecha.slice(0, 7) === mes) (dias[+b.fecha.slice(8, 10)] = dias[+b.fecha.slice(8, 10)] || []).push(b); });
+  const primero = (new Date(y, m - 1, 1).getDay() + 6) % 7, total = new Date(y, m, 0).getDate();
+  const hoy = new Date(), esHoy = d => hoy.getFullYear() === y && hoy.getMonth() === m - 1 && hoy.getDate() === d;
+  const nombre = new Date(y, m - 1, 15).toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+  const ant = new Date(y, m - 2, 15).toISOString().slice(0, 7), sig = new Date(y, m, 15).toISOString().slice(0, 7);
+  const hayAnt = meses[0] <= ant, haySig = meses[meses.length - 1] >= sig;
+  let h = '<section class="bol-calb"><div class="bol-calb-cab">' +
+    (hayAnt ? '<a href="#/boletines/' + ant + '" aria-label="Mes anterior">‹</a>' : "<span></span>") +
+    "<b>" + esc(nombre.charAt(0).toUpperCase() + nombre.slice(1)) + "</b>" +
+    (haySig ? '<a href="#/boletines/' + sig + '" aria-label="Mes siguiente">›</a>' : "<span></span>") + "</div>";
+  h += '<div class="bol-calb-meses">' + meses.map(x => { const t = new Date(+x.slice(0, 4), +x.slice(5, 7) - 1, 15).toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+    return '<a href="#/boletines/' + x + '"' + (x === mes ? ' class="on"' : "") + ">" + esc(t.replace(".", "")) + "</a>"; }).join("") + "</div>";
+  h += '<div class="bol-calb-rejilla">' + ["L", "M", "X", "J", "V", "S", "D"].map(d => "<b>" + d + "</b>").join("");
+  for (let i = 0; i < primero; i++) h += "<span></span>";
+  for (let d = 1; d <= total; d++) {
+    const bs = dias[d] || [];
+    h += bs.length ? '<a class="con' + (esHoy(d) ? " hoy" : "") + '" href="#/boletin/' + encodeURIComponent(bs[0].id) + '" title="Boletín Nº ' + esc(dosCifras(bs[0].numero)) + '"><i>' + d + "</i><small>Nº " + esc(dosCifras(bs[0].numero)) + "</small></a>"
+                   : '<span' + (esHoy(d) ? ' class="hoy"' : "") + "><i>" + d + "</i></span>";
+  }
+  return h + "</div></section>";
 }
 
 /* ---------- redes ---------- */
@@ -484,8 +519,8 @@ function espanaBloque() {
 function paginaEspana(filtro) {
   const d = (typeof window !== "undefined" && window.ESPANA_AL_DIA) || {};
   const gs = espanaGrupos().filter(g => !filtro || (g.tema || "").toLowerCase() === filtro);
-  let h = '<div class="bol-pagina">' + cabPagina("España al día", "Clipping de noticias políticas y económicas de España de los últimos siete días. Se actualiza sola cada 3 horas" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
-  h += barraLector("Compartir «España al día»", "*España al día* · Clipping diario de noticias políticas y económicas de España con toda la semana.", "https://boletin.movimientopatriam.es/espana-al-dia");
+  let h = '<div class="bol-pagina">' + cabPagina("España semana a semana", "Las noticias políticas y económicas de España de los últimos siete días. Las de hoy, en España al día. Se actualiza sola cada 3 horas" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
+  h += barraLector("Compartir «España semana a semana»", "*España semana a semana* · Las noticias políticas y económicas de España de los últimos siete días.", "https://boletin.movimientopatriam.es/#/espana-al-dia");
   h += '<nav class="crit-tabs">' + [["", "Todo"], ["politica", "Política"], ["economia", "Economía"]].map(([k, t]) => '<a href="#/espana-al-dia' + (k ? "/" + k : "") + '"' + ((filtro || "") === (k ? (k === "politica" ? "política" : "economía") : "") ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>";
   if (!gs.length) return h + '<p class="bol-vacio">Todavía no hay titulares. Se cargan solos cada 3 horas.</p></div>';
   let dia = "";
@@ -949,9 +984,10 @@ function paginaIniciativas(lista) {
   return h + "</div>";
 }
 
-function paginaBoletines(lista) {
+function paginaBoletines(lista, mes) {
   const ls = ordenar(lista);
-  return '<div class="bol-pagina">' + cabPagina("Boletines anteriores", "Cada semana, un boletín. Aquí están todos, completos: pulsa en uno para verlo o compartirlo.", ls.length) +
+  return '<div class="bol-pagina">' + cabPagina("Boletines", "Cada semana, un boletín. Aquí están todos, completos: muévete por el calendario o pulsa en uno para verlo o compartirlo.", ls.length) +
+         calendarioBoletines(ls, mes) +
          '<div class="bol-archivo">' + ls.map((x, i) => tarjetaBoletin(x, i === 0)).join("") + "</div></div>";
 }
 
@@ -1205,7 +1241,7 @@ function renderApp(ruta, lista, cfg) {
     case "colaboracion": { const x = todasColaboraciones(ls).find(y => y.c.id === p[1]); const k = x ? claveColab(x.c) : "colaboraciones";
       return m(k === "actualidad" ? "noticias" : k === "analisis" ? "criterio" : k, paginaColaboracion(ls, p[1], cfg)); }
     case "iniciativas": case "eventos": return m("iniciativas", paginaIniciativas(ls));
-    case "boletines": return m("boletines", paginaBoletines(ls));
+    case "boletines": return m("boletines", paginaBoletines(ls, p[1]));
     case "espana-al-dia": return m("espana", paginaEspana(p[1] === "politica" ? "política" : p[1] === "economia" ? "economía" : ""));
     case "al": return m("", p[1] ? paginaAlMomento(cfg, p[1]) : paginaAlMomentoLista(cfg));
     case "buscar": return m("", paginaBuscar(ls, cfg, p[1] || ""));
