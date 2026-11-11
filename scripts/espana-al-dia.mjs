@@ -143,9 +143,25 @@ for (const n of todas) {
   if (n.imagen) n.imagen = n.imagen.replace(/^(https?:\/\/[^/]+)\/(?:[a-z0-9.-]+\.[a-z]{2,})(\/wp-content\/)/i, '$1$2')
   if (n.imagen && GENERICA.test(n.imagen)) n.imagen = ''
 }
+// Fotos actuales: si la dirección de la foto lleva fecha (…/2026/09/13/…) y es de más de 4 días antes que la noticia,
+// es una foto de archivo reutilizada. Se busca la de la propia noticia (og:image) y, si tampoco es actual, se quita.
+const fechaFoto = (u) => { const m = String(u || '').match(/\/(20\d\d)[\/_-](0[1-9]|1[0-2])(?:[\/_-](0[1-9]|[12]\d|3[01]))?(?=[\/_-])/); return m ? Date.UTC(+m[1], +m[2] - 1, m[3] ? +m[3] : 28) : 0 }
+const vieja = (u, fecha) => { const f = fechaFoto(u); return !!f && (Date.parse(fecha) || Date.now()) - f > 4 * 86400e3 }
+let kv = 0
+for (const n of todas) {
+  if (!n.imagen || !vieja(n.imagen, n.fecha)) continue
+  if (!n.miradaFoto && kv < 60) {
+    kv++; n.miradaFoto = 1
+    const html = await bajar(n.url, 12000)
+    const og = html && ((html.match(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image)["'][^>]*content=["']([^"']+)/i) || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["'](?:og:image|twitter:image)["']/i) || [])[1])
+    if (og && /^https?:/.test(ent(og)) && !vieja(ent(og), n.fecha) && !GENERICA.test(ent(og))) { n.imagen = ent(og); continue }
+  }
+  n.imagenVieja = n.imagen; n.imagen = ''
+}
 // completar imagen/resumen de las que no lo traen (como mucho 60 por pasada)
 let k = 0
 for (const n of todas) { if ((n.imagen && n.resumen) || n.mirada || k >= 60) continue; await completar(n); n.mirada = 1; k++ }
+for (const n of todas) if (n.imagen && vieja(n.imagen, n.fecha)) { n.imagenVieja = n.imagen; n.imagen = '' }
 // agrupar
 const df = new Map()
 for (const n of todas) for (const w of claves(n.titulo)) df.set(w, (df.get(w) || 0) + 1)
@@ -171,7 +187,7 @@ const ordenGrupos = grupos.slice().sort((a, b) => b.medios.length - a.medios.len
 const usadas = new Set()
 for (const g of ordenGrupos) {
   const base = (u) => u.split('?')[0].replace(/-\d+x\d+(?=\.\w+$)/, '').replace(/\.r_d\.[\d-]+(?=\.\w+$)/, '')
-  const libre = g.imgs.find((u) => !usadas.has(base(u)))
+  const libre = g.imgs.find((u) => !usadas.has(base(u)) && !vieja(u, g.fecha))
   g.imagen = libre || ''
   if (libre) usadas.add(base(libre))
 }

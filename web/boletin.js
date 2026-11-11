@@ -511,7 +511,9 @@ function espanaLateral() {
 function espanaBloque() {
   const gs = espanaGrupos();
   if (!gs.length) return "";
-  const dest = gs.filter(g => g.destacada).concat(gs.filter(g => !g.destacada && g.medios.length > 1), gs.filter(g => !g.destacada && g.medios.length < 2)).slice(0, 3);
+  // En el boletín, primero las que llevan foto actual (las fotos de archivo ya vienen quitadas)
+  const conFoto = xs => xs.filter(g => g.imagen).concat(xs.filter(g => !g.imagen));
+  const dest = gs.filter(g => g.destacada).concat(conFoto(gs.filter(g => !g.destacada && g.medios.length > 1)), conFoto(gs.filter(g => !g.destacada && g.medios.length < 2))).slice(0, 3);
   return '<section class="bol-espana"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2></div>' +
     '<p class="esp-intro">Clipping de noticias políticas y económicas de España de estos días. Si varios medios cuentan lo mismo, tienes un botón para cada uno.</p>' +
     '<div class="esp-rejilla">' + dest.map(g => espanaFicha(g, false)).join("") + "</div>" +
