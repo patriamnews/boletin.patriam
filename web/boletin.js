@@ -503,10 +503,12 @@ function espanaFicha(g, mini) {
     "<h3>" + esc(g.titulo) + "</h3>" + (!mini && g.resumen ? "<p>" + esc(recortar(g.resumen, 260)) + "</p>" : "") + espanaBotones(g) + "</div></article>";
 }
 function espanaLateral() {
-  const gs = espanaGrupos().filter(g => g.destacada).concat(espanaGrupos().filter(g => !g.destacada && g.medios.length > 1), espanaGrupos().filter(g => !g.destacada && g.medios.length < 2)).slice(0, 3);
+  // España semana a semana: a un lado, con las noticias de los últimos siete días (las destacadas primero, luego por fecha)
+  const todas = espanaGrupos();
+  const gs = todas.filter(g => g.destacada).concat(todas.filter(g => !g.destacada)).slice(0, 14);
   if (!gs.length) return "";
-  return '<section class="lat-esp"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2></div>' +
-    '<div class="lat-esp-lista">' + gs.map(g => espanaFicha(g, true)).join("") + "</div>" + '<a class="bol-btn lat-esp-mas" href="https://boletin.movimientopatriam.es/mipatriaaldia">Leer más ' + icono("flecha") + "</a></section>";
+  return '<section class="lat-esp"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España semana a semana</h2></div>' +
+    '<div class="lat-esp-lista">' + gs.map(g => espanaFicha(g, true)).join("") + "</div>" + '<a class="bol-btn lat-esp-mas" href="#/espana-al-dia">Toda la semana ' + icono("flecha") + "</a></section>";
 }
 function espanaBloque() {
   const gs = espanaGrupos();
@@ -650,7 +652,7 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
     (x.medio ? "<small>" + esc(x.medio) + "</small>" : "") + "</span></a>").join("")).join("") + "</div>";
 
   h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Leer el boletín completo ' + icono("flecha") + "</a></div>";
-  h += espanaBloque() + "</section>";
+  h += "</section>";
   return h;
 }
 /* En cada sección, la pieza principal (la primera con imagen) va en grande y el resto en pequeño, a dos columnas */
@@ -689,7 +691,6 @@ function centroInicio(b, cfg, todos) {
          (g.ruta ? '<a href="' + g.ruta + '">Ver todos ' + icono("flecha") + "</a>" : "") + "</div>" +
          '<div class="bib-lista">' + g.xs.map(x => tarjetaBib(x, cfg, true)).join("") + "</div></section>";
   });
-  h += espanaBloque();
   h += bloqueRedes(cfg);
   h += '<div class="bol-unete"><span class="bol-unete-ico">' + icono("correo") + "</span>" +
        '<div><b>' + esc(cfg.uneteTitulo || "Únete a PATRIAM") + "</b><p>" + esc(cfg.uneteTexto || "Recibe cada semana nuestro boletín y forma parte del cambio.") + "</p></div>" +

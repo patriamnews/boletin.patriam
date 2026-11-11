@@ -48,7 +48,7 @@ function unirAportaciones(L, C, opciones) {
   if (opciones.lectores) {
     // A los lectores no se les enseñan los boletines que todavía no han salido (salvo vista previa del equipo: ?vista=N)
     var hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
-    var vista = Number(new URLSearchParams(location.search).get("vista") || 0);
+    var vista = Number(new URLSearchParams(location.search).get("vista") || (window.PATRIAM_PREVIA && window.PATRIAM_PREVIA.numero) || 0);
     for (var i = L.length - 1; i >= 0; i--) {
       var x = L[i];
       if (x._dePublicar && x.fecha > hoy && Number(x.numero) !== vista) L.splice(i, 1);

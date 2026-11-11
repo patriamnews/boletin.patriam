@@ -18,19 +18,25 @@ function limpio($t, $n = 20000) { return mb_substr(trim(str_replace("\r", '', (s
 function url_ok($u) { $u = trim((string)$u); return preg_match('#^https?://#i', $u) ? mb_substr($u, 0, 1000) : ''; }
 
 /* ---------- público: lo aprobado y los boletines abiertos, para el boletín ---------- */
+require_once __DIR__ . '/_previa.php';
 if ($acc === 'js') {
   header('Content-Type: application/javascript; charset=utf-8');
   header('Cache-Control: no-cache, max-age=0');
   $d = leerAp($FICHERO);
-  $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'aprobado'));
-  $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1]), 'creado' => $x['creado'] ?? ''], $items);
+  // Vista previa del equipo (previa.php, con su clave): también lo pendiente de aprobar del número que se está viendo
+  $pv = previaValida($d, $_GET['previa'] ?? '', true);
+  $pvNum = $pv ? (int)$pv['numero'] : 0;
+  $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'aprobado' || ($pvNum && ($x['estado'] ?? '') === 'pendiente' && (int)($x['numero'] ?? 0) === $pvNum)));
+  $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1, 'imagenes' => 1]), 'creado' => $x['creado'] ?? ''], $items);
   // Cambios a lo preparado en importar.js: datos aprobados y piezas quitadas (lo pendiente no sale)
   $cambios = [];
-  foreach ($d['cambios'] ?? [] as $id => $c) { $o = []; if (!empty($c['datos']) && !empty($c['aprobado'])) $o['datos'] = $c['datos']; if (!empty($c['quitado'])) $o['quitado'] = true; if ($o) $cambios[$id] = $o; }
+  foreach ($d['cambios'] ?? [] as $id => $c) { $o = []; if (!empty($c['datos']) && !empty($c['aprobado'])) $o['datos'] = $c['datos']; if (!empty($c['quitado'])) $o['quitado'] = true;
+    if ($pvNum && !empty($c['propuesta'])) $o['datos'] = $c['propuesta'];   // en la vista previa, el último cambio aunque esté pendiente
+    if ($o) $cambios[$id] = $o; }
   // Lo preparado para un boletín que todavía no ha salido no se ve hasta que alguien lo aprueba
   foreach ($d['boletines'] as $b) if (($b['fecha'] ?? '') >= $hoy) foreach (piezasImportar() as $x)
-    if ((int)($x['numero'] ?? 0) === (int)$b['numero'] && empty($d['cambios'][$x['id']]['aprobado'])) $cambios[$x['id']] = ['quitado' => true, 'sinAprobar' => true];
-  echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items, 'cambios' => (object)$cambios], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
+    if ((int)($x['numero'] ?? 0) === (int)$b['numero'] && (int)$b['numero'] !== $pvNum && empty($d['cambios'][$x['id']]['aprobado'])) $cambios[$x['id']] = ['quitado' => true, 'sinAprobar' => true];
+  echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items, 'cambios' => (object)$cambios, 'previa' => $pvNum ?: null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
   exit;
 }
 
@@ -107,6 +113,7 @@ function contenidoEditor($num) {
   foreach ((array)($b['eventos'] ?? []) as $x) if ($t($x['titulo'] ?? '')) $res[] = ['tipo' => 'Agenda', 'titulo' => $t($x['titulo']), 'firma' => $t($x['fecha'] ?? '')];
   return ['aprobado' => true, 'items' => $res];
 }
+const MAX_ARTICULOS = 10;   // artículos de firma que pueden salir en cada número
 function estado($d, $hoy, $yo) {
   $bs = boletinesTodos($d);
   $abierto = null; $ultimo = null;
@@ -120,7 +127,22 @@ function estado($d, $hoy, $yo) {
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') !== 'borrado' && ($num === null || $x['numero'] === $num || ($x['estado'] ?? '') === 'pendiente')));
   $items = array_map(fn($x) => array_merge($x, ['datos' => array_diff_key($x['datos'] ?? [], ['cv' => 1]), 'tieneCv' => !empty($x['datos']['cv'])]) + ['mio' => ($x['autor_id'] ?? '') === $yo['id']], $items);
   if ($num) foreach (preparados($d, $num) as $x) $items[] = $x;
-  return ['delEditor' => $num ? contenidoEditor($num) : null, 'hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
+  // Imágenes: Isabel sube una o varias; elige quien subió el artículo (lo preparado y lo del correo, quien aprueba)
+  foreach ($items as &$it) {
+    $orig = esPreparado($it['id']) ? ((piezaPreparada($it['id']) ?? [])['datos']['imagen'] ?? '') : '';
+    $ops = array_merge([$it['datos']['imagen'] ?? '', $orig], $it['datos']['imagenes'] ?? [], $d['cambios'][$it['id']]['imagenes'] ?? []);
+    $it['imagenesOpciones'] = array_values(array_unique(array_filter($ops)));
+    $sinDueno = ($it['origen'] ?? '') === 'preparado' || in_array($it['autor_id'] ?? '', ['', 'correo'], true);
+    $it['puedoElegirImagen'] = $sinDueno ? (bool)$yo['puedeAprobar'] : (($it['autor_id'] ?? '') === $yo['id']);
+  }
+  unset($it);
+  // Elegidos para aprobar al final (de todo lo pendiente) y tope de 10 artículos de firma por número
+  $sel = $num ? array_values(array_filter($d['seleccion'][$num] ?? [], fn($id) => in_array($id, array_column($items, 'id'), true))) : [];
+  $delEd = $num ? contenidoEditor($num) : null;
+  $firmasAprob = count(array_filter($items, fn($x) => ($x['tipo'] ?? '') === 'firma' && ($x['estado'] ?? '') === 'aprobado' && (int)($x['numero'] ?? 0) === (int)$num))
+    + count(array_filter($delEd['items'] ?? [], fn($x) => str_starts_with($x['tipo'] ?? '', 'Colaboración')));
+  $firmasSel = count(array_filter($items, fn($x) => ($x['tipo'] ?? '') === 'firma' && ($x['estado'] ?? '') !== 'aprobado' && in_array($x['id'], $sel, true)));
+  return ['delEditor' => $delEd, 'seleccion' => $sel, 'maxArticulos' => MAX_ARTICULOS, 'articulosAprobados' => $firmasAprob, 'articulosElegidos' => $firmasSel, 'hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
 }
 
 $cuerpo = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];
@@ -152,6 +174,17 @@ function piezasRecamara($d) {
       'origen' => 'preparado', 'autor' => $x['autor'] ?? '', 'autor_id' => '', 'creado' => $x['creado'] ?? '', 'aprobado_por' => ''];
   }
   return $res;
+}
+/* Aprueba una pieza (subida desde Publicar o preparada en importar.js) */
+function aprobarPieza(&$d, $id, $yo) {
+  if (preg_match('/^(imp|rec)-/', (string)$id)) {
+    $c = $d['cambios'][$id] ?? [];
+    if (!empty($c['propuesta'])) $c['datos'] = $c['propuesta'];
+    $c['aprobado'] = true; $c['aprobado_por'] = $yo['nombre'] ?? ''; unset($c['propuesta'], $c['propuestaDe']);
+    $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c; return;
+  }
+  foreach ($d['items'] as &$x) if ($x['id'] === $id && ($x['estado'] ?? '') === 'pendiente') { $x['estado'] = 'aprobado'; $x['aprobado_por'] = $yo['nombre'] ?? ''; $x['cambiado'] = gmdate('c'); }
+  unset($x);
 }
 function esPreparado($id) { return (bool)preg_match('/^(imp|rec)-/', (string)$id); }
 function piezaPreparada($id) { foreach (piezasImportar() as $x) if ($x['id'] === $id) return $x; return null; }
@@ -328,8 +361,65 @@ switch ($acc) {
     salir(estado($d, $hoy, $yo) + ['ok' => true]);
   }
 
+  /* ---------- Imágenes de un artículo: se añaden opciones y elige quien lo subió ---------- */
+  case 'imagen-anadir': case 'imagen-elegir': {
+    $e = estado($d, $hoy, $yo); $id = (string)($cuerpo['id'] ?? ''); $url = url_ok($cuerpo['url'] ?? '');
+    $p = null; foreach ($e['items'] as $x) if ($x['id'] === $id) $p = $x;
+    if (!$p || !$url) salir(['error' => 'Falta la imagen o no se encuentra el artículo.'], 400);
+    $prep = esPreparado($id);
+    if ($acc === 'imagen-anadir') {
+      $una = !$p['imagenesOpciones'];   // si no tenía ninguna, esa se queda
+      if ($prep) { $c = $d['cambios'][$id] ?? []; $c['imagenes'] = array_values(array_unique(array_merge($c['imagenes'] ?? [], [$url]))); $d['cambios'][$id] = $c; }
+      else foreach ($d['items'] as &$x) if ($x['id'] === $id) { $x['datos']['imagenes'] = array_values(array_unique(array_merge($x['datos']['imagenes'] ?? [], [$url]))); if ($una) $x['datos']['imagen'] = $url; }
+      unset($x);
+      if ($una && $prep) { $c = $d['cambios'][$id]; $c['propuesta'] = array_merge($c['propuesta'] ?? ($c['datos'] ?? $p['datos']), ['imagen' => $url]); $c['propuestaDe'] = $yo['nombre'] ?? ''; $d['cambios'][$id] = $c; }
+      guardarAp($FICHERO, $d); salir(estado($d, $hoy, $yo));
+    }
+    if (!$p['puedoElegirImagen']) salir(['error' => 'La imagen la elige quien subió el artículo.'], 403);
+    if (!in_array($url, $p['imagenesOpciones'], true)) salir(['error' => 'Esa imagen no está entre las opciones.'], 400);
+    if ($prep) {   // cambio en lo preparado: espera su «Aprobar», como todo
+      $c = $d['cambios'][$id] ?? []; $base = $c['propuesta'] ?? ($c['datos'] ?? (piezaPreparada($id)['datos'] ?? []));
+      $c['propuesta'] = array_merge($base, ['imagen' => $url]); $c['propuestaDe'] = $yo['nombre'] ?? ''; $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
+    } else foreach ($d['items'] as &$x) if ($x['id'] === $id) {
+      $x['datos']['imagen'] = $url; $x['cambiado'] = gmdate('c');
+      if (($x['estado'] ?? '') === 'aprobado') { $x['estado'] = 'pendiente'; $x['aprobado_por'] = ''; }
+    }
+    unset($x);
+    guardarAp($FICHERO, $d); salir(estado($d, $hoy, $yo));
+  }
+  /* ---------- Elegir lo que sale: se marca de uno en uno y se aprueba todo junto al final ---------- */
+  case 'elegir': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden elegir Carlos e Isabel.'], 403);
+    $e = estado($d, $hoy, $yo); $num = (int)($e['abierto']['numero'] ?? 0);
+    if (!$num) salir(['error' => 'No hay ningún boletín abierto.'], 409);
+    $id = (string)($cuerpo['id'] ?? ''); $pieza = null;
+    foreach ($e['items'] as $x) if ($x['id'] === $id) $pieza = $x;
+    if (!$pieza) salir(['error' => 'No se encuentra.'], 404);
+    $sel = $e['seleccion'];
+    if (!empty($cuerpo['si'])) {
+      if (($pieza['tipo'] ?? '') === 'firma' && !in_array($id, $sel, true) && $e['articulosAprobados'] + $e['articulosElegidos'] >= MAX_ARTICULOS)
+        salir(['error' => 'Ya hay ' . MAX_ARTICULOS . ' artículos. Quita uno de los elegidos (o pasa uno aprobado a la recámara) para elegir este.', 'lleno' => true] + $e, 409);
+      if (!in_array($id, $sel, true)) $sel[] = $id;
+    } else $sel = array_values(array_diff($sel, [$id]));
+    $d['seleccion'][$num] = $sel; guardarAp($FICHERO, $d);
+    salir(estado($d, $hoy, $yo));
+  }
+  case 'aprobar-eleccion': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden aprobar Carlos e Isabel.'], 403);
+    $e = estado($d, $hoy, $yo); $num = (int)($e['abierto']['numero'] ?? 0);
+    if (!$e['seleccion']) salir(['error' => 'No has elegido nada todavía.'], 400);
+    if ($e['articulosAprobados'] + $e['articulosElegidos'] > MAX_ARTICULOS) salir(['error' => 'Hay más de ' . MAX_ARTICULOS . ' artículos: quita alguno.'], 409);
+    foreach ($e['seleccion'] as $id) aprobarPieza($d, $id, $yo);
+    $d['seleccion'][$num] = []; guardarAp($FICHERO, $d);
+    salir(estado($d, $hoy, $yo) + ['aprobados' => count($e['seleccion'])]);
+  }
   case 'aprobar': case 'rechazar': case 'borrar': {
     $id = $cuerpo['id'] ?? '';
+    if ($acc === 'aprobar') {   // aprobar suelto: también respeta el tope de artículos
+      $e = estado($d, $hoy, $yo); $p = null; foreach ($e['items'] as $x) if ($x['id'] === $id) $p = $x;
+      if ($p && ($p['tipo'] ?? '') === 'firma' && ($p['estado'] ?? '') !== 'aprobado' && $e['articulosAprobados'] >= MAX_ARTICULOS)
+        salir(['error' => 'Ya hay ' . MAX_ARTICULOS . ' artículos aprobados. Pasa uno a la recámara para aprobar este.'], 409);
+    }
     if (esPreparado($id)) {   // lo preparado: aprobar el cambio propuesto, rechazarlo, o quitar la pieza del boletín
       if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden hacerlo Carlos e Isabel.'], 403);
       $c = $d['cambios'][$id] ?? [];
@@ -353,6 +443,21 @@ switch ($acc) {
   }
 
   /* ---------- Recámara: lo preparado que todavía no va a ningún número ---------- */
+  /* ---------- Vista previa del equipo: enlace temporal con clave (vale hasta el día siguiente a la salida) ---------- */
+  case 'previa': {
+    $e = estado($d, $hoy, $yo);
+    if (!$e['abierto']) salir(['error' => 'Primero hay que abrir el boletín.'], 409);
+    $num = (int)$e['abierto']['numero'];
+    $p = $d['previas'][$num] ?? null;
+    if (!$p || !empty($cuerpo['nueva']) || strtotime($p['expira'] ?? '1970-01-01') < time()) {
+      $alf = 'abcdefghjkmnpqrstuvwxyz23456789'; $clave = '';
+      for ($i = 0; $i < 8; $i++) $clave .= $alf[random_int(0, strlen($alf) - 1)];
+      $fin = (new DateTime($e['abierto']['fecha'] . ' 23:59:59', $zona))->modify('+1 day');
+      $p = ['token' => bin2hex(random_bytes(12)), 'clave' => $clave, 'numero' => $num, 'expira' => $fin->format('c'), 'creada_por' => $yo['nombre'] ?? '', 'creada' => gmdate('c')];
+      $d['previas'][$num] = $p; guardarAp($FICHERO, $d);
+    }
+    salir(['url' => origenPrevia() . '/previa/' . $p['token'], 'clave' => $p['clave'], 'expira' => $p['expira'], 'numero' => $num]);
+  }
   case 'recamara': {
     $r = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'recamara'));
     $r = array_merge($r, piezasRecamara($d));

@@ -65,11 +65,12 @@
       (b.noticias || []).forEach(function(n){ if (String(n.titular || "").indexOf(a.titular) === 0 && a.seccion) n.seccion = a.seccion; }); });
   });
   var C = window.PATRIAM_CONFIG;
-  if (C && destino) {
-    C.biblioteca = C.biblioteca || []; destino.recomendados = destino.recomendados || [];
+  if (C) {
+    C.biblioteca = C.biblioteca || []; if (destino) destino.recomendados = destino.recomendados || [];
     (window.PATRIAM_RECOMENDAR || []).forEach(function(x){
       if (!x || !x.id) return;
-      if (x.numero && !L.some(function(b){ return Number(b.numero) === Number(x.numero); })) return;   // no se ve hasta que salga su boletín
+      if (x.numero && !L.some(function(b){ return Number(b.numero) === Number(x.numero); })) {   // su boletín puede abrirse desde Publicar: espera a que llegue
+        (window.PATRIAM_RECOMENDAR_ESPERA = window.PATRIAM_RECOMENDAR_ESPERA || []).push(JSON.parse(JSON.stringify(x))); return; }
       var ya = C.biblioteca.filter(function(y){ return y.id === x.id; })[0];
       if (ya) Object.assign(ya, JSON.parse(JSON.stringify(x))); else C.biblioteca.push(JSON.parse(JSON.stringify(x)));
       var dr = x.numero ? L.filter(function(b){ return Number(b.numero) === Number(x.numero); })[0] : destino;
@@ -92,7 +93,7 @@
 })();
 </script>
 <script>document.write('<script src="aportaciones.js?m=' + Date.now().toString(36).slice(0, -4) + '"><\/script>');</script>
-<script src="aportaciones-unir.js?v=20261111b"></script>
+<script src="aportaciones-unir.js?v=20261111c"></script>
 <script>unirAportaciones(window.BOLETINES || [], window.PATRIAM_CONFIG, { lectores: true });</script>
 <script>
 /* Presentaciones de los colaboradores enviadas desde Publicar (ya aprobadas) */
@@ -116,6 +117,17 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   if (d) { d.colaboraciones = d.colaboraciones || []; d.colaboraciones.push(JSON.parse(JSON.stringify(it))); }
 });
 </script>
+<script>
+/* Las recomendaciones preparadas para un boletín abierto desde Publicar (llega en aportaciones.js) */
+(window.PATRIAM_RECOMENDAR_ESPERA || []).forEach(function(x){
+  var L = window.BOLETINES || [], C = window.PATRIAM_CONFIG; if (!C) return;
+  var d = L.filter(function(b){ return Number(b.numero) === Number(x.numero); })[0]; if (!d) return;
+  C.biblioteca = C.biblioteca || []; d.recomendados = d.recomendados || [];
+  var ya = C.biblioteca.filter(function(y){ return y.id === x.id; })[0];
+  if (ya) Object.assign(ya, x); else C.biblioteca.push(x);
+  if (d.recomendados.indexOf(x.id) < 0) d.recomendados.push(x.id);
+});
+</script>
 <script>try { aplicarCambiosPreparados(window.BOLETINES || [], window.PATRIAM_CONFIG); } catch (e) {}</script>
 <script>document.write('<script src="imagenes-auto.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
 <script>
@@ -124,7 +136,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   (window.BOLETINES || []).forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c && !c.imagen && A[c.id]) c.imagen = A[c.id]; }); }); })();
 </script>
 <script src="legales.js?v=20261031a"></script>
-<script src="boletin.js?v=20261111aa"></script>
+<script src="boletin.js?v=20261111ab"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
