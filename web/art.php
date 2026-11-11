@@ -14,7 +14,7 @@ $art = null;
 if ($id && preg_match('/window\.PATRIAM_IMPORTAR = (\[.*?\n\]);/s', $s, $m)) {
   foreach (json_decode($m[1], true) ?: [] as $x) if (($x['id'] ?? '') === $id) { $art = $x; break; }
 }
-$destino = WEB . '/' . ($art ? '#/colaboracion/' . rawurlencode($id) : '');
+$destino = WEB . '/' . ($id ? '#/colaboracion/' . rawurlencode($id) : '');   // también las firmas escritas en el editor
 $titulo = $art ? $art['titulo'] : 'Lo que hay que saber: con criterio · PATRIAM';
 $desc = $art ? plano($art['entradilla'] ?? '') : 'El boletín de PATRIAM.';
 if ($art && !empty($art['autor'])) $desc = $art['autor'] . ' · ' . $desc;
