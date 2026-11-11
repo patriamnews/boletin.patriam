@@ -193,7 +193,7 @@ function sincronizarSuscriptores($lista, $bajas) {
     $l[$e] = $x;
   }
   // Los que ya no están en la lista buena (y no se apuntaron hace un momento) dejan de recibir
-  foreach ($l as $e => &$x) if (($x['estado'] ?? '') === 'activo' && !isset($vistos[$e]) && strtotime($x['alta'] ?? '') < time() - 600) { $x['estado'] = 'fuera'; $x['fuera'] = gmdate('c'); }
+  foreach ($l as $e => &$x) if (($x['estado'] ?? '') === 'activo' && !isset($vistos[$e]) && ($x['origen'] ?? '') !== 'publicar' && strtotime($x['alta'] ?? '') < time() - 600) { $x['estado'] = 'fuera'; $x['fuera'] = gmdate('c'); }
   unset($x);
   susGuardar($l);
   @file_put_contents(privado() . '/boletin-suscriptores-sincronizado.txt', gmdate('c') . ' · ' . count($vistos) . " activos\n");
