@@ -116,6 +116,7 @@ window.PATRIAM_IMPORTAR = [
   "id": "c-aznar-pp-psoe",
   "numero": 2,
   "apertura": true,
+  "aperturaFija": true,
   "autor": "Consuelo Arnau",
   "cargo": "",
   "titulo": "Aznar lo confirma: PP y PSOE son lo mismo",

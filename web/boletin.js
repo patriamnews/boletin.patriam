@@ -119,13 +119,20 @@ function todasColaboraciones(lista) {
   return r;
 }
 function enlaceColaboracion(c) { return "#/colaboracion/" + encodeURIComponent(c.id); }
+/* Ficha breve del boletín: imagen entera, título, un resumen corto y «Leer más» (se abre encima, sin salir del boletín) */
+function fichaBreve(tipo, id, titulo, img, resumen, medio) {
+  return '<article class="fb" data-tipo="' + tipo + '" data-id="' + esc(String(id)) + '" tabindex="0">' +
+    '<span class="fb-img">' + (img ? '<img src="' + esc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : "") + (medio && !img ? "<b>" + esc(medio) + "</b>" : "") + "</span>" +
+    '<span class="fb-txt"><h3>' + esc(titulo || "") + "</h3>" + (resumen ? "<p>" + esc(recortar(resumen, 160)) + "</p>" : "") +
+    '<span class="fb-mas">Leer más ' + icono("flecha") + "</span></span></article>";
+}
 function tarjetaColaboracion(c, b) {
   const img = urlSegura(c.imagen);
   return '<a class="bol-colab" href="' + enlaceColaboracion(c) + '">' +
     '<div class="bol-colab-img"' + (img ? ' style="background-image:url(\'' + esc(img) + '\')"' : "") + ">" + (img ? "" : icono("colaboraciones", "grande")) + "</div>" +
     '<div class="bol-colab-txt"><div class="bol-etiqueta"><span>Firma invitada</span>' + (b ? "<em>" + esc(fechaLarga(b.fecha)) + "</em>" : "") + "</div>" +
     "<h3>" + esc(c.titulo) + "</h3>" + (c.entradilla ? "<p>" + esc(recortar(c.entradilla, 150)) + "</p>" : "<p>" + esc(recortar(textoPlano(primerParrafo(c.texto)), 150)) + "</p>") +
-    '<span class="bol-colab-autor"><span class="bol-avatar">' + esc((c.autor || "?").charAt(0).toUpperCase()) + "</span><span><b>" + esc(c.autor || "") + "</b>" + (c.cargo ? "<small>" + esc(c.cargo) + "</small>" : "") + "</span></span></div></a>";
+    '<span class="bol-colab-autor"><span class="bol-avatar">' + esc((c.autor || "?").charAt(0).toUpperCase()) + "</span><span><b>" + esc(c.autor || "") + "</b>" + (c.cargo ? "<small>" + esc(c.cargo) + "</small>" : "") + "</span></span><span class=\"bol-leer-completo\">Leer completo →</span></div></a>";
 }
 /* Sección de una firma: la que tenga marcada; si no tiene, Actualidad */
 function claveColab(c) { const k = sinAcentos(c.seccion || ""); return SECCIONES.some(x => x.clave === k) ? k : "actualidad"; }
@@ -667,7 +674,7 @@ function centroInicio(b, cfg, todos) {
   const urlsRec = new Set((b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean)
     .flatMap(x => [x.url].concat((x.capitulos || []).map(c => c.url))).filter(Boolean).map(u => String(u).trim()));
   const ns = (b.noticias || []).filter(n => (n.titular || n.url) && !urlsRec.has(String(n.url || "").trim()));
-  const cols = ordenarFirmas((b.colaboraciones || []).filter(c => c.titulo));
+  let cols = ordenarFirmas((b.colaboraciones || []).filter(c => c.titulo));
   const grupos = gruposNoticias(ns);
   const recs = (b.recomendados || []).map(id => itemBib(cfg, id)).filter(Boolean);
   const evs = todosEventos([b]).proximos;
@@ -675,26 +682,36 @@ function centroInicio(b, cfg, todos) {
   let h = editor ? "" : barraCompartir(b, cfg);
   // Todo en una sola página: cada sección (Actualidad, Sociedad, Historia, Análisis…) con nuestros artículos y las noticias,
   // en fichas cuadradas del mismo tamaño; al final, las recomendaciones
-  h += '<div class="bol-completo" id="completo">';
+  h += '<div class="bol-completo" id="completo" data-b="' + esc(b.id) + '">';
+  // La principal (la fijada, o la marcada como apertura) va arriba, grande, y no se repite en su sección
+  const princ = cols.find(c => c.aperturaFija) || cols.find(c => c.apertura);
+  if (princ) {
+    const pimg = urlSegura(princ.imagen);
+    h += '<section class="fb-principal fb" data-tipo="c" data-id="' + esc(princ.id) + '" tabindex="0">' +
+      '<span class="fb-img">' + (pimg ? '<img src="' + esc(pimg) + '" alt="">' : "") + "</span>" +
+      '<span class="fb-txt"><span class="pt-kicker">' + esc((SECCIONES.find(x => x.clave === claveColab(princ)) || {}).nombre || "") + '</span><h2>' + esc(princ.titulo) + "</h2>" +
+      (princ.entradilla ? "<p>" + esc(princ.entradilla) + "</p>" : "") +
+      '<span class="fb-autor">' + esc(princ.autor || "") + '</span><span class="fb-mas">Leer más ' + icono("flecha") + "</span></span></section>";
+    cols = cols.filter(c => c !== princ);
+  }
   const secsCol = new Set(cols.map(c => claveColab(c)));
   const secs = SECCIONES.slice().sort((a, c) => pesoLectura(a.clave) - pesoLectura(c.clave))
     .filter(sec => secsCol.has(sec.clave) || grupos.some(g => g.sec.clave === sec.clave));
   secs.forEach(sec => {
     const suyas = cols.filter(c => claveColab(c) === sec.clave);
     const g = grupos.find(x => x.sec.clave === sec.clave);
-    const fichas = suyas.map(c => tarjetaColaboracion(c, b)).concat(g ? g.items.map(({ n, i }) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1))) : []);
+    const fichas = suyas.map(c => fichaBreve("c", c.id, c.titulo, urlSegura(c.imagen), c.entradilla || textoPlano(primerParrafo(c.texto))))
+      .concat(g ? g.items.map(({ n, i }) => fichaBreve("n", i, n.titular || n.url, urlSegura(n.imagen), n.resumen ? textoPlano(n.resumen) : "", n.medio)) : []);
     h += '<section class="bol-noticias bol-seccion-unica" id="sec-' + sec.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(sec.nombre) + "</h2>" +
          '<a href="#/' + sec.ruta + '">Ver más en ' + esc(sec.menu) + " " + icono("flecha") + "</a></div>" +
-         '<div class="bol-lista bol-firmas-lista">' + fichas.join("") + "</div></section>";
+         '<div class="fb-lista">' + fichas.join("") + "</div></section>";
   });
   if (cols.length) h += notaColab(cfg);
-  // Un bloque por tipo: «Podcasts y vídeos recomendados», «Libros recomendados»…
-  gruposRecomendados(recs).forEach(g => {
-    const titulo = g.clave === "recomendado" ? "Recomendado esta semana" : g.t + " de la semana";
-    h += '<section class="bol-recomendados" id="rec-' + g.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(titulo) + "</h2>" +
-         (g.ruta ? '<a href="' + g.ruta + '">Ver todos ' + icono("flecha") + "</a>" : "") + "</div>" +
-         '<div class="bib-lista">' + g.xs.map(x => tarjetaBib(x, cfg, true)).join("") + "</div></section>";
-  });
+  // Recomendaciones al final: libro, podcast y película, en fichas breves que se abren encima
+  const grs = gruposRecomendados(recs);
+  if (grs.length) h += '<section class="bol-noticias bol-seccion-unica" id="recomendaciones"><div class="bol-sec-cab"><h2 class="bol-tit-sec">Recomendaciones</h2></div><div class="fb-lista">' +
+    grs.map(g => g.xs.map(x => fichaBreve("r", x.id, x.titulo, urlSegura(x.imagen) || ((y => y ? "https://i.ytimg.com/vi/" + y + "/hqdefault.jpg" : "")(idYoutube(urlSegura(((x.capitulos || [])[0] || x).url)))),
+      g.t + (x.medio ? " · " + x.medio : "") + (x.resumen || x.descripcion ? " — " + textoPlano(x.resumen || x.descripcion) : ""))).join("")).join("") + "</div></section>";
   h += bloqueRedes(cfg);
   h += '<div class="bol-unete"><span class="bol-unete-ico">' + icono("correo") + "</span>" +
        '<div><b>' + esc(cfg.uneteTitulo || "Únete a PATRIAM") + "</b><p>" + esc(cfg.uneteTexto || "Recibe cada semana nuestro boletín y forma parte del cambio.") + "</p></div>" +
@@ -1560,4 +1577,81 @@ function textoComunicacionWa(c, aj, nombre) {
   window.addEventListener("resize", luego);
   document.addEventListener("DOMContentLoaded", function () { new MutationObserver(luego).observe(document.body, { childList: true, subtree: true }); luego(); });
   window.addEventListener("load", luego, true);
+})();
+
+
+/* ---------- Lector: «Leer completo» abre la pieza encima del boletín, sin salir de él hasta cerrarla ---------- */
+(function () {
+  if (typeof document === "undefined") return;
+  let caja = null;
+  function cerrar(desdeAtras) {
+    if (!caja) return;
+    caja.remove(); caja = null; document.documentElement.classList.remove("lector-abierto");
+    if (!desdeAtras && history.state && history.state.lector) history.back();
+  }
+  function abrir(html) {
+    if (caja) caja.remove();
+    caja = document.createElement("div");
+    caja.className = "lector";
+    caja.innerHTML = '<div class="lector-caja" role="dialog" aria-modal="true"><button type="button" class="lector-cerrar" aria-label="Cerrar">×</button>' +
+      '<div class="lector-in">' + html + '</div><div class="lector-pie"><button type="button" class="bol-btn lector-volver">← Volver al boletín</button></div></div>';
+    document.body.appendChild(caja);
+    document.documentElement.classList.add("lector-abierto");
+    caja.querySelectorAll(".bol-volver, .bol-articulo-pie, .bol-compartir-lector").forEach(e => e.remove());
+    // los enlaces de fuera se abren en otra pestaña; los de dentro del boletín no se siguen
+    caja.querySelectorAll(".lector-in a[href]").forEach(a => {
+      const h = a.getAttribute("href") || "";
+      if (/^https?:/i.test(h)) { a.target = "_blank"; a.rel = "noopener"; } else a.addEventListener("click", e => e.preventDefault());
+    });
+    const st = Object.assign({}, history.state || {}, { lector: 1 });
+    try { history.pushState(st, "", location.href); } catch (e) {}
+    caja.querySelector(".lector-caja").focus && caja.querySelector(".lector-cerrar").focus();
+  }
+  function htmlNoticia(n, cfg) {
+    const url = urlSegura(n.url), yt = idYoutube(url), img = urlSegura(n.imagen), sec = seccionDe(n);
+    let h = '<article class="bol-articulo"><div class="bol-etiqueta"><span>' + esc(sec.nombre) + "</span></div>";
+    if (n.medio) h += '<div class="bol-medio-linea grande">' + logoMedio(n, cfg) + "<span>" + esc(n.medio) + "</span></div>";
+    h += "<h1>" + esc(n.titular || "") + "</h1>";
+    if (yt) h += reproductorYoutube(yt, n.titular, url);
+    else if (img) h += '<img class="bol-articulo-img" src="' + esc(img) + '" alt="">';
+    if (n.resumen) h += '<div class="bol-resumen grande">' + parrafosRicos(n.resumen) + "</div>";
+    h += bloqueComentario(n, cfg);
+    const enl = (n.enlaces || []).filter(e => urlSegura(e.url));
+    if (enl.length > 1) h += '<p class="lector-fuente">' + enl.map(e => '<a class="bol-btn claro" href="' + esc(urlSegura(e.url)) + '">Leer en ' + esc(e.medio || "su web") + " ↗</a>").join(" ") + "</p>";
+    else if (url) h += '<p class="lector-fuente"><a class="bol-btn claro" href="' + esc(url) + '">' + (yt ? "Ver en YouTube" : "Leer la noticia en " + esc(n.medio || "su web")) + " ↗</a></p>";
+    return h + "</article>";
+  }
+  document.addEventListener("click", function (e) {
+    if (caja && (e.target.closest(".lector-cerrar, .lector-volver") || e.target === caja)) { e.preventDefault(); cerrar(); return; }
+    const zona = e.target.closest && e.target.closest("#completo .bol-seccion-unica, #completo .fb-principal");
+    if (!zona) return;
+    if (e.target.closest(".bol-medio-linea a, .lector-fuente a")) return;
+    const ficha = e.target.closest(".fb"); if (!ficha) return;
+    const L = window.BOLETINES || [], C = window.PATRIAM_CONFIG || {};
+    const bid = (document.getElementById("completo") || {}).dataset ? document.getElementById("completo").dataset.b : "";
+    const b = L.find(x => String(x.id) === String(bid));
+    if (ficha.dataset.tipo === "r") {
+      const x = itemBib(C, ficha.dataset.id); if (!x) return;
+      e.preventDefault(); e.stopPropagation();
+      abrir('<div class="bib-lista">' + tarjetaBib(x, C, true) + "</div>");
+      return;
+    }
+    if (ficha.dataset.tipo === "c") {
+      const id = ficha.dataset.id;
+      e.preventDefault(); e.stopPropagation();
+      abrir(paginaColaboracion(L, id, C));
+      return;
+    }
+    if (!b) return;
+    const k = +ficha.dataset.id;
+    const ns = (b.noticias || []).filter(n => (n.titular || n.url));
+    // el número de la ficha es su orden en el boletín
+    const lista = [];
+    gruposNoticias(ns).forEach(g => g.items.forEach(x => { lista[x.i] = x.n; }));
+    const n = lista[k]; if (!n) return;
+    e.preventDefault(); e.stopPropagation();
+    abrir(htmlNoticia(n, C));
+  }, true);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && caja) cerrar(); if (e.key === "Enter" && e.target.classList && e.target.classList.contains("fb")) e.target.click(); });
+  window.addEventListener("popstate", e => { if (caja) { e.stopImmediatePropagation(); cerrar(true); } });
 })();
