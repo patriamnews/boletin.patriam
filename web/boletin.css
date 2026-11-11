@@ -1063,3 +1063,6 @@ html.lector-abierto { overflow: hidden; }
 .fb h3 { min-height: 0; }
 .lector-in .bib-lista .bol-tarjeta, .lector-in .bib { grid-template-columns: 1fr !important; }
 .lector-in .bib-img, .lector-in .bol-foto { min-height: 260px; }
+/* La imagen (también los GIF) siempre entera dentro de su recuadro */
+.fb-img { position: relative; }
+.fb-img img { position: absolute; inset: 0; width: 100% !important; height: 100% !important; object-fit: contain !important; }
