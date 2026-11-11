@@ -484,10 +484,10 @@ function espanaBloque() {
 function paginaEspana(filtro) {
   const d = (typeof window !== "undefined" && window.ESPANA_AL_DIA) || {};
   const gs = espanaGrupos().filter(g => !filtro || (g.tema || "").toLowerCase() === filtro);
-  let h = '<div class="bol-pagina">' + cabPagina("España al día", "Clipping de noticias políticas y económicas de España de los últimos siete días. Se actualiza solo cada día" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
+  let h = '<div class="bol-pagina">' + cabPagina("España al día", "Clipping de noticias políticas y económicas de España de los últimos siete días. Se actualiza sola tres veces al día" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
   h += barraLector("Compartir «España al día»", "*España al día* · Clipping diario de noticias políticas y económicas de España con toda la semana.", "https://boletin.movimientopatriam.es/espana-al-dia");
   h += '<nav class="crit-tabs">' + [["", "Todo"], ["politica", "Política"], ["economia", "Economía"]].map(([k, t]) => '<a href="#/espana-al-dia' + (k ? "/" + k : "") + '"' + ((filtro || "") === (k ? (k === "politica" ? "política" : "economía") : "") ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>";
-  if (!gs.length) return h + '<p class="bol-vacio">Todavía no hay titulares. Se cargan solos varias veces al día.</p></div>';
+  if (!gs.length) return h + '<p class="bol-vacio">Todavía no hay titulares. Se cargan solos tres veces al día.</p></div>';
   let dia = "";
   gs.forEach(g => { const x = espanaDia(g.fecha); if (x !== dia) { if (dia) h += "</div>"; dia = x; h += '<h2 class="esp-dia">' + esc(x.charAt(0).toUpperCase() + x.slice(1)) + '</h2><div class="esp-rejilla">'; } h += espanaFicha(g, false); });
   return h + "</div></div>";
