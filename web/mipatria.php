@@ -148,9 +148,25 @@ if ($acc === 'enviar') {
     [$ok, $motivo] = brevo($email, 'España al día · ' . $g[0]['titulo'], $html, $texto, $baja);
     if ($ok) $env++; else $mal[] = "$email: $motivo";
   }
-  $hechos[$hoy] = ['enviados' => $env, 'errores' => count($mal), 'hora' => gmdate('c')];
+  // Por WhatsApp: a quien lo tenga marcado (Publicar › Boletín › Teléfonos), solo con la API de WhatsApp Business.
+  // Sin la API se manda a mano desde Publicar con «Mandar al siguiente» (España al día de hoy).
+  $wa = 0;
+  require_once __DIR__ . '/carlos.php';
+  if ($k = cWhatsappApi()) {
+    $tf = privado() . '/telefonos.json'; $tel = is_file($tf) ? (json_decode(file_get_contents($tf), true) ?: []) : [];
+    $clave = 'd-' . $hoy; $fechaL = mb_strtolower($fecha) === 'hoy' ? diaLargo() : $fecha;
+    foreach (comLeerTodo()['contactos'] ?? [] as $c) {
+      $mv = cMovil($c['movil'] ?? ''); $id = $c['id'] ?? $mv;
+      if (!$mv || empty($c['waDiaria']) || isset($tel['envios'][$clave][$id])) continue;
+      [$ok, $m] = cWhatsapp($k, $mv, cNombre($c), "Aquí tienes «España al día» de hoy, $fechaL: " . $g[0]['titulo'] . ' y el resto de noticias políticas y económicas de España.' . "\n\n" . URL_MP);
+      if ($ok) { $tel['envios'][$clave][$id] = gmdate('c'); $wa++; } else $mal[] = "+$mv: $m";
+    }
+    $tel += ['envios' => [], 'texto' => ''];
+    file_put_contents($tf . '.tmp', json_encode($tel, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX); rename($tf . '.tmp', $tf); @chmod($tf, 0600);
+  }
+  $hechos[$hoy] = ['enviados' => $env, 'whatsapp' => $wa, 'errores' => count($mal), 'hora' => gmdate('c')];
   file_put_contents($log, json_encode(array_slice($hechos, -60, null, true)), LOCK_EX);
-  echo "Enviados: $env" . ($mal ? "\nErrores:\n" . implode("\n", $mal) : '') . "\n";
+  echo "Enviados: $env correos, $wa WhatsApp" . ($mal ? "\nErrores:\n" . implode("\n", $mal) : '') . "\n";
   exit;
 }
 

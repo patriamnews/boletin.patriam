@@ -16,7 +16,13 @@ $in = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];
 const TEL_NOTA = 'Boletín por WhatsApp';
 
 function telLeer() { $f = privado() . '/telefonos.json'; $d = is_file($f) ? (json_decode(file_get_contents($f), true) ?: []) : []; return $d + ['envios' => [], 'texto' => ''] ; }
-function telGuardar($d) { $f = privado() . '/telefonos.json'; file_put_contents($f . '.tmp', json_encode($d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX); rename($f . '.tmp', $f); @chmod($f, 0600); }
+function telGuardar($d) {
+  $lim = 'd-' . date('Y-m-d', time() - 30 * 86400);
+  foreach (array_keys($d['envios'] ?? []) as $k) if (str_starts_with((string)$k, 'd-') && $k < $lim) unset($d['envios'][$k]); $f = privado() . '/telefonos.json'; file_put_contents($f . '.tmp', json_encode($d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX); rename($f . '.tmp', $f); @chmod($f, 0600); }
+function telHoyDia() { return 'd-' . (new DateTime('now', new DateTimeZone('Europe/Madrid')))->format('Y-m-d'); }
+function telTextoDiaBase() {
+  return "Buenos días, {nombre}:\n\nAquí tienes «España al día» de hoy, {fecha}: las noticias políticas y económicas de España.\n\n{enlace}\n\nSi te sirve, reenvíalo.\n\nUn saludo,\nPATRIAM";
+}
 function telTextoBase() {
   return "Buenos días, {nombre}:\n\nYa tienes el boletín nº {numero} de PATRIAM, «Lo que hay que saber: con criterio».\n\n{enlace}\n\nSi te gusta, reenvíalo.\n\nUn saludo,\nPATRIAM";
 }
@@ -26,13 +32,15 @@ function telPublico() {
   $cont = array_values(array_map(fn($c) => [
       'id' => $c['id'] ?? '', 'nombre' => $c['nombre'] ?? '', 'movil' => $c['movil'] ?? '', 'email' => $c['email'] ?? '',
       'nota' => $c['nota'] ?? '', 'origen' => $c['origen'] ?? '', 'alta' => $c['alta'] ?? '', 'wa' => empty($c['noWa']) && cMovil($c['movil'] ?? '') !== '',
-      'abonado' => !empty($c['abonado']), 'quincenal' => ($sus[cCorreo($c['email'] ?? '')]['estado'] ?? '') === 'activo', 'diaria' => ($dia[cCorreo($c['email'] ?? '')]['estado'] ?? '') === 'activo'],
+      'abonado' => !empty($c['abonado']), 'quincenal' => ($sus[cCorreo($c['email'] ?? '')]['estado'] ?? '') === 'activo', 'diaria' => ($dia[cCorreo($c['email'] ?? '')]['estado'] ?? '') === 'activo',
+      'waDiaria' => !empty($c['waDiaria']) && cMovil($c['movil'] ?? '') !== ''],
     comLeerTodo()['contactos'] ?? []));
   usort($cont, fn($a, $b) => strcasecmp($a['nombre'], $b['nombre']));
   $env = is_file(privado() . '/boletin-envios.json') ? (json_decode(file_get_contents(privado() . '/boletin-envios.json'), true) ?: []) : [];
   return ['whatsappApi' => (bool)cWhatsappApi(), 'brevo' => !empty(cClaves()['brevo']), 'enviosAuto' => (object)array_map(fn($r) => ['correo' => count($r['correo'] ?? []), 'whatsapp' => count($r['whatsapp'] ?? []), 'errores' => array_slice($r['errores'] ?? [], -5)], $env),
     'suscriptores' => count(array_filter($sus, fn($x) => ($x['estado'] ?? '') === 'activo')), 'diarios' => count(array_filter($dia, fn($x) => ($x['estado'] ?? '') === 'activo')),
-    'contactos' => $cont, 'envios' => (object)$t['envios'], 'texto' => $t['texto'] ?: telTextoBase(), 'textoBase' => telTextoBase()];
+    'contactos' => $cont, 'envios' => (object)$t['envios'], 'texto' => $t['texto'] ?: telTextoBase(), 'textoBase' => telTextoBase(),
+    'hoyDia' => telHoyDia(), 'textoDia' => ($t['textoDia'] ?? '') ?: telTextoDiaBase(), 'textoDiaBase' => telTextoDiaBase()];
 }
 
 if ($acc === 'datos') salir(telPublico());
@@ -50,7 +58,7 @@ if ($acc === 'anadir') {
     $nombre = trim(mb_substr((string)($p['nombre'] ?? ''), 0, 80)); $apell = trim(mb_substr((string)($p['apellidos'] ?? ''), 0, 120));
     $completo = trim($nombre . ' ' . $apell);
     $mv = cMovil($p['movil'] ?? ''); $e = cCorreo($p['email'] ?? '');
-    $quiere = ['quincenal' => !isset($p['quincenal']) || !empty($p['quincenal']), 'diaria' => !empty($p['diaria']), 'whatsapp' => !isset($p['whatsapp']) || !empty($p['whatsapp'])];
+    $quiere = ['quincenal' => !isset($p['quincenal']) || !empty($p['quincenal']), 'diaria' => !empty($p['diaria']), 'whatsapp' => !isset($p['whatsapp']) || !empty($p['whatsapp']), 'waDiaria' => !empty($p['waDiaria'])];
     if (!$mv && !$e) { if ($completo !== '' || trim((string)($p['movil'] ?? '')) !== '') $malos[] = $completo ?: (string)$p['movil']; continue; }
     // ¿ya está? se completa en lugar de repetirlo
     $k = null;
@@ -59,11 +67,12 @@ if ($acc === 'anadir') {
     $datos['abonado'] = !empty($p['abonado']);
     if ($k === null) {
       $com['contactos'][] = ['id' => 'k' . base_convert((string)(int)(microtime(true) * 1000), 10, 36) . bin2hex(random_bytes(2)), 'nota' => TEL_NOTA, 'alta' => gmdate('c'), 'altaPor' => $yo['nombre'] ?? '']
-        + $datos + ($quiere['whatsapp'] ? [] : ['noWa' => true]);
+        + $datos + ($quiere['whatsapp'] ? [] : ['noWa' => true]) + ($quiere['waDiaria'] && $mv ? ['waDiaria' => true] : []);
       $n++;
     } else {
       $com['contactos'][$k] = array_merge($com['contactos'][$k], $datos);
       if ($quiere['whatsapp']) unset($com['contactos'][$k]['noWa']); else $com['contactos'][$k]['noWa'] = true;
+      if ($quiere['waDiaria'] && $mv) $com['contactos'][$k]['waDiaria'] = true;
       $act++;
     }
     if ($e && $quiere['quincenal']) { susAlta($e, $completo); $l = susLeer(); $l[$e]['origen'] = 'publicar'; $l[$e]['abonado'] = !empty($p['abonado']); susGuardar($l); }
@@ -83,6 +92,7 @@ if ($acc === 'editar') {
     if (isset($in['movil'])) { $mv = cMovil($in['movil']); if (!$mv) { cSoltar($fp); salir(['error' => 'El móvil no es válido.'], 400); } $c['movil'] = '+' . $mv; }
     if (isset($in['email'])) $c['email'] = cCorreo($in['email']);
     if (isset($in['wa'])) { if ($in['wa']) unset($c['noWa']); else $c['noWa'] = true; }
+    if (isset($in['waDiaria'])) { if ($in['waDiaria']) $c['waDiaria'] = true; else unset($c['waDiaria']); }
   }
   unset($c);
   comGuardarTodo($com); cSoltar($fp); salir(telPublico());
@@ -92,14 +102,15 @@ if ($acc === 'quitar') {
   $com['contactos'] = array_values(array_filter($com['contactos'] ?? [], fn($c) => ($c['id'] ?? '') !== ($in['id'] ?? '')));
   comGuardarTodo($com); cSoltar($fp); salir(telPublico());
 }
-if ($acc === 'enviado') {   // apunta que a esta persona ya se le ha mandado el boletín nº N
-  $t = telLeer(); $num = (string)(int)($in['numero'] ?? 0); $id = (string)($in['id'] ?? '');
+if ($acc === 'enviado') {   // apunta que a esta persona ya se le ha mandado el boletín nº N (o «España al día» de hoy: d-AAAA-MM-DD)
+  $t = telLeer(); $id = (string)($in['id'] ?? '');
+  $num = preg_match('/^d-\d{4}-\d{2}-\d{2}$/', (string)($in['numero'] ?? '')) ? (string)$in['numero'] : (string)(int)($in['numero'] ?? 0);
   if ($num === '0' || $id === '') { cSoltar($fp); salir(['error' => 'Faltan datos.'], 400); }
   if (!empty($in['quitar'])) unset($t['envios'][$num][$id]); else $t['envios'][$num][$id] = gmdate('c');
   telGuardar($t); cSoltar($fp); salir(telPublico());
 }
 if ($acc === 'texto') {
-  $t = telLeer(); $t['texto'] = mb_substr((string)($in['texto'] ?? ''), 0, 3000);
+  $t = telLeer(); $t[($in['cual'] ?? '') === 'dia' ? 'textoDia' : 'texto'] = mb_substr((string)($in['texto'] ?? ''), 0, 3000);
   telGuardar($t); cSoltar($fp); salir(telPublico());
 }
 cSoltar($fp);
