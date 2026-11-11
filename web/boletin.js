@@ -441,7 +441,16 @@ function miniCalendario(eventos, ref) {
   return h + "</div></div>";
 }
 /* ---------- «España al día»: titulares de la semana (se actualiza solo, scripts/espana-al-dia.mjs) ---------- */
-function espanaGrupos() { const d = typeof window !== "undefined" && window.ESPANA_AL_DIA; return (d && Array.isArray(d.grupos)) ? d.grupos : []; }
+function espanaGrupos() {
+  const d = typeof window !== "undefined" && window.ESPANA_AL_DIA, auto = (d && Array.isArray(d.grupos)) ? d.grupos : [];
+  // Las que el equipo mete a mano desde Publicar («no puede faltar»): van delante durante siete días
+  const A = (typeof window !== "undefined" && window.PATRIAM_APORTACIONES) || {}, lim = Date.now() - 7 * 864e5;
+  const fijas = (A.items || []).filter(x => x.tipo === "espana" && x.datos && x.datos.url && (!x.creado || Date.parse(x.creado) >= lim))
+    .map(x => ({ titulo: x.datos.titulo, resumen: x.datos.resumen || "", imagen: x.datos.imagen || "", fecha: x.creado || new Date().toISOString(), tema: x.datos.tema || "Política", destacada: true, medios: [{ medio: x.datos.medio || "Abrir", url: x.datos.url }] }))
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const urls = new Set(fijas.map(f => f.medios[0].url));
+  return fijas.concat(auto.filter(g => !g.medios.some(m => urls.has(m.url))));
+}
 function espanaHora(f) { try { return new Date(f).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } }
 function espanaDia(f) {
   const d = new Date(f), hoy = new Date(), ayer = new Date(Date.now() - 864e5), mismo = (a, b) => a.toDateString() === b.toDateString();
@@ -458,18 +467,19 @@ function espanaFicha(g, mini) {
     "<h3>" + esc(g.titulo) + "</h3>" + (!mini && g.resumen ? "<p>" + esc(recortar(g.resumen, 260)) + "</p>" : "") + espanaBotones(g) + "</div></article>";
 }
 function espanaLateral() {
-  const gs = espanaGrupos().slice(0, 10);
+  const gs = espanaGrupos().filter(g => g.destacada).concat(espanaGrupos().filter(g => !g.destacada && g.medios.length > 1), espanaGrupos().filter(g => !g.destacada && g.medios.length < 2)).slice(0, 3);
   if (!gs.length) return "";
-  return '<section class="lat-esp"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2><a href="#/espana-al-dia">La semana</a></div>' +
-    '<div class="lat-esp-lista">' + gs.map(g => espanaFicha(g, true)).join("") + "</div>" + '<a class="bol-btn lat-esp-mas" href="#/espana-al-dia">Ver toda la semana ' + icono("flecha") + "</a></section>";
+  return '<section class="lat-esp"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2></div>' +
+    '<div class="lat-esp-lista">' + gs.map(g => espanaFicha(g, true)).join("") + "</div>" + '<a class="bol-btn lat-esp-mas" href="https://boletin.movimientopatriam.es/mipatriaaldia">Leer más ' + icono("flecha") + "</a></section>";
 }
 function espanaBloque() {
   const gs = espanaGrupos();
   if (!gs.length) return "";
-  const dest = gs.filter(g => g.medios.length > 1).concat(gs.filter(g => g.medios.length < 2)).slice(0, 6);
-  return '<section class="bol-espana"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2><a href="#/espana-al-dia">Toda la semana ' + icono("flecha") + "</a></div>" +
+  const dest = gs.filter(g => g.destacada).concat(gs.filter(g => !g.destacada && g.medios.length > 1), gs.filter(g => !g.destacada && g.medios.length < 2)).slice(0, 3);
+  return '<section class="bol-espana"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2></div>' +
     '<p class="esp-intro">Clipping de noticias políticas y económicas de España de estos días. Si varios medios cuentan lo mismo, tienes un botón para cada uno.</p>' +
-    '<div class="esp-rejilla">' + dest.map(g => espanaFicha(g, false)).join("") + "</div></section>";
+    '<div class="esp-rejilla">' + dest.map(g => espanaFicha(g, false)).join("") + "</div>" +
+    '<p class="esp-mas"><a class="bol-btn" href="https://boletin.movimientopatriam.es/mipatriaaldia">Leer más ' + icono("flecha") + '</a> <a class="bol-btn claro" href="https://boletin.movimientopatriam.es/mipatriaaldia#recibir">Recíbelo cada mañana en tu correo</a></p></section>';
 }
 function paginaEspana(filtro) {
   const d = (typeof window !== "undefined" && window.ESPANA_AL_DIA) || {};
@@ -1146,7 +1156,7 @@ function renderCorreo(b, cfg, opciones) {
       '<p style="margin:2px 0 0;font:400 14px/1.5 ' + F + ';color:#5b4f49">' + [e.hora, e.lugar].filter(Boolean).map(esc).join(" · ") + (e.descripcion ? "<br>" + esc(e.descripcion) : "") + "</p></td></tr></table>";
   }).join(""), "#faf6ef");
   // España al día (lo más reciente de la semana)
-  const esp = espanaGrupos().slice(0, 8);
+  const esp = espanaGrupos().filter(g => g.destacada).concat(espanaGrupos().filter(g => !g.destacada && g.medios.length > 1), espanaGrupos().filter(g => !g.destacada && g.medios.length < 2)).slice(0, 3);
   if (esp.length) h += bloque(etiqueta("España al día") +
     '<p style="margin:0 0 16px;font:400 14px/1.5 ' + F + ';color:#6b5f58">Clipping de noticias políticas y económicas de España de estos días.</p>' +
     esp.map(g => '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px;border-top:1px solid #eadfcd"><tr>' +
@@ -1154,7 +1164,7 @@ function renderCorreo(b, cfg, opciones) {
       '<td valign="top" style="padding:12px 0 0 ' + (urlSegura(g.imagen) ? "14px" : "0") + '"><p style="margin:0 0 4px;font:600 10px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + G + '">' + esc(g.tema || "Política") + '</p>' +
       '<p style="margin:0 0 6px;font:700 16px/1.3 ' + F + ";color:" + T + '">' + esc(g.titulo) + "</p>" +
       '<p style="margin:0">' + g.medios.map(m => '<a href="' + esc(m.url) + '" style="display:inline-block;margin:0 6px 6px 0;background:' + G + ';color:#fff;text-decoration:none;font:600 11px ' + F + ';padding:5px 11px;border-radius:999px">' + esc(m.medio) + " &rarr;</a>").join("") + "</p></td></tr></table>").join("") +
-    boton(ir("#/espana-al-dia"), "Toda la semana"), "#ffffff");
+    boton("https://boletin.movimientopatriam.es/mipatriaaldia", "Leer más"), "#ffffff");
   // llamada final
   h += bloque('<div style="text-align:center"><p style="margin:0 0 14px;font:italic 400 18px ' + F + ";color:" + G + '">Todo el boletín, con vídeos, podcasts y la biblioteca, en la web</p>' + boton(base, "Ver el boletín completo") + "</div>");
   // pie

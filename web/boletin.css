@@ -928,3 +928,4 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 .leer-varios { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 
 @media (max-width: 640px) { .bol-pag-cab { flex-direction: column; align-items: flex-start; gap: .5rem; } .bol-pag-cab p { flex: none; font-size: 1rem; line-height: 1.45; } }
+.esp-mas { display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; margin: 1.2rem 0 0; }

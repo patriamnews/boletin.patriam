@@ -23,7 +23,7 @@ if ($acc === 'js') {
   header('Cache-Control: no-cache, max-age=0');
   $d = leerAp($FICHERO);
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'aprobado'));
-  $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1])], $items);
+  $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1]), 'creado' => $x['creado'] ?? ''], $items);
   echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
   exit;
 }
@@ -127,6 +127,12 @@ switch ($acc) {
       $datos['enlaces'] = array_values(array_filter(array_map(fn($e) => ['medio' => limpio($e['medio'] ?? '', 80), 'url' => url_ok($e['url'] ?? '')], array_slice((array)($x['enlaces'] ?? []), 0, 8)), fn($e) => $e['url']));
       if (!$datos['enlaces']) unset($datos['enlaces']);
       if (!$datos['titular'] || !$datos['url']) salir(['error' => 'Faltan el titular o el enlace de la noticia.'], 400);
+    } elseif ($tipo === 'espana') {
+      // Una noticia que no puede faltar en «España al día» (también de Instagram, X, YouTube…): sale destacada siete días
+      $datos = ['titulo' => limpio($x['titular'] ?? ($x['titulo'] ?? ''), 300), 'url' => url_ok($x['url'] ?? ''), 'medio' => limpio($x['medio'] ?? '', 80), 'imagen' => url_ok($x['imagen'] ?? ''),
+        'resumen' => limpio($x['resumen'] ?? '', 1200), 'tema' => ($x['tema'] ?? '') === 'Economía' ? 'Economía' : 'Política'];
+      if (!$datos['titulo'] || !$datos['url']) salir(['error' => 'Faltan el titular o el enlace.'], 400);
+      if (!$datos['medio']) $datos['medio'] = preg_replace('/^www\./', '', parse_url($datos['url'], PHP_URL_HOST) ?: 'Abrir');
     } elseif ($tipo === 'firma') {
       $datos = ['titulo' => limpio($x['titulo'] ?? '', 300), 'entradilla' => limpio($x['entradilla'] ?? '', 600), 'texto' => limpio($x['texto'] ?? '', 60000), 'imagen' => url_ok($x['imagen'] ?? ''),
         'autor' => limpio($x['firma'] ?? '', 80), 'cargo' => limpio($x['cargo'] ?? '', 120), 'seccion' => $sec, 'tema' => limpio($x['tema'] ?? '', 60)];
