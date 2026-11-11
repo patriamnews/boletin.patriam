@@ -28,13 +28,13 @@
 <meta name="apple-mobile-web-app-title" content="Lo que hay que saber, con criterio · Boletín de noticias de PATRIAM">
 <link rel="apple-touch-icon" href="icono-192.png">
 <link rel="icon" href="icono-192.png">
-<link rel="stylesheet" href="boletin.css?v=20261111sinautor">
+<link rel="stylesheet" href="boletin.css?v=20261111frase">
 </head>
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
 <script>document.write('<script src="espana-al-dia.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
-<script src="importar.js?v=20261111sinautor"></script>
+<script src="importar.js?v=20261111frase"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -93,7 +93,7 @@
 })();
 </script>
 <script>document.write('<script src="aportaciones.js?m=' + Date.now().toString(36).slice(0, -4) + '"><\/script>');</script>
-<script src="aportaciones-unir.js?v=20261111d"></script>
+<script src="aportaciones-unir.js?v=20261111frase"></script>
 <script>unirAportaciones(window.BOLETINES || [], window.PATRIAM_CONFIG, { lectores: true });</script>
 <script>
 /* Presentaciones de los colaboradores enviadas desde Publicar (ya aprobadas) */
@@ -129,6 +129,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
 });
 </script>
 <script>try { aplicarCambiosPreparados(window.BOLETINES || [], window.PATRIAM_CONFIG); } catch (e) {}</script>
+<script>try { aplicarFrases(window.BOLETINES || []); } catch (e) {}</script>
 <script>
 /* La pieza principal elegida en Publicar abre la portada del boletín (si no hay, la que ya iba) */
 (function(){ var P = (window.PATRIAM_APORTACIONES || {}).principal || {};
@@ -143,7 +144,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   (window.BOLETINES || []).forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c && !c.imagen && A[c.id]) c.imagen = A[c.id]; }); }); })();
 </script>
 <script src="legales.js?v=20261031a"></script>
-<script src="boletin.js?v=20261111sinautor"></script>
+<script src="boletin.js?v=20261111frase"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.

@@ -191,7 +191,7 @@ function piezasRecamara($d) {
 }
 /* Aprueba una pieza (subida desde Publicar o preparada en importar.js) */
 function aprobarPieza(&$d, $id, $yo) {
-  if (preg_match('/^(imp|rec)-/', (string)$id)) {
+  if (preg_match('/^(imp|rec|fra)-/', (string)$id)) {
     $c = $d['cambios'][$id] ?? [];
     if (!empty($c['propuesta'])) $c['datos'] = $c['propuesta'];
     $c['aprobado'] = true; $c['aprobado_por'] = $yo['nombre'] ?? ''; unset($c['propuesta'], $c['propuestaDe']);
@@ -200,7 +200,7 @@ function aprobarPieza(&$d, $id, $yo) {
   foreach ($d['items'] as &$x) if ($x['id'] === $id && ($x['estado'] ?? '') === 'pendiente') { $x['estado'] = 'aprobado'; $x['aprobado_por'] = $yo['nombre'] ?? ''; $x['cambiado'] = gmdate('c'); }
   unset($x);
 }
-function esPreparado($id) { return (bool)preg_match('/^(imp|rec)-/', (string)$id); }
+function esPreparado($id) { return (bool)preg_match('/^(imp|rec|fra)-/', (string)$id); }
 function piezaPreparada($id) { foreach (piezasImportar() as $x) if ($x['id'] === $id) return $x; return null; }
 /* Los datos de un formulario de Publicar, limpios según el tipo (igual que al subir) */
 function datosLimpios($tipo, $x, $antes = []) {
@@ -211,6 +211,7 @@ function datosLimpios($tipo, $x, $antes = []) {
   if ($tipo === 'firma') return array_merge($antes, ['titulo' => $t('titulo', 300), 'entradilla' => $t('entradilla', 600), 'texto' => $t('texto', 60000), 'imagen' => $u('imagen'), 'autor' => limpio($x['firma'] ?? ($x['autor'] ?? ($antes['autor'] ?? '')), 80), 'cargo' => $t('cargo', 120), 'seccion' => $sec, 'tema' => $t('tema', 60)]);
   if ($tipo === 'recomendacion') return array_merge($antes, ['tipo' => $t('tipo', 40), 'titulo' => $t('titulo', 300), 'url' => $u('url'), 'imagen' => $u('imagen'), 'medio' => $t('medio', 160), 'descripcion' => $t('descripcion', 3000), 'comentario' => $t('comentario', 3000), 'critica' => $t('critica', 40000), 'comenta' => limpio($x['firma'] ?? ($x['comenta'] ?? ($antes['comenta'] ?? '')), 80)]);
   if ($tipo === 'editorial') return array_merge($antes, ['titulo' => $t('titulo', 300), 'texto' => $t('texto', 40000), 'firma' => $t('firma', 80), 'imagen' => $u('imagen')]);
+  if ($tipo === 'frase') return array_merge($antes, ['frase' => trim($t('frase', 600), " \t\n\"«»“”"), 'autor' => limpio($x['autor'] ?? ($x['firma'] ?? ($antes['autor'] ?? '')), 120)]);
   if ($tipo === 'espana') return array_merge($antes, ['titulo' => limpio($x['titular'] ?? ($x['titulo'] ?? ($antes['titulo'] ?? '')), 300), 'url' => $u('url'), 'medio' => $t('medio', 80), 'imagen' => $u('imagen'), 'resumen' => $t('resumen', 1200)]);
   return $antes;
 }
@@ -224,6 +225,8 @@ function piezasImportar() {
   foreach ($lee('PATRIAM_RECOMENDAR') as $x) $res[] = ['id' => 'rec-' . ($x['id'] ?? ''), 'tipo' => 'recomendacion', 'numero' => $x['numero'] ?? 1,
     'datos' => ['tipo' => $x['tipo'] ?? '', 'titulo' => $x['titulo'] ?? '', 'url' => $x['url'] ?? '', 'imagen' => $x['imagen'] ?? '', 'medio' => $x['medio'] ?? '', 'descripcion' => $x['descripcion'] ?? '',
       'comentario' => $x['comentario'] ?? '', 'critica' => $x['critica'] ?? '', 'comenta' => $x['comenta'] ?? '', 'seccion' => $x['seccion'] ?? '', 'tema' => $x['tema'] ?? 'Cine']];
+  foreach ($lee('PATRIAM_FRASES') as $x) $res[] = ['id' => 'fra-' . ($x['id'] ?? ''), 'tipo' => 'frase', 'numero' => $x['numero'] ?? null,
+    'datos' => ['frase' => $x['frase'] ?? '', 'autor' => $x['autor'] ?? '']];
   return $res;
 }
 
@@ -242,7 +245,7 @@ switch ($acc) {
 
   case 'subir': {
     $e = estado($d, $hoy, $yo);
-    $aRecamara = ($cuerpo['destino'] ?? '') === 'recamara' && in_array($cuerpo['tipo'] ?? '', ['noticia', 'firma', 'recomendacion', 'editorial'], true);
+    $aRecamara = ($cuerpo['destino'] ?? '') === 'recamara' && in_array($cuerpo['tipo'] ?? '', ['noticia', 'firma', 'recomendacion', 'editorial', 'frase'], true);
     if (!$e['abierto'] && !$aRecamara) salir(['error' => 'Primero hay que abrir el boletín de esta semana (o guárdalo en la recámara).'], 409);
     $tipo = $cuerpo['tipo'] ?? '';
     $x = $cuerpo['datos'] ?? [];
@@ -271,6 +274,9 @@ switch ($acc) {
     } elseif ($tipo === 'editorial') {
       $datos = ['titulo' => limpio($x['titulo'] ?? '', 300), 'texto' => limpio($x['texto'] ?? '', 40000), 'firma' => limpio($x['firma'] ?? '', 80), 'imagen' => url_ok($x['imagen'] ?? '')];
       if (!$datos['titulo'] || !$datos['texto']) salir(['error' => 'Faltan el título o el texto de la editorial.'], 400);
+    } elseif ($tipo === 'frase') {   // la frase de cabecera del boletín (bajo «con criterio»): una por número
+      $datos = ['frase' => trim(limpio($x['frase'] ?? '', 600), " \t\n\"«»“”"), 'autor' => limpio($x['autor'] ?? ($x['firma'] ?? ''), 120)];
+      if (!$datos['frase']) salir(['error' => 'Falta la frase.'], 400);
     } else salir(['error' => 'Tipo desconocido.'], 400);
     $id = 'ap-' . bin2hex(random_bytes(5));
     if ($aRecamara) {   // a la recámara: no va a ningún número todavía; se aprueba al usarlo
@@ -278,6 +284,10 @@ switch ($acc) {
       guardarAp($FICHERO, $d);
       salir(estado($d, $hoy, $yo) + ['nuevo' => $id, 'recamara' => true]);
     }
+    if ($tipo === 'frase')   // solo una frase por número: la que hubiera pasa a la recámara
+      foreach ($d['items'] as &$y) if (($y['tipo'] ?? '') === 'frase' && (int)($y['numero'] ?? 0) === (int)$e['abierto']['numero'] && in_array($y['estado'] ?? '', ['pendiente', 'aprobado'], true)) {
+        $y['numero'] = null; $y['estado'] = 'recamara'; $y['cambiado'] = gmdate('c'); }
+    unset($y);
     $d['items'][] = ['id' => $id, 'tipo' => $tipo, 'numero' => $e['abierto']['numero'], 'datos' => $datos, 'estado' => 'pendiente',
       'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];
     guardarAp($FICHERO, $d);
@@ -517,6 +527,11 @@ switch ($acc) {
         'autor' => $p['autor'], 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => '', 'de_recamara' => $p['id']];
       $c = $d['cambios'][$p['id']] ?? []; $c['usado'] = true; $c['cambiado'] = gmdate('c'); $d['cambios'][$p['id']] = $c; $ok = true;
     }
+    $usada = null; foreach ($d['items'] as $x) if ($x['id'] === ($cuerpo['id'] ?? '')) $usada = $x;
+    if (($usada['tipo'] ?? '') === 'frase')   // una frase por número: la que hubiera vuelve a la recámara
+      foreach ($d['items'] as &$y) if (($y['tipo'] ?? '') === 'frase' && $y['id'] !== $usada['id'] && (int)($y['numero'] ?? 0) === (int)$e['abierto']['numero'] && in_array($y['estado'] ?? '', ['pendiente', 'aprobado'], true)) {
+        $y['numero'] = null; $y['estado'] = 'recamara'; $y['cambiado'] = gmdate('c'); }
+    unset($y);
     foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['estado'] ?? '') === 'recamara') {
       $x['numero'] = $e['abierto']['numero']; $x['estado'] = 'pendiente';
       $x['aprobado_por'] = ''; $x['cambiado'] = gmdate('c'); $ok = true;
@@ -544,7 +559,7 @@ switch ($acc) {
     if (!$hecho) {   // algo ya publicado: se copia a la recámara, marcado con el número en que salió
       $p = $cuerpo['pieza'] ?? null;
       if (!$p) foreach ($d['items'] as $x) if ($x['id'] === $id) $p = ['tipo' => $x['tipo'], 'datos' => $x['datos'], 'numero' => $x['numero']];
-      if (!$p || !in_array($p['tipo'] ?? '', ['noticia', 'firma', 'recomendacion', 'editorial'], true)) salir(['error' => 'No se encuentra.'], 404);
+      if (!$p || !in_array($p['tipo'] ?? '', ['noticia', 'firma', 'recomendacion', 'editorial', 'frase'], true)) salir(['error' => 'No se encuentra.'], 404);
       $datos = array_map(fn($v) => is_string($v) ? limpio($v, 60000) : $v, (array)($p['datos'] ?? []));
       $d['items'][] = ['id' => 'ap-' . bin2hex(random_bytes(5)), 'tipo' => $p['tipo'], 'numero' => null, 'datos' => $datos, 'estado' => 'recamara',
         'ya_en' => (int)($p['numero'] ?? 0) ?: null, 'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];

@@ -30,6 +30,8 @@ function unirAportaciones(L, C, opciones) {
     } else if (it.tipo === "editorial") {
       if (!b.editorial || !b.editorial.texto || b.editorial.id === it.id || b._dePublicar) b.editorial = d;
       if (b._dePublicar && d.titulo) b.titulo = d.titulo;
+    } else if (it.tipo === "frase") {   // frase de cabecera de ese número (la última aprobada manda)
+      if (d.frase) { b.fraseMes = d.frase; b.fraseMesAutor = d.autor || ""; b._frasePropia = true; b._fraseDePublicar = true; }
     } else if (it.tipo === "recomendacion" && C) {
       C.biblioteca = C.biblioteca || [];
       b.recomendados = b.recomendados || [];
@@ -71,5 +73,22 @@ function aplicarCambiosPreparados(L, C) {
       (C.biblioteca || []).forEach(function (x) { if (x && x.id === id && c.datos) Object.assign(x, c.datos); });
       if (c.quitado) (L || []).forEach(function (b) { b.recomendados = (b.recomendados || []).filter(function (r) { return r !== id; }); });
     }
+  });
+}
+
+/* Frases de cabecera preparadas en importar.js (window.PATRIAM_FRASES, id «fra-…»): salen en su número cuando
+   alguien las aprueba en Publicar (hasta entonces aportaciones.js las marca como quitadas, salvo en la vista previa).
+   Si desde Publicar se ha subido otra frase para ese número, manda la de Publicar. */
+function aplicarFrases(L) {
+  var M = (window.PATRIAM_APORTACIONES || {}).cambios || {};
+  (window.PATRIAM_FRASES || []).forEach(function (f) {
+    if (!f || !f.id) return;
+    var c = M["fra-" + f.id] || {};
+    if (c.quitado) return;
+    var d = Object.assign({}, f, c.datos || {});
+    (L || []).forEach(function (b) {
+      if (Number(b.numero) !== Number(f.numero) || b._fraseDePublicar || !d.frase) return;
+      b.fraseMes = d.frase; b.fraseMesAutor = d.autor || ""; b._frasePropia = true;
+    });
   });
 }

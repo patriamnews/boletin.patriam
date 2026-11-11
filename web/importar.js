@@ -250,3 +250,13 @@ window.PATRIAM_COLABORADORES = [
 
 /* Redes: la noticia del día que sale arriba en /redes/ (id de un texto de arriba) */
 window.PATRIAM_REDES_DIA = "c-aznar-pp-psoe";
+
+/* Frases de cabecera preparadas (bajo «con criterio»): una por número; salen cuando se aprueban en Publicar */
+window.PATRIAM_FRASES = [
+ {
+  "id": "cortes-valientes",
+  "numero": 2,
+  "frase": "No pelea el número, sino el ánimo. No vencen los muchos, sino los valientes",
+  "autor": "Hernán Cortés"
+ }
+];
