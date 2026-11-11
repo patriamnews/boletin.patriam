@@ -5,9 +5,9 @@ header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 $h = file_get_contents(__DIR__ . '/index.html');
 $t = 'España al día · Clipping de noticias políticas y económicas de España';
-$d = 'Clipping diario de noticias políticas y económicas de España: lo que publican The Objective, El Debate, La Gaceta y El Español, con toda la semana. Por PATRIAM.';
+$d = 'Clipping diario de noticias políticas y económicas de España, con toda la semana. Se actualiza cada día. Por PATRIAM.';
 $u = 'https://boletin.movimientopatriam.es/espana-al-dia';
-$i = 'https://boletin.movimientopatriam.es/espana-al-dia-og.jpg?v=1';
+$i = 'https://boletin.movimientopatriam.es/espana-al-dia-og.jpg?v=2';
 $e = fn($x) => htmlspecialchars($x, ENT_QUOTES, 'UTF-8');
 $cambios = [
   '#<title>.*?</title>#s' => '<title>' . $e($t) . '</title>',

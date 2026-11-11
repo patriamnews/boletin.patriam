@@ -468,14 +468,14 @@ function espanaBloque() {
   if (!gs.length) return "";
   const dest = gs.filter(g => g.medios.length > 1).concat(gs.filter(g => g.medios.length < 2)).slice(0, 6);
   return '<section class="bol-espana"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2><a href="#/espana-al-dia">Toda la semana ' + icono("flecha") + "</a></div>" +
-    '<p class="esp-intro">Lo que publican estos días The Objective, El Debate, La Gaceta y El Español sobre política y economía. Si varios medios cuentan lo mismo, tienes un botón para cada uno.</p>' +
+    '<p class="esp-intro">Clipping de noticias políticas y económicas de España de estos días. Si varios medios cuentan lo mismo, tienes un botón para cada uno.</p>' +
     '<div class="esp-rejilla">' + dest.map(g => espanaFicha(g, false)).join("") + "</div></section>";
 }
 function paginaEspana(filtro) {
   const d = (typeof window !== "undefined" && window.ESPANA_AL_DIA) || {};
   const gs = espanaGrupos().filter(g => !filtro || (g.tema || "").toLowerCase() === filtro);
-  let h = '<div class="bol-pagina">' + cabPagina("España al día", "Política y economía de los últimos siete días en The Objective, El Debate, La Gaceta y El Español. Se actualiza sola cada día" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
-  h += barraLector("Compartir «España al día»", "*España al día* · Clipping diario de noticias políticas y económicas de España (The Objective, El Debate, La Gaceta y El Español), con toda la semana.", "https://boletin.movimientopatriam.es/espana-al-dia");
+  let h = '<div class="bol-pagina">' + cabPagina("España al día", "Clipping de noticias políticas y económicas de España de los últimos siete días. Se actualiza solo cada día" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
+  h += barraLector("Compartir «España al día»", "*España al día* · Clipping diario de noticias políticas y económicas de España con toda la semana.", "https://boletin.movimientopatriam.es/espana-al-dia");
   h += '<nav class="crit-tabs">' + [["", "Todo"], ["politica", "Política"], ["economia", "Economía"]].map(([k, t]) => '<a href="#/espana-al-dia' + (k ? "/" + k : "") + '"' + ((filtro || "") === (k ? (k === "politica" ? "política" : "economía") : "") ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>";
   if (!gs.length) return h + '<p class="bol-vacio">Todavía no hay titulares. Se cargan solos varias veces al día.</p></div>';
   let dia = "";
@@ -1148,7 +1148,7 @@ function renderCorreo(b, cfg, opciones) {
   // España al día (lo más reciente de la semana)
   const esp = espanaGrupos().slice(0, 8);
   if (esp.length) h += bloque(etiqueta("España al día") +
-    '<p style="margin:0 0 16px;font:400 14px/1.5 ' + F + ';color:#6b5f58">Política y economía de estos días en The Objective, El Debate, La Gaceta y El Español.</p>' +
+    '<p style="margin:0 0 16px;font:400 14px/1.5 ' + F + ';color:#6b5f58">Clipping de noticias políticas y económicas de España de estos días.</p>' +
     esp.map(g => '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px;border-top:1px solid #eadfcd"><tr>' +
       (urlSegura(g.imagen) ? '<td width="96" valign="top" style="width:96px;padding-top:12px"><img src="' + esc(g.imagen) + '" alt="" width="96" style="display:block;width:96px;height:auto;border:0;border-radius:3px"></td>' : "") +
       '<td valign="top" style="padding:12px 0 0 ' + (urlSegura(g.imagen) ? "14px" : "0") + '"><p style="margin:0 0 4px;font:600 10px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + G + '">' + esc(g.tema || "Política") + '</p>' +

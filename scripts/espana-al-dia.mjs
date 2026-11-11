@@ -71,9 +71,12 @@ const valeGeneral = (n) => SI.test(new URL(n.url).pathname) && !NO.test(new URL(
 const VACIAS = new Set('el la los las un una unos unas de del al a ante bajo con contra desde en entre hacia hasta para por segun sin sobre tras y e o u ni que se su sus lo le les es son ser fue han ha hay mas muy ya no si como cuando donde quien porque pero tambien este esta estos estas ese esa eso ese aqui asi tras sus nos os mi tu te me sera esta estan tiene tienen hace hacen dice dicen va van'.split(' '))
 const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9ñ ]+/g, ' ')
 const claves = (t) => new Set(norm(t).split(/\s+/).filter((w) => w.length > 3 && !VACIAS.has(w)).map((w) => w.slice(0, 7)))
+// Las palabras que salen en muchos titulares de la semana («huelga», «general», «gobierno»…) no cuentan para juntar
+let COMUNES = new Set()
 function parecidas(a, b) {
-  let c = 0; for (const w of a) if (b.has(w)) c++
-  return c >= 3 && c / Math.min(a.size, b.size) >= 0.45
+  let c = 0; for (const w of a) if (b.has(w) && !COMUNES.has(w)) c++
+  const fa = [...a].filter((w) => !COMUNES.has(w)).length, fb = [...b].filter((w) => !COMUNES.has(w)).length
+  return c >= 3 && c / Math.max(1, Math.min(fa, fb)) >= 0.5
 }
 
 // ---------- imagen y resumen de la propia noticia, si el feed no los trae ----------
@@ -117,6 +120,9 @@ const todas = [...porUrl.values()].sort((a, b) => b.fecha.localeCompare(a.fecha)
 let k = 0
 for (const n of todas) { if ((n.imagen && n.resumen) || n.mirada || k >= 60) continue; await completar(n); n.mirada = 1; k++ }
 // agrupar
+const df = new Map()
+for (const n of todas) for (const w of claves(n.titulo)) df.set(w, (df.get(w) || 0) + 1)
+COMUNES = new Set([...df].filter(([, c]) => c > Math.max(6, todas.length * 0.02)).map(([w]) => w))
 const grupos = []
 for (const n of todas) {
   const cl = claves(n.titulo)
@@ -125,7 +131,6 @@ for (const n of todas) {
     if (!g.medios.some((x) => x.medio === n.medio)) g.medios.push({ medio: n.medio, url: n.url, titulo: n.titulo })
     if (!g.imagen && n.imagen) g.imagen = n.imagen
     if (!g.resumen && n.resumen) g.resumen = n.resumen
-    for (const w of cl) g.cl.add(w)
   } else grupos.push({ titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, fecha: n.fecha, tema: n.tema, medios: [{ medio: n.medio, url: n.url, titulo: n.titulo }], cl })
 }
 const salida = grupos.map(({ cl, ...g }) => g)

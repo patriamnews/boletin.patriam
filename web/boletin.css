@@ -252,7 +252,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 700; line-height: 1.15; mar
 .bol-pagina { padding-top: 2.6rem; }
 .bol-pag-cab { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem 1.4rem; padding-bottom: 1.1rem; margin-bottom: 1.8rem; border-bottom: 2px solid var(--acento); }
 .bol-pag-cab h1 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; color: var(--acento); text-transform: uppercase; letter-spacing: .02em; }
-.bol-pag-cab p { margin: 0; color: var(--suave); flex: 1; }
+.bol-pag-cab p { margin: 0; color: var(--suave); flex: 1 1 320px; min-width: 0; }
 .bol-pag-cab > span { font-size: .85rem; font-weight: 700; color: #fff; background: var(--acento); border-radius: 999px; padding: .1rem .75rem; }
 .bol-filtro { display: flex; align-items: center; gap: .7rem; margin-bottom: 1.6rem; background: var(--papel); border: 1.5px solid var(--linea); border-radius: 999px; padding: 0 1.2rem; color: var(--suave); }
 .bol-filtro input { flex: 1; font: 400 1.02rem var(--serif); padding: .8rem 0; border: 0; background: none; outline: none; }
@@ -926,3 +926,5 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 
 /* Noticia contada por varios medios: un botón por medio */
 .leer-varios { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+
+@media (max-width: 640px) { .bol-pag-cab { flex-direction: column; align-items: flex-start; gap: .5rem; } .bol-pag-cab p { flex: none; font-size: 1rem; line-height: 1.45; } }
