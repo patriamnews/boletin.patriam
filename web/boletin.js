@@ -618,7 +618,7 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
   const otras = cols.filter(c => c !== ap);
   if (ap) {
     const enl = ' href="' + enlaceColaboracion(ap) + '"';
-    h += '<article class="pt-apertura">' + foto(urlSegura(ap.imagen), enl, "", "colaboraciones") +
+    h += '<article class="pt-apertura' + (/\.gif(\?|$)/i.test(ap.imagen || "") ? " gif" : "") + '">' + foto(urlSegura(ap.imagen), enl, "", "colaboraciones") +
       '<div class="pt-ap-txt"><span class="pt-kicker">' + esc(ap.seccion || "Firma invitada") + (ap.tema ? " · " + esc(ap.tema) : "") + "</span>" +
       "<h2><a" + enl + ">" + esc(ap.titulo) + "</a></h2>" + extracto(ap.entradilla || primerParrafo(ap.texto), 240) + firma(ap.autor, ap.cargo) + "</div></article>";
   }
