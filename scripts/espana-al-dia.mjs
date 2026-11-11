@@ -22,6 +22,14 @@ const MEDIOS = [
 // Si la fuente es general, solo entra lo que por su dirección es de política o economía de España
 const SI = /\/(espana|nacional|politica|economia|invertia|empresas|mercados|macroeconomia|vivienda|trabajo|fiscal|hacienda|tribunales|justicia|elecciones|gobierno|congreso)\b/i
 const NO = /\/(internacional|mundo|america|europa|deportes|cultura|gente|television|tv|ocio|gastronomia|viajes|salud|ciencia|tecnologia|motor|loterias|horoscopo|tiempo|sociedad|religion|opinion|blogs|corazon|famosos|estilo|series|cine|libros|toros|virales)\b/i
+// Secciones que nunca son política ni economía, venga del feed que venga (se mira la carpeta entera: /deportes/, no «/deportes-…»)
+const NUNCA = /\/(deportes|cultura|gente|television|tv|ocio|gastronomia|viajes|motor|loterias|horoscopo|tiempo|religion|religion-y-cofradias|cofradias|corazon|famosos|estilo|series|cine|libros|toros|virales|obituarios|necrologicas|esquelas|espectaculos|teatro|musica)(?=\/)/i
+// Aunque venga de un feed de España, fuera lo que por el titular es espectáculo, famosos o deporte (esquelas de actores, series, galas…)
+const NO_TITULO = /\b(actriz|actor|actores|cantante|cantautor[a]?|futbolista|torero|presentador[a]?|influencer|reality|telenovela|estudio 1|pel[ií]cula|concierto|festival|gala de|premios goya|eurovisi[oó]n|loter[ií]a|hor[oó]scopo|famos[oa]s?|euromillones|bonoloto|gran hermano|exposici[oó]n|fiesta del|career fair)\b/i
+// Noticias quitadas a mano: una dirección por línea en datos/espana-fuera.txt (las líneas con # no cuentan)
+const FUERA = new Set((() => { try { return readFileSync(new URL('../datos/espana-fuera.txt', import.meta.url).pathname, 'utf8') } catch { return '' } })()
+  .split('\n').map((l) => l.trim().split('#')[0].split('?')[0]).filter(Boolean))
+const sobra = (n) => { try { return FUERA.has(n.url.split('#')[0].split('?')[0]) || NUNCA.test(new URL(n.url).pathname) || NO_TITULO.test(n.titulo || '') } catch { return true } }
 
 const UA = 'Mozilla/5.0 (compatible; PatriamBoletin/1.0; +https://boletin.movimientopatriam.es)'
 async function bajar(url, ms = 15000) {
@@ -110,7 +118,7 @@ for (const m of MEDIOS) {
 const porUrl = new Map()
 for (const n of [...antes.noticias, ...nuevas]) {
   const t = Date.parse(n.fecha) || Date.now()
-  if (t < limite || t > Date.now() + 36e5) continue
+  if (t < limite || t > Date.now() + 36e5 || sobra(n)) continue
   const u = n.url.split('#')[0].split('?')[0]
   const ya = porUrl.get(u)
   porUrl.set(u, { ...(ya || {}), ...n, url: u, fecha: new Date(t).toISOString(), tema: temaDe(n), imagen: n.imagen || ya?.imagen || '', resumen: n.resumen || ya?.resumen || '' })
@@ -133,6 +141,10 @@ for (const n of todas) {
     if (!g.resumen && n.resumen) g.resumen = n.resumen
   } else grupos.push({ titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, fecha: n.fecha, tema: n.tema, medios: [{ medio: n.medio, url: n.url, titulo: n.titulo }], cl })
 }
+// asunto de cada noticia (huelga, elecciones…): el primero de web/espana-asuntos.json que encaje en titular o resumen
+const ASUNTOS = (() => { try { return JSON.parse(readFileSync(new URL('../web/espana-asuntos.json', import.meta.url).pathname, 'utf8')).asuntos.map((a) => ({ nombre: a.nombre, re: new RegExp(a.patron, 'i') })) } catch { return [] } })()
+const sinTildes = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+for (const g of grupos) { const t = sinTildes(g.titulo + ' ' + (g.resumen || '')); g.asunto = (ASUNTOS.find((a) => a.re.test(t)) || {}).nombre || 'Otros' }
 const salida = grupos.map(({ cl, ...g }) => g)
   .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
   .slice(0, 400)
