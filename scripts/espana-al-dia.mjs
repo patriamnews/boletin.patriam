@@ -124,6 +124,12 @@ for (const n of [...antes.noticias, ...nuevas]) {
   porUrl.set(u, { ...(ya || {}), ...n, url: u, fecha: new Date(t).toISOString(), tema: temaDe(n), imagen: n.imagen || ya?.imagen || '', resumen: n.resumen || ya?.resumen || '' })
 }
 const todas = [...porUrl.values()].sort((a, b) => b.fecha.localeCompare(a.fecha))
+// Imágenes: arreglar direcciones mal formadas y quitar las genéricas (logos del periódico)
+const GENERICA = /\/(images|img|assets)\/[^/]*(logo|el-debate|default|placeholder|og-default|share)[^/]*\.(png|jpe?g|svg|webp)$|logo/i
+for (const n of todas) {
+  if (n.imagen) n.imagen = n.imagen.replace(/^(https?:\/\/[^/]+)\/(?:[a-z0-9.-]+\.[a-z]{2,})(\/wp-content\/)/i, '$1$2')
+  if (n.imagen && GENERICA.test(n.imagen)) n.imagen = ''
+}
 // completar imagen/resumen de las que no lo traen (como mucho 60 por pasada)
 let k = 0
 for (const n of todas) { if ((n.imagen && n.resumen) || n.mirada || k >= 60) continue; await completar(n); n.mirada = 1; k++ }
@@ -138,14 +144,25 @@ for (const n of todas) {
   if (g) {
     if (!g.medios.some((x) => x.medio === n.medio)) g.medios.push({ medio: n.medio, url: n.url, titulo: n.titulo })
     if (!g.imagen && n.imagen) g.imagen = n.imagen
+    if (n.imagen) g.imgs.push(n.imagen)
     if (!g.resumen && n.resumen) g.resumen = n.resumen
-  } else grupos.push({ titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, fecha: n.fecha, tema: n.tema, medios: [{ medio: n.medio, url: n.url, titulo: n.titulo }], cl })
+  } else grupos.push({ titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, imgs: n.imagen ? [n.imagen] : [], fecha: n.fecha, tema: n.tema, medios: [{ medio: n.medio, url: n.url, titulo: n.titulo }], cl })
 }
 // asunto de cada noticia (huelga, elecciones…): el primero de web/espana-asuntos.json que encaje en titular o resumen
 const ASUNTOS = (() => { try { return JSON.parse(readFileSync(new URL('../web/espana-asuntos.json', import.meta.url).pathname, 'utf8')).asuntos.map((a) => ({ nombre: a.nombre, re: new RegExp(a.patron, 'i') })) } catch { return [] } })()
 const sinTildes = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 for (const g of grupos) { const t = sinTildes(g.titulo + ' ' + (g.resumen || '')); g.asunto = (ASUNTOS.find((a) => a.re.test(t)) || {}).nombre || 'Otros' }
-const salida = grupos.map(({ cl, ...g }) => g)
+// La misma foto no se repite: si ya la lleva otra noticia (los periódicos reutilizan la de agencia),
+// se usa la de otro medio del grupo; si no hay otra, va sin foto (sale el recuadro de color)
+const ordenGrupos = grupos.slice().sort((a, b) => b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
+const usadas = new Set()
+for (const g of ordenGrupos) {
+  const base = (u) => u.split('?')[0].replace(/-\d+x\d+(?=\.\w+$)/, '').replace(/\.r_d\.[\d-]+(?=\.\w+$)/, '')
+  const libre = g.imgs.find((u) => !usadas.has(base(u)))
+  g.imagen = libre || ''
+  if (libre) usadas.add(base(libre))
+}
+const salida = grupos.map(({ cl, imgs, ...g }) => g)
   .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
   .slice(0, 400)
 mkdirSync(new URL('../datos/', import.meta.url).pathname, { recursive: true })
