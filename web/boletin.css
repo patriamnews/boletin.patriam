@@ -1004,3 +1004,6 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 .bol-lista .bol-tarjeta::after, .bol-firmas-lista .bol-colab::after { content: ""; position: absolute; left: -.6rem; right: -.6rem; bottom: calc(-.75rem - 1px); height: 1px; background: rgba(123,28,44,.35); pointer-events: none; }
 .bol-lista .bol-tarjeta-in > :not(.bol-texto-corto), .bol-firmas-lista .bol-colab-txt > :not(p) { flex: none; }
 .bol-lista .bol-tarjeta::after, .bol-firmas-lista .bol-colab::after { left: -.7rem; right: -.7rem; }
+/* Sección con artículos propios y noticias juntos */
+.bol-seccion-unica + .bol-seccion-unica { margin-top: 2.4rem; }
+.bol-seccion-unica .bol-colab { background: var(--papel); border: 1px solid var(--linea); border-radius: 4px; }

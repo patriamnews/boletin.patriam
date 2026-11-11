@@ -557,7 +557,7 @@ function lateral(b, cfg, ls) {
 /* ---------- centro de la portada ---------- */
 /* Noticias del boletín agrupadas por sección (Actualidad, Historia, Sociedad, Análisis), numeradas seguidas */
 /* Orden de lectura de cada número: primero lo de actualidad, luego el análisis y el fondo histórico, y al final la vida y las costumbres */
-const ORDEN_LECTURA = ["actualidad", "analisis", "historia", "sociedad"];
+const ORDEN_LECTURA = ["actualidad", "economia", "sociedad", "historia", "analisis"];
 const pesoLectura = clave => { const k = ORDEN_LECTURA.indexOf(clave); return k < 0 ? ORDEN_LECTURA.length : k; };
 function claveTexto(s) { return String(s || "actualidad").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
 function ordenarFirmas(cols) { return cols.map((c, k) => ({ c, k })).sort((a, b) => (b.c.apertura ? 1 : 0) - (a.c.apertura ? 1 : 0) || pesoLectura(claveTexto(a.c.seccion)) - pesoLectura(claveTexto(b.c.seccion)) || a.k - b.k).map(x => x.c); }
@@ -576,7 +576,7 @@ const TIPOS_REC = [
 ];
 function tipoRec(x) { return TIPOS_REC.find(g => g.es(x)) || { t: "Recomendado", clave: "recomendado", ruta: "", ico: "historia" }; }
 function gruposRecomendados(recs) {
-  const orden = TIPOS_REC.map(g => g.clave).concat("recomendado"), uno = {};
+  const orden = ["libros", "podcasts", "peliculas", "recomendado"], uno = {};
   recs.forEach(x => { uno[tipoRec(x).clave] = x; });
   return orden.filter(k => uno[k]).map(k => { const g = tipoRec(uno[k]); return { t: g.t, clave: g.clave, ruta: g.ruta, ico: g.ico, xs: [uno[k]] }; });
 }
@@ -673,17 +673,21 @@ function centroInicio(b, cfg, todos) {
   const evs = todosEventos([b]).proximos;
   const editor = enEditor();
   let h = editor ? "" : barraCompartir(b, cfg);
-  h += sumarioBoletin(b, cfg, grupos, cols, recs, evs);
-  // El boletín completo: plegado hasta pulsar «Entrar» (en la vista previa del editor se ve siempre)
-  h += '<div class="bol-completo' + (editor ? "" : " plegado") + '" id="completo">';
-  if (cols.length) h += '<section class="bol-firmas" id="colaboraciones"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + (cols.length > 1 ? "Firmas invitadas" : "Firma invitada") + '</h2>' +
-                        (cols.length > 1 ? "" : '<a href="#/colaboraciones">Todas ' + icono("flecha") + "</a>") + "</div>" +
-                        listaJerarquica(cols, c => urlSegura(c.imagen), c => tarjetaColaboracion(c, b), "bol-firmas-lista") + notaColab(cfg) + "</section>";
-  grupos.forEach(g => {
-    h += '<section class="bol-noticias" id="sec-' + g.sec.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(g.sec.nombre) + "</h2>" +
-         '<a href="#/' + g.sec.ruta + '">Ver más en ' + esc(g.sec.menu) + " " + icono("flecha") + "</a></div>";
-    h += listaJerarquica(g.items, ({ n }) => urlSegura(n.imagen) || idYoutube(urlSegura(n.url)), ({ n, i }) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1)), "bol-lista") + "</section>";
+  // Todo en una sola página: cada sección (Actualidad, Sociedad, Historia, Análisis…) con nuestros artículos y las noticias,
+  // en fichas cuadradas del mismo tamaño; al final, las recomendaciones
+  h += '<div class="bol-completo" id="completo">';
+  const secsCol = new Set(cols.map(c => claveColab(c)));
+  const secs = SECCIONES.slice().sort((a, c) => pesoLectura(a.clave) - pesoLectura(c.clave))
+    .filter(sec => secsCol.has(sec.clave) || grupos.some(g => g.sec.clave === sec.clave));
+  secs.forEach(sec => {
+    const suyas = cols.filter(c => claveColab(c) === sec.clave);
+    const g = grupos.find(x => x.sec.clave === sec.clave);
+    const fichas = suyas.map(c => tarjetaColaboracion(c, b)).concat(g ? g.items.map(({ n, i }) => tarjetaNoticia(n, i, cfg, b, false, "n" + (i + 1))) : []);
+    h += '<section class="bol-noticias bol-seccion-unica" id="sec-' + sec.clave + '"><div class="bol-sec-cab"><h2 class="bol-tit-sec">' + esc(sec.nombre) + "</h2>" +
+         '<a href="#/' + sec.ruta + '">Ver más en ' + esc(sec.menu) + " " + icono("flecha") + "</a></div>" +
+         '<div class="bol-lista bol-firmas-lista">' + fichas.join("") + "</div></section>";
   });
+  if (cols.length) h += notaColab(cfg);
   // Un bloque por tipo: «Podcasts y vídeos recomendados», «Libros recomendados»…
   gruposRecomendados(recs).forEach(g => {
     const titulo = g.clave === "recomendado" ? "Recomendado esta semana" : g.t + " de la semana";
