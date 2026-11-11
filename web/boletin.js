@@ -473,6 +473,7 @@ function paginaEspana(filtro) {
   const d = (typeof window !== "undefined" && window.ESPANA_AL_DIA) || {};
   const gs = espanaGrupos().filter(g => !filtro || (g.tema || "").toLowerCase() === filtro);
   let h = '<div class="bol-pagina">' + cabPagina("España al día", "Política y economía de los últimos siete días en The Objective, El Debate, La Gaceta y El Español. Se actualiza sola cada día" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
+  h += barraLector("Compartir «España al día»", "*España al día* · Clipping diario de noticias políticas y económicas de España (The Objective, El Debate, La Gaceta y El Español), con toda la semana.", "https://boletin.movimientopatriam.es/espana-al-dia");
   h += '<nav class="crit-tabs">' + [["", "Todo"], ["politica", "Política"], ["economia", "Economía"]].map(([k, t]) => '<a href="#/espana-al-dia' + (k ? "/" + k : "") + '"' + ((filtro || "") === (k ? (k === "politica" ? "política" : "economía") : "") ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>";
   if (!gs.length) return h + '<p class="bol-vacio">Todavía no hay titulares. Se cargan solos varias veces al día.</p></div>';
   let dia = "";
