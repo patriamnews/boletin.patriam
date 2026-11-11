@@ -1,7 +1,7 @@
 /* Lo que el equipo sube desde publicar.movimientopatriam.es («Boletín paso a paso») entra solo en su boletín.
    Llega en window.PATRIAM_APORTACIONES (aportaciones.js, solo lo aprobado).
    - Los boletines abiertos desde Publicar se crean aquí si el editor todavía no los tiene.
-   - Un boletín no se enseña a los lectores hasta su fecha; el equipo lo ve antes con ?vista=N.
+   - Un boletín no se enseña a los lectores hasta su fecha; el equipo lo ve antes solo en la vista previa temporal con clave.
    - Nada se repite: cada pieza lleva su id («ap-…») y si ya está (porque el editor la guardó) no se vuelve a poner.
    - Una recomendación de cada tipo por boletín: la última que se sube sustituye a la anterior del mismo tipo. */
 function unirAportaciones(L, C, opciones) {
@@ -46,12 +46,13 @@ function unirAportaciones(L, C, opciones) {
     }
   });
   if (opciones.lectores) {
-    // A los lectores no se les enseñan los boletines que todavía no han salido (salvo vista previa del equipo: ?vista=N)
+    // A los lectores no se les enseña ningún boletín que todavía no haya salido.
+    // El equipo lo ve SOLO en la vista previa temporal con clave (/previa/<token>, que pone PATRIAM_PREVIA); ya no vale ?vista=N.
     var hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Madrid" });
-    var vista = Number(new URLSearchParams(location.search).get("vista") || (window.PATRIAM_PREVIA && window.PATRIAM_PREVIA.numero) || 0);
+    var vista = Number((window.PATRIAM_PREVIA && window.PATRIAM_PREVIA.numero) || 0);
     for (var i = L.length - 1; i >= 0; i--) {
       var x = L[i];
-      if (x._dePublicar && x.fecha > hoy && Number(x.numero) !== vista) L.splice(i, 1);
+      if (x.fecha && String(x.fecha).slice(0, 10) > hoy && Number(x.numero) !== vista) L.splice(i, 1);
     }
   }
 }
