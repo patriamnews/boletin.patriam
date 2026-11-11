@@ -55,7 +55,9 @@ function comprobarAdmin() {
   [$c, $r] = pedir(origenBoletin() . '/api/suscriptores', ['Authorization: ' . $token, 'Accept: application/json']);
   if ($c === 401) salir(['error' => 'sesion'], 401);
   if ($c !== 200) salir(['error' => $c === 403 ? 'Solo para administradores.' : 'No se ha podido comprobar la sesión (' . $c . ').'], $c === 403 ? 403 : 502);
-  return json_decode($r, true)['suscriptores'] ?? [];
+  $j = json_decode($r, true) ?: [];
+  sincronizarSuscriptores($j['suscriptores'] ?? [], $j['bajas'] ?? []);
+  return $j['suscriptores'] ?? [];
 }
 
 /* Equipo de la web (publicar.movimientopatriam.es): sesión de Supabase de un miembro activo del equipo.
@@ -142,4 +144,57 @@ function seguirEnlacesHtml($html, $p, $k) {
 }
 function seguirEnlacesTexto($t, $p, $k) {
   return preg_replace_callback('/https?:\/\/[^\s)<>"]+/i', fn($m) => enlaceSeguido($m[0], $p, $k), $t);
+}
+
+
+/* ---------- Copia de los suscriptores del boletín aquí, en Hostinger ----------
+   La lista buena está en el servidor del boletín (Netlify), que solo la enseña a un administrador.
+   Para que el envío automático de cada boletín funcione sin nadie delante, se guarda una copia en la carpeta privada:
+   - cada alta y cada baja que pasa por la web se anota al momento (proxy.php);
+   - cada vez que un administrador abre el editor, la copia se pone al día con la lista completa.
+   Las bajas no se borran: quedan con su fecha y cómo se dieron. */
+function susLeer() { $f = privado() . '/boletin-suscriptores.json'; return is_file($f) ? (json_decode(file_get_contents($f), true) ?: []) : []; }
+function susGuardar($l) {
+  $f = privado() . '/boletin-suscriptores.json';
+  file_put_contents($f . '.tmp', json_encode($l, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), LOCK_EX);
+  rename($f . '.tmp', $f); @chmod($f, 0600);
+}
+function susAnotar(&$x, $que) { $x['historial'] = array_slice(array_merge($x['historial'] ?? [], [['que' => $que, 'fecha' => gmdate('c')]]), -20); }
+function susAlta($email, $nombre = '') {
+  $email = strtolower(trim((string)$email));
+  if (!preg_match('/^[^@\s]+@[^@\s]+\.[^@\s]+$/', $email)) return;
+  $l = susLeer(); $x = $l[$email] ?? ['alta' => gmdate('c')];
+  if (($x['estado'] ?? '') !== 'activo') { $x['estado'] = 'activo'; $x['alta'] = gmdate('c'); susAnotar($x, isset($l[$email]) ? 'vuelve a darse de alta' : 'alta'); }
+  if ($nombre !== '') $x['nombre'] = mb_substr($nombre, 0, 120);
+  $l[$email] = $x; susGuardar($l);
+}
+function susBaja($email, $como) {
+  $email = strtolower(trim((string)$email));
+  if ($email === '') return;
+  $l = susLeer(); $x = $l[$email] ?? [];
+  $x['estado'] = 'baja'; $x['baja'] = gmdate('c'); $x['como'] = $como; susAnotar($x, 'baja (' . $como . ')');
+  $l[$email] = $x; susGuardar($l);
+}
+function sincronizarSuscriptores($lista, $bajas) {
+  if (!is_array($lista)) return;
+  $l = susLeer(); $vistos = [];
+  foreach ($lista as $s) {
+    $e = strtolower(trim((string)($s['email'] ?? ''))); if ($e === '') continue;
+    $vistos[$e] = 1; $x = $l[$e] ?? [];
+    if (($x['estado'] ?? '') === 'baja' && strtotime($x['baja'] ?? '') > strtotime($s['fecha'] ?? '')) continue;   // se dio de baja aquí después
+    $x['estado'] = 'activo'; $x['alta'] = $x['alta'] ?? ($s['fecha'] ?? gmdate('c'));
+    if (!empty($s['nombre'])) $x['nombre'] = $s['nombre'];
+    $l[$e] = $x;
+  }
+  foreach ((array)$bajas as $b) {
+    $e = strtolower(trim((string)($b['email'] ?? ''))); if ($e === '' || isset($vistos[$e])) continue;
+    $x = $l[$e] ?? []; if (($x['estado'] ?? '') === 'baja') continue;
+    $x['estado'] = 'baja'; $x['baja'] = $b['baja'] ?? gmdate('c'); $x['como'] = $b['como'] ?? ($b['motivo'] ?? 'en la lista de bajas');
+    $l[$e] = $x;
+  }
+  // Los que ya no están en la lista buena (y no se apuntaron hace un momento) dejan de recibir
+  foreach ($l as $e => &$x) if (($x['estado'] ?? '') === 'activo' && !isset($vistos[$e]) && strtotime($x['alta'] ?? '') < time() - 600) { $x['estado'] = 'fuera'; $x['fuera'] = gmdate('c'); }
+  unset($x);
+  susGuardar($l);
+  @file_put_contents(privado() . '/boletin-suscriptores-sincronizado.txt', gmdate('c') . ' · ' . count($vistos) . " activos\n");
 }

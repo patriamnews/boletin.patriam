@@ -29,6 +29,17 @@ $tam = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
 http_response_code(curl_getinfo($ch, CURLINFO_RESPONSE_CODE));
 curl_close($ch);
 $cuerpo = substr($res, $tam);
+// Copia de los suscriptores aquí (para el envío automático del boletín por correo)
+$codigo = http_response_code();
+if ($codigo >= 200 && $codigo < 300) {
+  try {
+    require_once __DIR__ . '/_privado.php';
+    $entrada = in_array($metodo, ['GET', 'HEAD']) ? '' : file_get_contents('php://input');
+    if ($ruta === 'api/suscribir') { parse_str($entrada, $f); if (empty($f['bot-field']) && !empty($f['privacidad'])) susAlta($f['email'] ?? '', trim((string)($f['nombre'] ?? ''))); }
+    elseif ($ruta === 'api/baja') { $b = json_decode($entrada, true) ?: []; susBaja($b['email'] ?? '', 'formulario de la web'); }
+    elseif ($ruta === 'api/suscriptores') { $j = json_decode($cuerpo, true) ?: []; if (isset($j['suscriptores'])) sincronizarSuscriptores($j['suscriptores'], $j['bajas'] ?? []); }
+  } catch (Throwable $e) { /* la copia nunca debe estropear la respuesta */ }
+}
 foreach (explode("\r\n", substr($res, 0, $tam)) as $l) {
   if (!preg_match('/^(Content-Type|Cache-Control|ETag|Location|Last-Modified|Set-Cookie):\s*(.*)$/i', $l, $m)) continue;
   $v = $m[2];
