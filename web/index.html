@@ -103,6 +103,12 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   if (d) { d.colaboraciones = d.colaboraciones || []; d.colaboraciones.push(JSON.parse(JSON.stringify(it))); }
 });
 </script>
+<script>document.write('<script src="imagenes-auto.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
+<script>
+/* Los artículos sin imagen propia llevan la ilustración que se ha creado para ellos */
+(function(){ var A = window.PATRIAM_IMG_AUTO || {};
+  (window.BOLETINES || []).forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c && !c.imagen && A[c.id]) c.imagen = A[c.id]; }); }); })();
+</script>
 <script src="legales.js?v=20261031a"></script>
 <script src="boletin.js?v=20261111f"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>

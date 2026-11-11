@@ -46,6 +46,26 @@ function revisarCorreo($FICHERO, $hoy, $forzar = false) {
     return $id;
   }, $forzar);
 }
+/* Artículos ya publicados (o aprobados) que todavía no tienen imagen: los lee cada mañana la tarea que crea las ilustraciones.
+   Solo lo que ya es público (aprobado o del editor); lo pendiente no sale aquí. */
+if ($acc === 'sin-imagen') {
+  header('Access-Control-Allow-Origin: *');
+  $auto = @file_get_contents(__DIR__ . '/imagenes-auto.js') ?: '';
+  $hechas = preg_match('/=\s*(\{.*\})\s*;?\s*$/s', $auto, $m) ? (json_decode($m[1], true) ?: []) : [];
+  $res = [];
+  $corto = fn($t, $n) => mb_substr(trim(preg_replace('/\s+/u', ' ', str_replace(['**', '*', '## ', '> '], '', (string)$t))), 0, $n);
+  $mete = function ($id, $c, $num) use (&$res, $hechas, $corto) {
+    if (!$id || !empty($c['imagen']) || isset($hechas[$id]) || empty($c['titulo'])) return;
+    $res[$id] = ['id' => $id, 'numero' => $num, 'titulo' => $c['titulo'], 'autor' => $c['autor'] ?? '', 'seccion' => $c['seccion'] ?? '',
+      'entradilla' => $corto($c['entradilla'] ?? '', 400), 'texto' => $corto($c['texto'] ?? '', 1800)];
+  };
+  foreach (leerAp($FICHERO)['items'] as $x) if (($x['estado'] ?? '') === 'aprobado' && ($x['tipo'] ?? '') === 'firma') $mete($x['id'], $x['datos'], $x['numero']);
+  [$c, $js] = pedir(origenBoletin() . '/boletines.js', ['Accept: application/javascript']);
+  if ($c === 200 && preg_match('/window\.BOLETINES\s*=\s*(\[.*\]);?\s*$/s', $js, $m))
+    foreach (json_decode(rtrim($m[1], "; \n"), true) ?: [] as $b) foreach ($b['colaboraciones'] ?? [] as $col) $mete($col['id'] ?? '', $col, $b['numero'] ?? null);
+  salir(['articulos' => array_values($res)]);
+}
+
 // Lo llama el propio boletín al abrirse (y puede llamarlo una tarea programada de Hostinger): como mucho una vez cada 5 minutos
 if ($acc === 'correo-auto') { $r = revisarCorreo($FICHERO, $hoy); salir(['ok' => $r['ok'], 'nuevos' => count($r['nuevos'] ?? [])]); }
 
