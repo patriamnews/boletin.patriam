@@ -24,7 +24,10 @@ if ($acc === 'js') {
   $d = leerAp($FICHERO);
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'aprobado'));
   $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1]), 'creado' => $x['creado'] ?? ''], $items);
-  echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
+  // Cambios a lo preparado en importar.js: datos aprobados y piezas quitadas (lo pendiente no sale)
+  $cambios = [];
+  foreach ($d['cambios'] ?? [] as $id => $c) { $o = []; if (!empty($c['datos'])) $o['datos'] = $c['datos']; if (!empty($c['quitado'])) $o['quitado'] = true; if ($o) $cambios[$id] = $o; }
+  echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items, 'cambios' => (object)$cambios], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
   exit;
 }
 
@@ -113,10 +116,40 @@ function estado($d, $hoy, $yo) {
   $num = $abierto ? $abierto['numero'] : null;
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') !== 'borrado' && ($num === null || $x['numero'] === $num || ($x['estado'] ?? '') === 'pendiente')));
   $items = array_map(fn($x) => array_merge($x, ['datos' => array_diff_key($x['datos'] ?? [], ['cv' => 1]), 'tieneCv' => !empty($x['datos']['cv'])]) + ['mio' => ($x['autor_id'] ?? '') === $yo['id']], $items);
+  if ($num) foreach (preparados($d, $num) as $x) $items[] = $x;
   return ['delEditor' => $num ? contenidoEditor($num) : null, 'hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
 }
 
 $cuerpo = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];
+
+/* Lo preparado en importar.js para el nº N, con los cambios hechos desde Publicar, como un elemento más */
+function preparados($d, $num) {
+  $res = [];
+  foreach (piezasImportar() as $x) {
+    if ((int)($x['numero'] ?? 0) !== (int)$num) continue;
+    $c = $d['cambios'][$x['id']] ?? [];
+    if (!empty($c['quitado'])) continue;
+    $datos = $c['datos'] ?? $x['datos'];
+    $res[] = ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => (int)$num, 'datos' => !empty($c['propuesta']) ? $c['propuesta'] : $datos,
+      'estado' => !empty($c['propuesta']) ? 'pendiente' : 'aprobado', 'origen' => 'preparado', 'autor' => $datos['autor'] ?? ($datos['comenta'] ?? ''),
+      'mio' => true, 'propuestaDe' => $c['propuestaDe'] ?? ''];
+  }
+  return $res;
+}
+function esPreparado($id) { return (bool)preg_match('/^(imp|rec)-/', (string)$id); }
+function piezaPreparada($id) { foreach (piezasImportar() as $x) if ($x['id'] === $id) return $x; return null; }
+/* Los datos de un formulario de Publicar, limpios según el tipo (igual que al subir) */
+function datosLimpios($tipo, $x, $antes = []) {
+  $t = fn($k, $n) => limpio($x[$k] ?? ($antes[$k] ?? ''), $n);
+  $sec = in_array($x['seccion'] ?? ($antes['seccion'] ?? ''), ['Actualidad', 'Historia', 'Sociedad', 'Análisis'], true) ? ($x['seccion'] ?? $antes['seccion']) : ($antes['seccion'] ?? 'Actualidad');
+  $u = fn($k) => url_ok($x[$k] ?? ($antes[$k] ?? ''));
+  if ($tipo === 'noticia') return array_merge($antes, ['titular' => $t('titular', 300), 'url' => $u('url'), 'medio' => $t('medio', 80), 'imagen' => $u('imagen'), 'resumen' => $t('resumen', 2000), 'comentario' => $t('comentario', 2000), 'comenta' => limpio($x['firma'] ?? ($x['comenta'] ?? ($antes['comenta'] ?? '')), 80), 'seccion' => $sec]);
+  if ($tipo === 'firma') return array_merge($antes, ['titulo' => $t('titulo', 300), 'entradilla' => $t('entradilla', 600), 'texto' => $t('texto', 60000), 'imagen' => $u('imagen'), 'autor' => limpio($x['firma'] ?? ($x['autor'] ?? ($antes['autor'] ?? '')), 80), 'cargo' => $t('cargo', 120), 'seccion' => $sec, 'tema' => $t('tema', 60)]);
+  if ($tipo === 'recomendacion') return array_merge($antes, ['tipo' => $t('tipo', 40), 'titulo' => $t('titulo', 300), 'url' => $u('url'), 'imagen' => $u('imagen'), 'medio' => $t('medio', 160), 'descripcion' => $t('descripcion', 3000), 'comentario' => $t('comentario', 3000), 'critica' => $t('critica', 40000), 'comenta' => limpio($x['firma'] ?? ($x['comenta'] ?? ($antes['comenta'] ?? '')), 80)]);
+  if ($tipo === 'editorial') return array_merge($antes, ['titulo' => $t('titulo', 300), 'texto' => $t('texto', 40000), 'firma' => $t('firma', 80), 'imagen' => $u('imagen')]);
+  if ($tipo === 'espana') return array_merge($antes, ['titulo' => limpio($x['titular'] ?? ($x['titulo'] ?? ($antes['titulo'] ?? '')), 300), 'url' => $u('url'), 'medio' => $t('medio', 80), 'imagen' => $u('imagen'), 'resumen' => $t('resumen', 1200)]);
+  return $antes;
+}
 
 /* Lo preparado en importar.js (artículos y recomendaciones), en el mismo formato que lo subido desde Publicar */
 function piezasImportar() {
@@ -249,8 +282,41 @@ switch ($acc) {
     salir(estado($d, $hoy, $yo));
   }
 
+  case 'editar': {   // cambiar algo ya subido (de Publicar o preparado): si no lo cambia quien aprueba, espera visto bueno
+    $id = $cuerpo['id'] ?? ''; $x = $cuerpo['datos'] ?? [];
+    if (esPreparado($id)) {
+      $p = piezaPreparada($id); if (!$p) salir(['error' => 'No se encuentra.'], 404);
+      $c = $d['cambios'][$id] ?? [];
+      $nuevo = datosLimpios($p['tipo'], $x, $c['datos'] ?? $p['datos']);
+      if ($yo['puedeAprobar']) { $c['datos'] = $nuevo; unset($c['propuesta'], $c['propuestaDe']); }
+      else { $c['propuesta'] = $nuevo; $c['propuestaDe'] = $yo['nombre'] ?? ''; }
+      $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
+    } else {
+      $ok = false;
+      foreach ($d['items'] as &$it) if ($it['id'] === $id) {
+        if (!$yo['puedeAprobar'] && ($it['autor_id'] ?? '') !== $yo['id']) salir(['error' => 'Solo puede cambiarlo quien lo subió o quien aprueba.'], 403);
+        $it['datos'] = datosLimpios($it['tipo'], $x, $it['datos'] ?? []);
+        if (!$yo['puedeAprobar'] && ($it['estado'] ?? '') === 'aprobado') $it['estado'] = 'pendiente';
+        $it['cambiado'] = gmdate('c'); $ok = true;
+      }
+      unset($it);
+      if (!$ok) salir(['error' => 'No se encuentra.'], 404);
+    }
+    guardarAp($FICHERO, $d);
+    salir(estado($d, $hoy, $yo) + ['ok' => true]);
+  }
+
   case 'aprobar': case 'rechazar': case 'borrar': {
     $id = $cuerpo['id'] ?? '';
+    if (esPreparado($id)) {   // lo preparado: aprobar el cambio propuesto, rechazarlo, o quitar la pieza del boletín
+      if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden hacerlo Carlos e Isabel.'], 403);
+      $c = $d['cambios'][$id] ?? [];
+      if ($acc === 'aprobar' && !empty($c['propuesta'])) $c['datos'] = $c['propuesta'];
+      if ($acc !== 'borrar') unset($c['propuesta'], $c['propuestaDe']); else $c['quitado'] = true;
+      $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
+      guardarAp($FICHERO, $d);
+      salir(estado($d, $hoy, $yo));
+    }
     if ($acc !== 'borrar' && !$yo['puedeAprobar']) salir(['error' => 'Solo pueden aprobar Carlos e Isabel.'], 403);
     foreach ($d['items'] as &$x) {
       if ($x['id'] !== $id) continue;
@@ -295,6 +361,12 @@ switch ($acc) {
       }
     }
     unset($x);
+    if (!$hecho && esPreparado($id) && ($pp = piezaPreparada($id)) && (int)($pp['numero'] ?? 0) === (int)$abierto) {
+      $c = $d['cambios'][$id] ?? []; $c['quitado'] = true; $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
+      $d['items'][] = ['id' => 'ap-' . bin2hex(random_bytes(5)), 'tipo' => $pp['tipo'], 'numero' => null, 'datos' => $c['datos'] ?? $pp['datos'], 'estado' => 'recamara',
+        'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];
+      $hecho = true;
+    }
     if (!$hecho) {   // algo ya publicado: se copia a la recámara, marcado con el número en que salió
       $p = $cuerpo['pieza'] ?? null;
       if (!$p) foreach ($d['items'] as $x) if ($x['id'] === $id) $p = ['tipo' => $x['tipo'], 'datos' => $x['datos'], 'numero' => $x['numero']];

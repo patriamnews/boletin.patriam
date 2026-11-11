@@ -55,3 +55,20 @@ function unirAportaciones(L, C, opciones) {
     }
   }
 }
+
+/* Cambios hechos desde Publicar a lo preparado en importar.js (artículos «imp-…» y recomendaciones «rec-…»):
+   se aplican los datos aprobados y se quitan las piezas quitadas o pasadas a la recámara. */
+function aplicarCambiosPreparados(L, C) {
+  var M = (window.PATRIAM_APORTACIONES || {}).cambios || {};
+  Object.keys(M).forEach(function (k) {
+    var c = M[k], id = k.replace(/^(imp|rec)-/, "");
+    if (/^imp-/.test(k)) (L || []).forEach(function (b) {
+      b.colaboraciones = (b.colaboraciones || []).filter(function (x) { return !(x && x.id === id && c.quitado); });
+      (b.colaboraciones || []).forEach(function (x) { if (x && x.id === id && c.datos) Object.assign(x, c.datos); });
+    });
+    if (/^rec-/.test(k) && C) {
+      (C.biblioteca || []).forEach(function (x) { if (x && x.id === id && c.datos) Object.assign(x, c.datos); });
+      if (c.quitado) (L || []).forEach(function (b) { b.recomendados = (b.recomendados || []).filter(function (r) { return r !== id; }); });
+    }
+  });
+}
