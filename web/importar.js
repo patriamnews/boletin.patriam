@@ -57,8 +57,8 @@ window.PATRIAM_IMPORTAR = [
  {
   "id": "c-unos-pagan-otros-deciden",
   "numero": 2,
-  "autor": "Isabel O.C.",
-  "cargo": "",
+  "autor": "Carlos R.",
+  "cargo": "PATRIAM",
   "titulo": "La España de Sánchez: unos pagan, otros deciden",
   "entradilla": "La Ley de Nietos abre la nacionalidad, y con ella el censo, a personas que nunca han vivido en España. Unos pagan los impuestos y otros deciden quién los administra.",
   "imagen": "https://boletin.movimientopatriam.es/imagenes/unos-pagan-otros-deciden.jpg",
@@ -71,8 +71,8 @@ window.PATRIAM_IMPORTAR = [
  {
   "id": "c-todo-por-salvar-al-puto-amo",
   "numero": 2,
-  "autor": "Isabel O.C.",
-  "cargo": "",
+  "autor": "Carlos R.",
+  "cargo": "PATRIAM",
   "titulo": "Todo por salvar al puto amo, al number one",
   "entradilla": "Una semana después de la dimisión de Óscar Puente: los peones caen, el rey permanece y las familias de las 115 víctimas siguen esperando respuestas.",
   "imagen": "https://boletin.movimientopatriam.es/imagenes/todo-por-salvar-al-puto-amo.jpg",
@@ -85,8 +85,8 @@ window.PATRIAM_IMPORTAR = [
  {
   "id": "c-el-diablo-no-entra-en-la-iglesia",
   "numero": 2,
-  "autor": "PATRIAM",
-  "cargo": "",
+  "autor": "Carlos R.",
+  "cargo": "PATRIAM",
   "titulo": "El diablo no entra en la iglesia",
   "entradilla": "69 muertos. 69 familias destrozadas. Y un presidente del Gobierno que, cuando llega el momento de dar la cara, desaparece.",
   "imagen": "https://boletin.movimientopatriam.es/imagenes/el-diablo-no-entra-en-la-iglesia.jpg",
@@ -99,8 +99,8 @@ window.PATRIAM_IMPORTAR = [
  {
   "id": "c-burka-feminismo",
   "numero": 2,
-  "autor": "Isabel O.C.",
-  "cargo": "",
+  "autor": "Carlos R.",
+  "cargo": "PATRIAM",
   "titulo": "El burka en España: la vergüenza de un feminismo que solo grita cuando le conviene",
   "entradilla": "Baleares prohíbe el burka y el niqab en los espacios públicos. Y las feministas de pancarta, ministerio y subvención, ¿dónde están?",
   "imagen": "https://boletin.movimientopatriam.es/imagenes/burka-feminismo.jpg",
