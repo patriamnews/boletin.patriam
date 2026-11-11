@@ -79,11 +79,27 @@ function boletinesTodos($d) {
   $lista = [];
   [$c, $js] = pedir(origenBoletin() . '/boletines.js', ['Accept: application/javascript']);
   if ($c === 200 && preg_match('/window\.BOLETINES\s*=\s*(\[.*\]);?\s*$/s', $js, $m)) {
-    foreach (json_decode(rtrim($m[1], "; \n"), true) ?: [] as $b) $lista[(int)$b['numero']] = ['numero' => (int)$b['numero'], 'fecha' => substr($b['fecha'] ?? '', 0, 10), 'origen' => 'editor'];
+    foreach (json_decode(rtrim($m[1], "; \n"), true) ?: [] as $b) {
+      $lista[(int)$b['numero']] = ['numero' => (int)$b['numero'], 'fecha' => substr($b['fecha'] ?? '', 0, 10), 'origen' => 'editor'];
+      $GLOBALS['BOLETIN_EDITOR'][(int)$b['numero']] = $b;   // contenido completo (para «Lo que ya hay»)
+    }
   }
   foreach ($d['boletines'] as $b) if (empty($lista[(int)$b['numero']])) $lista[(int)$b['numero']] = ['numero' => (int)$b['numero'], 'fecha' => $b['fecha'], 'origen' => 'publicar'];
   ksort($lista);
   return array_values($lista);
+}
+/* Lo que tiene el boletín nº N en el editor (lo aprobado): para enseñarlo junto a lo subido desde Publicar */
+function contenidoEditor($num) {
+  $b = $GLOBALS['BOLETIN_EDITOR'][$num] ?? null;
+  if (!$b) return ['aprobado' => false, 'items' => []];
+  $t = fn($x) => trim((string)$x);
+  $res = [];
+  if (is_array($b['editorial'] ?? null) && $t($b['editorial']['titulo'] ?? '')) $res[] = ['tipo' => 'Editorial', 'titulo' => $t($b['editorial']['titulo']), 'firma' => $t($b['editorial']['firma'] ?? ($b['editorial']['autor'] ?? ''))];
+  foreach ((array)($b['noticias'] ?? []) as $x) if ($t($x['titular'] ?? '')) $res[] = ['tipo' => $t($x['seccion'] ?? '') ?: 'Noticia', 'titulo' => $t($x['titular']), 'firma' => $t($x['comenta'] ?? ''), 'medio' => $t($x['medio'] ?? '')];
+  foreach ((array)($b['colaboraciones'] ?? []) as $x) if ($t($x['titulo'] ?? '')) $res[] = ['tipo' => 'Colaboración' . ($t($x['seccion'] ?? '') ? ' · ' . $t($x['seccion']) : ''), 'titulo' => $t($x['titulo']), 'firma' => $t($x['autor'] ?? '')];
+  foreach ((array)($b['recomendados'] ?? []) as $x) if (is_array($x) && $t($x['titulo'] ?? '')) $res[] = ['tipo' => $t($x['tipo'] ?? '') ?: 'Recomendación', 'titulo' => $t($x['titulo']), 'firma' => $t($x['autor'] ?? '')];
+  foreach ((array)($b['eventos'] ?? []) as $x) if ($t($x['titulo'] ?? '')) $res[] = ['tipo' => 'Agenda', 'titulo' => $t($x['titulo']), 'firma' => $t($x['fecha'] ?? '')];
+  return ['aprobado' => true, 'items' => $res];
 }
 function estado($d, $hoy, $yo) {
   $bs = boletinesTodos($d);
@@ -97,7 +113,7 @@ function estado($d, $hoy, $yo) {
   $num = $abierto ? $abierto['numero'] : null;
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') !== 'borrado' && ($num === null || $x['numero'] === $num || ($x['estado'] ?? '') === 'pendiente')));
   $items = array_map(fn($x) => array_merge($x, ['datos' => array_diff_key($x['datos'] ?? [], ['cv' => 1]), 'tieneCv' => !empty($x['datos']['cv'])]) + ['mio' => ($x['autor_id'] ?? '') === $yo['id']], $items);
-  return ['hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
+  return ['delEditor' => $num ? contenidoEditor($num) : null, 'hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
 }
 
 $cuerpo = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];

@@ -951,3 +951,16 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 .bol-calb-rejilla > a.con:hover { background: var(--acento-osc, #5a1320); }
 .bol-calb-rejilla .hoy { box-shadow: inset 0 0 0 2px var(--gualda); }
 @media (max-width: 560px) { .bol-calb-rejilla > span, .bol-calb-rejilla > a { min-height: 2.6rem; } .bol-calb-rejilla > a.con small { font-size: .58rem; } }
+
+/* Noticias: en el ordenador, el texto que se ve tiene el alto de la imagen: un trozo del resumen y del comentario de PATRIAM
+   (se abren enteros con «Seguir leyendo») */
+.bol-vertodo { display: block; text-align: left; background: none; border: 0; padding: .3rem 0; margin-top: .5rem; font: 600 .85rem var(--serif); letter-spacing: .04em; color: var(--acento); cursor: pointer; text-transform: uppercase; }
+@media (min-width: 761px) {
+  .bol-tarjeta .bol-texto-corto .bol-resumen { max-height: 6.4em; overflow: hidden; }
+  .bol-tarjeta .bol-texto-corto .bol-comentario { max-height: 8.6em; overflow: hidden; margin-top: .6rem; }
+  .bol-tarjeta .bol-texto-corto.cortado .bol-resumen, .bol-tarjeta .bol-texto-corto.cortado .bol-comentario { -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+  .bol-tarjeta.abierta .bol-texto-corto .bol-resumen, .bol-tarjeta.abierta .bol-texto-corto .bol-comentario { max-height: none; -webkit-mask-image: none; mask-image: none; }
+  .bol-tarjeta .bol-foto { min-height: 0; }
+  .bol-noticias .bol-tarjeta .bol-foto { min-height: 260px; }
+}
+@media (max-width: 760px) { .bol-vertodo { display: none !important; } }

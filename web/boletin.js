@@ -348,8 +348,9 @@ function tarjetaNoticia(n, i, cfg, b, conBoletin, idAncla) {
        (conBoletin && b ? '<a href="#/boletin/' + encodeURIComponent(b.id) + '">Nº ' + esc(b.numero || "") + " · " + esc(fechaLarga(b.fecha)) + "</a>" : "") + "</div>";
   if (n.medio) h += '<div class="bol-medio-linea">' + logoMedio(n, cfg) + "<span>" + esc(n.medio) + "</span></div>";
   h += "<h3>" + (url ? '<a href="' + esc(destino) + '"' + fuera + ">" + esc(n.titular || url) + "</a>" : esc(n.titular)) + "</h3>";
-  if (n.resumen) h += '<div class="bol-resumen">' + parrafosRicos(n.resumen) + "</div>";
-  h += bloqueComentario(n, cfg);
+  // Resumen y comentario: en el ordenador se ve un trozo del mismo alto que la imagen; «Seguir leyendo» lo abre entero
+  h += '<div class="bol-texto-corto">' + (n.resumen ? '<div class="bol-resumen">' + parrafosRicos(n.resumen) + "</div>" : "") + bloqueComentario(n, cfg) + "</div>" +
+       '<button type="button" class="bol-vertodo" hidden>Seguir leyendo</button>';
   if (url) h += '<a class="bol-leer" href="' + esc(destino) + '"' + fuera + ">" + (yt ? "Ver y escuchar " : "Leer la noticia ") + icono("flecha") + "</a>";
   return h + "</div></article>";
 }
@@ -1524,3 +1525,28 @@ function textoComunicacion(c, aj, nombre) {
   const plano = t => String(t || "").replace(/^##\s+|^>\s?|^-\s+/gm, "").replace(/\*\*|\*/g, "").replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)").trim();
   return [saludoComunicacion(c, aj, nombre), plano(c.texto), plano(aj.firmaTexto)].filter(Boolean).join("\n\n");
 }
+
+/* Tarjetas de noticias: «Seguir leyendo» solo cuando el texto no cabe junto a la imagen */
+(function () {
+  if (typeof document === "undefined") return;
+  function revisar() {
+    document.querySelectorAll(".bol-texto-corto").forEach(function (t) {
+      var b = t.nextElementSibling; if (!b || !b.classList.contains("bol-vertodo")) return;
+      var tarjeta = t.closest(".bol-tarjeta"); if (tarjeta && tarjeta.classList.contains("abierta")) return;
+      var corta = [].some.call(t.children, function (x) { return x.scrollHeight > x.clientHeight + 4; });
+      b.hidden = !corta; t.classList.toggle("cortado", corta);
+    });
+  }
+  var pendiente = 0;
+  function luego() { if (pendiente) return; pendiente = requestAnimationFrame(function () { pendiente = 0; revisar(); }); }
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest(".bol-vertodo"); if (!b) return;
+    var t = b.closest(".bol-tarjeta"); if (!t) return;
+    var abierta = t.classList.toggle("abierta");
+    b.textContent = abierta ? "Ver menos" : "Seguir leyendo";
+    if (!abierta) t.scrollIntoView({ block: "nearest" });
+  });
+  window.addEventListener("resize", luego);
+  document.addEventListener("DOMContentLoaded", function () { new MutationObserver(luego).observe(document.body, { childList: true, subtree: true }); luego(); });
+  window.addEventListener("load", luego, true);
+})();
