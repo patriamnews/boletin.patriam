@@ -1540,7 +1540,7 @@ function textoComunicacionWa(c, aj, nombre) {
     document.querySelectorAll(".bol-texto-corto").forEach(function (t) {
       var b = t.nextElementSibling; if (!b || !b.classList.contains("bol-vertodo")) return;
       var tarjeta = t.closest(".bol-tarjeta"); if (tarjeta && tarjeta.classList.contains("abierta")) return;
-      var corta = [].some.call(t.children, function (x) { return x.scrollHeight > x.clientHeight + 4; });
+      var corta = t.scrollHeight > t.clientHeight + 4 || [].some.call(t.children, function (x) { return x.scrollHeight > x.clientHeight + 4; });
       b.hidden = !corta; t.classList.toggle("cortado", corta);
     });
   }
