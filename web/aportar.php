@@ -81,6 +81,8 @@ switch ($acc) {
     if ($tipo === 'noticia') {
       $datos = ['titular' => limpio($x['titular'] ?? '', 300), 'url' => url_ok($x['url'] ?? ''), 'medio' => limpio($x['medio'] ?? '', 80), 'imagen' => url_ok($x['imagen'] ?? ''),
         'resumen' => limpio($x['resumen'] ?? '', 2000), 'comentario' => limpio($x['comentario'] ?? '', 2000), 'comenta' => limpio($x['firma'] ?? '', 80), 'seccion' => $sec, 'formato' => 'Noticia'];
+      $datos['enlaces'] = array_values(array_filter(array_map(fn($e) => ['medio' => limpio($e['medio'] ?? '', 80), 'url' => url_ok($e['url'] ?? '')], array_slice((array)($x['enlaces'] ?? []), 0, 8)), fn($e) => $e['url']));
+      if (!$datos['enlaces']) unset($datos['enlaces']);
       if (!$datos['titular'] || !$datos['url']) salir(['error' => 'Faltan el titular o el enlace de la noticia.'], 400);
     } elseif ($tipo === 'firma') {
       $datos = ['titulo' => limpio($x['titulo'] ?? '', 300), 'entradilla' => limpio($x['entradilla'] ?? '', 600), 'texto' => limpio($x['texto'] ?? '', 60000), 'imagen' => url_ok($x['imagen'] ?? ''),
@@ -114,6 +116,15 @@ switch ($acc) {
     unset($x);
     guardarAp($FICHERO, $d);
     salir(estado($d, $hoy, $yo));
+  }
+
+  case 'sugerencias': {
+    // Las noticias de la semana de «España al día» (las recoge solo scripts/espana-al-dia.mjs) para meterlas con un clic
+    $t = @file_get_contents(__DIR__ . '/espana-al-dia.js') ?: '';
+    $j = preg_match('/=\s*(\{.*\})\s*;?\s*$/s', $t, $m) ? json_decode($m[1], true) : null;
+    $g = array_slice($j['grupos'] ?? [], 0, 150);
+    usort($g, fn($a, $b) => (count($b['medios'] ?? []) <=> count($a['medios'] ?? [])) ?: strcmp($b['fecha'] ?? '', $a['fecha'] ?? ''));
+    salir(['actualizado' => $j['actualizado'] ?? '', 'grupos' => array_values($g)]);
   }
 
   case 'enlace': {

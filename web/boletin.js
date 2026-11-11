@@ -657,7 +657,9 @@ function paginaLeer(ls, cfg, bid, k) {
   const yt = idYoutube(url);
   let h = '<div class="bol-pagina bol-leer-pag">';
   h += '<div class="leer-barra"><span></span>' +
-       '<a class="bol-btn claro" href="' + esc(url) + '" target="_blank" rel="noopener">' + (yt ? "Ver en YouTube" : "Abrir en " + esc(n.medio || "su web")) + " ↗</a></div>";
+       ((n.enlaces || []).filter(e => urlSegura(e.url)).length > 1
+         ? '<span class="leer-varios">' + n.enlaces.filter(e => urlSegura(e.url)).map(e => '<a class="bol-btn claro" href="' + esc(urlSegura(e.url)) + '" target="_blank" rel="noopener">' + esc(e.medio || "Abrir") + " ↗</a>").join("") + "</span></div>"
+         : '<a class="bol-btn claro" href="' + esc(url) + '" target="_blank" rel="noopener">' + (yt ? "Ver en YouTube" : "Abrir en " + esc(n.medio || "su web")) + " ↗</a></div>");
   h += '<div class="bol-etiqueta"><span>' + esc(seccionDe(n).nombre) + "</span>" + (yt || (n.formato && n.formato !== "Noticia") ? '<b class="bol-tipo">' + esc(n.formato && n.formato !== "Noticia" ? n.formato : "Vídeo") + "</b>" : "") + "</div>";
   if (n.medio) h += '<div class="bol-medio-linea grande">' + logoMedio(n, cfg) + "<span>" + esc(n.medio) + "</span></div>";
   h += '<h1 class="leer-tit">' + esc(n.titular || "") + "</h1>";
