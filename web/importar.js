@@ -191,6 +191,12 @@ window.PATRIAM_COLABORADORES = [
   "foto": ""
  },
  {
+  "firma": "Laura O.C.",
+  "cargo": "Compliance Officer en el sector bancario",
+  "bio": "",
+  "foto": ""
+ },
+ {
   "firma": "LODLC",
   "cargo": "",
   "bio": "",

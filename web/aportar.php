@@ -23,7 +23,7 @@ if ($acc === 'js') {
   header('Cache-Control: no-cache, max-age=0');
   $d = leerAp($FICHERO);
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'aprobado'));
-  $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => $x['datos']], $items);
+  $items = array_map(fn($x) => ['id' => $x['id'], 'tipo' => $x['tipo'], 'numero' => $x['numero'], 'datos' => array_diff_key($x['datos'], ['cv' => 1])], $items);
   echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
   exit;
 }
@@ -96,7 +96,7 @@ function estado($d, $hoy, $yo) {
   $siguiente = ['numero' => $max['numero'] + 1, 'fecha' => $sig->format('Y-m-d')];
   $num = $abierto ? $abierto['numero'] : null;
   $items = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') !== 'borrado' && ($num === null || $x['numero'] === $num || ($x['estado'] ?? '') === 'pendiente')));
-  $items = array_map(fn($x) => $x + ['mio' => ($x['autor_id'] ?? '') === $yo['id']], $items);
+  $items = array_map(fn($x) => array_merge($x, ['datos' => array_diff_key($x['datos'] ?? [], ['cv' => 1]), 'tieneCv' => !empty($x['datos']['cv'])]) + ['mio' => ($x['autor_id'] ?? '') === $yo['id']], $items);
   return ['hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
 }
 
@@ -145,6 +145,58 @@ switch ($acc) {
       'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => $yo['puedeAprobar'] ? ($yo['nombre'] ?? '') : ''];
     guardarAp($FICHERO, $d);
     salir(estado($d, $hoy, $yo) + ['nuevo' => $id]);
+  }
+
+  /* Presentación de cada colaborador para «Quién es quién» del boletín, con su CV (el CV no se publica: solo lo ven Carlos e Isabel) */
+  case 'mi-ficha': {
+    $mia = null;
+    foreach ($d['items'] as $x) if (($x['tipo'] ?? '') === 'ficha' && ($x['autor_id'] ?? '') === $yo['id'] && !in_array($x['estado'] ?? '', ['borrado', 'rechazado'], true)) $mia = $x;
+    salir(['ficha' => $mia ? ['estado' => $mia['estado'], 'datos' => array_diff_key($mia['datos'], ['cv' => 1]), 'cv' => !empty($mia['datos']['cv'])] : null]);
+  }
+  case 'ficha': {
+    $x = $cuerpo['datos'] ?? [];
+    $firma = limpio($x['firma'] ?? '', 80);
+    if (!$firma) salir(['error' => 'Falta la firma.'], 400);
+    $datos = ['firma' => $firma, 'titulo' => 'Presentación de ' . $firma, 'cargo' => limpio($x['cargo'] ?? '', 140), 'bio' => limpio($x['bio'] ?? '', 4000)];
+    $cv = $cuerpo['cv'] ?? null;
+    if (is_array($cv) && !empty($cv['datos'])) {
+      $ext = strtolower(pathinfo((string)($cv['nombre'] ?? ''), PATHINFO_EXTENSION));
+      if (!in_array($ext, ['pdf', 'doc', 'docx'], true)) salir(['error' => 'El CV tiene que ser PDF o Word.'], 400);
+      $bin = base64_decode(preg_replace('/^data:[^,]*,/', '', $cv['datos']), true);
+      if ($bin === false || strlen($bin) > 8000000) salir(['error' => 'El CV no se ha podido leer o pasa de 8 MB.'], 400);
+      @mkdir(privado() . '/cv', 0750, true);
+      $f = bin2hex(random_bytes(8)) . '.' . $ext;
+      file_put_contents(privado() . '/cv/' . $f, $bin); @chmod(privado() . '/cv/' . $f, 0600);
+      $datos['cv'] = ['archivo' => $f, 'nombre' => limpio($cv['nombre'] ?? 'cv.' . $ext, 120)];
+    }
+    if (!$datos['bio'] && empty($datos['cv'])) salir(['error' => 'Sube tu CV o escribe unas líneas sobre ti.'], 400);
+    $e = estado($d, $hoy, $yo);
+    // si ya había una suya, se sustituye (se conserva el CV si no se sube otro)
+    foreach ($d['items'] as &$y) if (($y['tipo'] ?? '') === 'ficha' && ($y['autor_id'] ?? '') === $yo['id'] && ($y['estado'] ?? '') !== 'borrado') {
+      if (empty($datos['cv']) && !empty($y['datos']['cv'])) $datos['cv'] = $y['datos']['cv'];
+      $y['estado'] = 'borrado'; $y['cambiado'] = gmdate('c');
+    }
+    unset($y);
+    $d['items'][] = ['id' => 'ap-' . bin2hex(random_bytes(5)), 'tipo' => 'ficha', 'numero' => $e['abierto']['numero'] ?? $e['siguiente']['numero'], 'datos' => $datos,
+      'estado' => $yo['puedeAprobar'] && $datos['bio'] ? 'aprobado' : 'pendiente', 'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];
+    guardarAp($FICHERO, $d);
+    salir(['ok' => true]);
+  }
+  case 'cv': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden verlo Carlos e Isabel.'], 403);
+    foreach ($d['items'] as $x) if ($x['id'] === ($cuerpo['id'] ?? '') && !empty($x['datos']['cv']['archivo'])) {
+      $f = privado() . '/cv/' . basename($x['datos']['cv']['archivo']);
+      if (!is_file($f)) break;
+      salir(['nombre' => $x['datos']['cv']['nombre'], 'datos' => base64_encode(file_get_contents($f))]);
+    }
+    salir(['error' => 'No hay CV.'], 404);
+  }
+  case 'editar-ficha': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden cambiarlo Carlos e Isabel.'], 403);
+    foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['tipo'] ?? '') === 'ficha') { $x['datos']['bio'] = limpio($cuerpo['bio'] ?? '', 4000); $x['datos']['cargo'] = limpio($cuerpo['cargo'] ?? $x['datos']['cargo'], 140); $x['cambiado'] = gmdate('c'); }
+    unset($x);
+    guardarAp($FICHERO, $d);
+    salir(estado($d, $hoy, $yo));
   }
 
   case 'seccion': {

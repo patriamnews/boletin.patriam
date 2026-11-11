@@ -34,7 +34,7 @@
 <div id="app"></div>
 <script src="boletines.js"></script>
 <script>document.write('<script src="espana-al-dia.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
-<script src="importar.js?v=20261111g"></script>
+<script src="importar.js?v=20261111h"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -90,6 +90,15 @@
 <script>document.write('<script src="aportaciones.js?m=' + Date.now().toString(36).slice(0, -4) + '"><\/script>');</script>
 <script src="aportaciones-unir.js?v=20261111a"></script>
 <script>unirAportaciones(window.BOLETINES || [], window.PATRIAM_CONFIG, { lectores: true });</script>
+<script>
+/* Presentaciones de los colaboradores enviadas desde Publicar (ya aprobadas) */
+(function(){ var A = window.PATRIAM_APORTACIONES || {}, F = window.PATRIAM_COLABORADORES = window.PATRIAM_COLABORADORES || [];
+  (A.items || []).filter(function(x){ return x.tipo === "ficha" && x.datos && x.datos.firma; }).forEach(function(x){
+    var ya = F.filter(function(f){ return f.firma === x.datos.firma; })[0];
+    if (ya) { if (x.datos.bio) ya.bio = x.datos.bio; if (x.datos.cargo) ya.cargo = x.datos.cargo; }
+    else F.unshift({ firma: x.datos.firma, cargo: x.datos.cargo || "", bio: x.datos.bio || "", foto: "" });
+  }); })();
+</script>
 <script>
 /* Mira si han llegado artículos por correo (hola@movimientopatriam.com, asunto «ARTICULO Nombre»). Entran pendientes de aprobar; el servidor lo hace como mucho cada 5 minutos. */
 try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive: true }).catch(function(){}); }, 4000); } catch (e) {}
