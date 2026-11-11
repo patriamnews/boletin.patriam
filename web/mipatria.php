@@ -66,6 +66,12 @@ function dia($iso) {
   $meses = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   return ucfirst($dias[(int)$d->format('w')]) . ' ' . (int)$d->format('j') . ' de ' . $meses[(int)$d->format('n')];
 }
+function diaLargo() {
+  $d = new DateTime('now', new DateTimeZone('Europe/Madrid'));
+  $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  $meses = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  return $dias[(int)$d->format('w')] . ' ' . (int)$d->format('j') . ' de ' . $meses[(int)$d->format('n')];
+}
 function hora($iso) { return (new DateTime($iso))->setTimezone(new DateTimeZone('Europe/Madrid'))->format('H:i'); }
 function pagina($titulo, $cuerpo) {
   echo '<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . e($titulo) . '</title><meta name="robots" content="noindex"><link rel="icon" href="/icono-192.png">'
@@ -233,6 +239,7 @@ main{max-width:1060px;margin:0 auto;padding:18px 16px 40px}
 h3.sec small,h2.asunto small{font-weight:400;color:var(--s);font-size:.85rem;font-style:normal}
 h2.asunto{margin:10px 0 0;font-size:1.6rem}.volver{margin:14px 0 0}.volver a,.vermas a{color:var(--g);font-weight:600;text-decoration:none}.vermas{margin:10px 0 0;text-align:right}
 @media (max-width:640px){.cifras{grid-template-columns:repeat(2,1fr)}.barras a{grid-template-columns:minmax(0,10rem) 1fr 2rem}}
+h2.bloque{margin:34px 0 6px;font-size:1.9rem;font-weight:800;color:var(--g);border-bottom:4px double var(--g);padding-bottom:6px}h2.bloque small{font-size:.95rem;font-weight:400;font-style:italic;color:var(--s)}
 h3.sec{margin:18px 0 10px;font-size:1.05rem;font-weight:600;font-style:italic;color:var(--t)}
 h2.dia{margin:26px 0 4px;font-size:.95rem;letter-spacing:.3em;text-transform:uppercase;color:var(--g);border-bottom:2px solid var(--g);padding-bottom:6px}
 .rej{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
@@ -307,22 +314,42 @@ if ($asunto !== '') {
     }
   }
 } else {
-  // Portada: Economía y luego Política; dentro de cada una, los asuntos de los que más se habla, con sus últimas noticias
-  foreach (['Economía', 'Política'] as $tm) {
-    $del = array_values(array_filter($g, fn($x) => $x['tema'] === $tm));
-    if (!$del) continue;
-    $grupos = [];
-    foreach ($del as $x) $grupos[$x['asunto']][] = $x;
-    uksort($grupos, fn($a, $b) => ($a === 'Otros') <=> ($b === 'Otros') ?: ($panel[$b][$tm] ?? 0) <=> ($panel[$a][$tm] ?? 0) ?: count($grupos[$b]) <=> count($grupos[$a]));
-    echo '<h2 class="dia" id="' . slug($tm) . '">' . $tm . '</h2>';
-    foreach ($grupos as $as => $xs) {
-      usort($xs, fn($a, $b) => strcmp($b['fecha'], $a['fecha']));
-      $max = $as === 'Otros' ? 9 : 6;
-      echo '<h3 class="sec" id="' . slug($tm . '-' . $as) . '">' . e($as === 'Otros' ? 'Otras noticias' : $as) . ' <small>' . count($xs) . '</small></h3><div class="rej">';
-      foreach (array_slice($xs, 0, $max) as $x) echo tarjeta($x, $primera);
-      echo '</div>';
-      if (count($xs) > $max) echo '<p class="vermas"><a href="' . e($enlaceMP($filtro, slug($as))) . '">Ver las ' . count($xs) . ' noticias de «' . e($as === 'Otros' ? 'Otras noticias' : $as) . '» →</a></p>';
+  // Portada en dos partes: primero las noticias de HOY; debajo, EL RESTO DE LA SEMANA
+  $hoyMad = (new DateTime('now', new DateTimeZone('Europe/Madrid')))->format('Y-m-d');
+  $deHoy = array_values(array_filter($g, fn($x) => dia2($x['fecha']) === $hoyMad));
+  $titHoy = 'Hoy';
+  if (!$deHoy) {   // a primera hora todavía no hay nada de hoy: lo último de las 24 horas anteriores
+    $deHoy = array_values(array_filter($g, fn($x) => strtotime($x['fecha']) >= time() - 24 * 3600));
+    $titHoy = 'Lo último';
+  }
+  $idsHoy = array_map(fn($x) => $x['titulo'] . '|' . $x['fecha'], $deHoy);
+  $semana = array_values(array_filter($g, fn($x) => !in_array($x['titulo'] . '|' . $x['fecha'], $idsHoy, true)));
+  // Cada parte: Economía y luego Política; dentro de cada una, los asuntos de los que más se habla
+  $pintar = function ($lista, $pref, $maxA, $maxO) use (&$primera, $panel, $enlaceMP, $filtro) {
+    foreach (['Economía', 'Política'] as $tm) {
+      $del = array_values(array_filter($lista, fn($x) => $x['tema'] === $tm));
+      if (!$del) continue;
+      $grupos = [];
+      foreach ($del as $x) $grupos[$x['asunto']][] = $x;
+      uksort($grupos, fn($a, $b) => ($a === 'Otros') <=> ($b === 'Otros') ?: ($panel[$b][$tm] ?? 0) <=> ($panel[$a][$tm] ?? 0) ?: count($grupos[$b]) <=> count($grupos[$a]));
+      echo '<h2 class="dia" id="' . $pref . slug($tm) . '">' . $tm . ' <small>' . count($del) . '</small></h2>';
+      foreach ($grupos as $as => $xs) {
+        usort($xs, fn($a, $b) => (!empty($b['destacada']) <=> !empty($a['destacada'])) ?: strcmp($b['fecha'], $a['fecha']));
+        $max = $as === 'Otros' ? $maxO : $maxA;
+        echo '<h3 class="sec" id="' . $pref . slug($tm . '-' . $as) . '">' . e($as === 'Otros' ? 'Otras noticias' : $as) . ' <small>' . count($xs) . '</small></h3><div class="rej">';
+        foreach (array_slice($xs, 0, $max) as $x) echo tarjeta($x, $primera);
+        echo '</div>';
+        if (count($xs) > $max) echo '<p class="vermas"><a href="' . e($enlaceMP($filtro, slug($as))) . '">Ver todas las noticias de «' . e($as === 'Otros' ? 'Otras noticias' : $as) . '» →</a></p>';
+      }
     }
+  };
+  if ($deHoy) {
+    echo '<h2 class="bloque" id="hoy">' . $titHoy . ' <small>' . e($titHoy === 'Hoy' ? diaLargo() : 'últimas 24 horas') . ' · ' . count($deHoy) . ' noticias</small></h2>';
+    $pintar($deHoy, 'hoy-', 4, 6);
+  }
+  if ($semana) {
+    echo '<h2 class="bloque" id="semana">El resto de la semana <small>' . count($semana) . ' noticias</small></h2>';
+    $pintar($semana, '', 6, 9);
   }
 }
 ?>
