@@ -13,10 +13,10 @@ permissions:
 concurrency: { group: espana-al-dia, cancel-in-progress: false }
 jobs:
   recopilar:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: node scripts/espana-al-dia.mjs
       - name: Guardar
@@ -26,7 +26,12 @@ jobs:
           git add datos/espana-al-dia.json web/espana-al-dia.js
           git diff --cached --quiet && exit 0
           git commit -m "España al día: actualización automática"
-          git pull --rebase -q origin main && git push
+          # Si a la vez se sube otro cambio, se reintenta (antes fallaba con «cannot lock ref»)
+          for i in 1 2 3 4 5; do
+            git pull --rebase -q origin main && git push && exit 0
+            echo "Reintento $i…"; sleep $((i * 7))
+          done
+          exit 1
       # Fotos originales de cada noticia, en pequeño, para la App PATRIAM (que no puede cargar fotos de otras webs).
       # Van a la rama «app-miniaturas», que se rehace entera cada vez (no engorda el historial de main).
       - name: Miniaturas para la App
