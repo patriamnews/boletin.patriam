@@ -29,6 +29,8 @@ RewriteRule ^(api/[A-Za-z0-9_-]+|img/[^/]+|a/[^/]+|boletin/[^/]+|boletines\.js)$
 # «España al día» con su propia tarjeta para compartir (WhatsApp, X, Facebook)
 RewriteRule ^(mipatriaaldia|españaaldia|espanaaldia)/?$ mipatria.php [L,QSA]
 RewriteRule ^espana-al-dia(/(politica|economia))?/?$ /mipatriaaldia [R=301,L]
+# Enlace para compartir un artículo, con su propia tarjeta (título, entradilla e imagen)
+RewriteRule ^articulo/([A-Za-z0-9_-]+)/?$ art.php?id=$1 [L,QSA]
 # Textos para redes (página interna del equipo)
 RewriteRule ^(post-redes-alvaro|redes-3a5d3ed620ba)/?$ /redes/ [R=301,L]
 # Todo lo demás: la página del boletín

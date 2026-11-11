@@ -111,6 +111,21 @@ window.PATRIAM_IMPORTAR = [
   "texto": "Baleares ha aprobado una iniciativa de Vox, apoyada por el PP, para prohibir el burka y el niqab en los espacios públicos. Y lo verdaderamente indignante es que en España, en pleno siglo XXI, todavía tengamos que discutir si la igualdad de la mujer está por encima de las imposiciones religiosas.\n\n¿Para esto hemos luchado durante generaciones? ¿Para conquistar derechos y libertades que ahora algunos están dispuestos a relativizar con tal de no incomodar a determinados sectores religiosos?\n\nPedro Sánchez ha convertido la integración en una auténtica tomadura de pelo. Su Gobierno presume de feminismo mientras se niega a afrontar con contundencia las prácticas que contradicen los principios de igualdad que dice defender.\n\n¡Ya está bien de tanta hipocresía! España no tiene por qué arrodillarse ante ninguna imposición religiosa, ni renunciar a sus valores para satisfacer a quienes pretenden que sus creencias estén por encima de nuestras leyes.\n\n**Y ahora, las feministas de pancarta, ministerio, subvención y discurso aprendido. ¿DÓNDE DEMONIOS ESTÁIS?**\n\nLas que montan un escándalo por una frase, las que ven machismo hasta en el diccionario, las que llevan años repartiendo carnés de feminista... ¿qué tienen que decir ante una prenda que puede convertirse en símbolo de sometimiento femenino?\n\nPorque hay que tener una cara de cemento armado para llenarse la boca hablando de empoderamiento mientras se rechazan medidas destinadas a combatir símbolos asociados a la subordinación de la mujer.\n\n¿O resulta que el machismo solo es intolerable cuando quien lo practica encaja en vuestro discurso político?\n\nNo es islamofobia. Es igualdad. Y precisamente por respeto a las mujeres musulmanas que quieren vivir libres de imposiciones, hay que denunciar cualquier coacción religiosa sin complejos.\n\nEspaña no tiene que pedir perdón por su cultura, sus libertades ni sus principios. Quien venga a vivir aquí tiene derecho a practicar su religión, pero no a imponer sus normas a los demás ni a situarlas por encima de la ley.\n\nY a Pedro Sánchez y a sus feministas de escaparate habría que recordarles algo muy sencillo: los derechos de las mujeres no son una mercancía electoral que se defiende o se abandona según convenga.\n\nPorque si vuestra defensa de la igualdad desaparece cuando entra en conflicto con vuestra ideología, dejad de dar lecciones de feminismo.\n\n**Eso no es defender a las mujeres. Eso es utilizar a las mujeres.**",
   "bio": "",
   "alta": "2026-11-11"
+ },
+ {
+  "id": "c-aznar-pp-psoe",
+  "numero": 2,
+  "apertura": true,
+  "autor": "Consuelo Arnau",
+  "cargo": "",
+  "titulo": "Aznar lo confirma: PP y PSOE son lo mismo",
+  "entradilla": "Aznar lo ha dicho en voz alta: comparte con Felipe González los «consensos fundamentales». Cuarenta años de leyes heredadas y nunca derogadas lo demuestran.",
+  "imagen": "https://boletin.movimientopatriam.es/imagenes/aznar-pp-psoe.gif",
+  "seccion": "Análisis",
+  "tema": "Política",
+  "texto": "Hoy, a dieciocho días de las elecciones, [The Objective](https://theobjective.com/espana/politica/2026-11-11/aznar-contundente-sobre-abascal-tengo-muchas-mas-discrepancias-con-vox-que-con-felipe-gonzalez/) ha rescatado unas palabras que en Génova preferirían olvidar. Preguntado por [El Español](https://www.elespanol.com/espana/20250316/aznar-hoy-sintonizo-politicamente-felipe-gonzalez-abascal-consensos-fundamentales/930657367_0.html) si se sentía más cerca de Felipe González o de Santiago Abascal, José María Aznar no dudó: con González, dijo, compartía «muchas más conexiones políticas y acuerdos sobre los consensos fundamentales».\n\nDurante años, quienes decíamos que el PP y el PSOE son lo mismo hemos tenido que oír que exagerábamos. Ahora lo dice, con otras palabras, el hombre que dio al PP su primera mayoría absoluta y que en esta campaña vuelve a subirse al estrado junto a Feijóo. Y no habla de simpatías personales, sino de «consensos fundamentales». Merece la pena preguntarse cuáles son y quién los escribió.\n\nY conviene detenerse en esa palabra. El «consenso» se presenta como una virtud democrática, pero casi siempre es un engaño: la manera de imponer una opinión como si fuera la verdad, sin tener que demostrarla, y de tachar de extremista a quien la discuta. Los maestros de la Escuela de Salamanca, de Francisco de Vitoria a Francisco Suárez, dejaron clara la regla que sirve para desenmascararlo: una ley injusta no es verdadera ley y no obliga. Su fuerza le viene de ser justa, no de cuántos la aprueben. Lo bueno y lo justo no se votan. Cuando el PP invoca el «consenso» para no tocar el aborto, no está respetando a la sociedad: está renunciando a defender la verdad.\n\nBasta repasar estos cuarenta años. El PSOE abre camino; el PP llega después, recurre, protesta, promete… y conserva. Por eso el socialismo ha podido ir de Felipe González a Pedro Sánchez sin una sola marcha atrás.\n\nTomemos el aborto, que es lo que más duele a un votante católico. González lo despenalizó en 1985. Aznar gobernó ocho años, cuatro con mayoría absoluta, y no tocó la ley. Zapatero aprobó en 2010 el aborto libre hasta la semana 14; el PP lo recurrió y prometió cambiarlo. Rajoy llegó al poder con 186 diputados, dejó que Gallardón preparase una reforma y en septiembre de 2014 la guardó en un cajón por falta de «consenso». Gallardón dimitió. Lo único que cambió fue que las chicas de 16 y 17 años volvieron a necesitar el permiso de sus padres. Hoy Feijóo considera «correcta» la ley de plazos y ha descartado tocarla incluso gobernando con Vox.\n\nCon la memoria histórica, lo mismo. El PP votó contra la ley de Zapatero de 2007 y Rajoy la llamó un error que dividía a los españoles. Con mayoría absoluta no la derogó: se limitó a dejar su partida en cero euros. Bastó que llegara Sánchez para volver a dotarla y, en 2022, aprobar una ley de Memoria Democrática mucho más dura. La ley que el PP no quiso derogar fue el cimiento de la siguiente. Y donde el PP gobierna solo, como en Andalucía, su ley autonómica de memoria sigue intacta; las leyes de concordia solo han llegado donde el PP dependía de Vox.\n\nTampoco con la unidad de España hubo freno. En 1996 Aznar necesitó a Pujol y pagó con el Pacto del Majestic: el 30 % del IRPF para la Generalitat, el tráfico para los Mossos, la desaparición de los gobernadores civiles. Ninguna de esas cesiones se revirtió con la mayoría absoluta del año 2000. Después el PP recurrió el Estatut de 2006, pero nunca lo reformó. Y en 2017, ante un golpe contra la Constitución, Rajoy aplicó un 155 tardío y breve, con elecciones inmediatas y sin tocar la escuela ni TV3.\n\nNi siquiera en economía hubo ruptura, sino relevo. González empezó en 1988 a vender Telefónica, Repsol, Endesa o Argentaria; Aznar terminó el trabajo en 1997 y 1998. Una sola política con dos firmas, que acabó igual para sus dos autores: González en el consejo de Gas Natural y Aznar en el de Endesa.\n\nLa lista sigue. El matrimonio entre personas del mismo sexo, recurrido por el PP y mantenido por Rajoy. El divorcio exprés, al que Rajoy añadió el divorcio ante notario. La eutanasia, recurrida en 2021 y asumida hoy por Feijóo. Siempre el mismo guion: **recurso en la oposición, silencio en el Gobierno.**\n\nEl PP dirá que recurrió todas esas leyes al Constitucional. Es verdad, pero recurrir es lo que se hace desde la oposición; derogar es lo que se hace desde el Gobierno, y eso no lo ha hecho nunca. Dirá que hizo la LOMCE y aplicó el 155: excepciones contadas, y la LOMCE la derogó el PSOE en cuanto pudo. Al PSOE no le tiembla el pulso para deshacer lo del PP; al PP sí para deshacer lo del PSOE. Y dirá que no había mayoría para hacerlo. Con 186 diputados, eso no es una excusa: es una decisión.\n\nEl propio Aznar admite en esa entrevista que el PP tiene ahora un problema a su derecha que antes no existía. Tiene razón, pero se equivoca de causa. Ese problema no lo ha creado Vox, sino cuarenta años sin un puñetazo en la mesa, sin proteger a unos votantes en su mayoría católicos y patriotas que se cansaron de esperar.\n\nNo decimos que PP y PSOE sean idénticos en todo. Decimos algo más preciso: en lo que de verdad importa (la vida, la familia, la historia, la unidad de España) uno abre el camino y el otro lo asfalta. Aznar no ha descubierto nada. Solo ha tenido la franqueza de decir en voz alta dónde están sus «consensos fundamentales». Ahora ya lo sabemos todos.\n\n*Fuente: [The Objective, 11 de noviembre de 2026](https://theobjective.com/espana/politica/2026-11-11/aznar-contundente-sobre-abascal-tengo-muchas-mas-discrepancias-con-vox-que-con-felipe-gonzalez/), que recupera la entrevista de Aznar en [El Español, 16 de marzo de 2025](https://www.elespanol.com/espana/20250316/aznar-hoy-sintonizo-politicamente-felipe-gonzalez-abascal-consensos-fundamentales/930657367_0.html). Las leyes citadas pueden consultarse en el BOE: LO 9/1985, Ley 13/2005, Ley 52/2007, LO 2/2010, LO 11/2015, LO 3/2021 y Ley 20/2022.*",
+  "bio": "",
+  "alta": "2026-11-11"
  }
 ];
 
@@ -186,15 +201,25 @@ window.PATRIAM_COLABORADORES = [
   "foto": ""
  },
  {
+  "firma": "Consuelo Arnau",
+  "cargo": "Abogada",
+  "bio": "Licenciada en Derecho y habilitada para el ejercicio de la abogacía.\n\nCuenta con 26 años de ejercicio profesional en el ámbito jurídico y de gobierno corporativo en una de las principales empresas multinacionales de su sector, donde ha asumido la dirección de áreas jurídicas, de cumplimiento normativo y de gestión corporativa, así como la estructuración de operaciones de gran complejidad.\n\nEn la actualidad ejerce como consultora independiente. Es autora del ensayo «Del Código Penal franquista al Código Penal de 1995».",
+  "foto": ""
+ },
+ {
   "firma": "Carlos R.",
-  "alias": ["Carlos Rubio"],
+  "alias": [
+   "Carlos Rubio"
+  ],
   "cargo": "Secretario y tesorero de PATRIAM",
   "bio": "",
   "foto": ""
  },
  {
   "firma": "LOC",
-  "alias": ["Laura O.C."],
+  "alias": [
+   "Laura O.C."
+  ],
   "cargo": "Compliance Officer en el sector bancario",
   "bio": "",
   "foto": ""
@@ -206,3 +231,6 @@ window.PATRIAM_COLABORADORES = [
   "foto": ""
  }
 ];
+
+/* Redes: la noticia del día que sale arriba en /redes/ (id de un texto de arriba) */
+window.PATRIAM_REDES_DIA = "c-aznar-pp-psoe";

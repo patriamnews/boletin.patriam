@@ -34,6 +34,10 @@ button{font:600 15px S,Georgia,serif;background:var(--granate);color:#fff;border
 button.ok{background:#2f6b3a}
 pre{margin:0;padding:14px;white-space:pre-wrap;word-wrap:break-word;font:16px/1.55 S,Georgia,serif}
 .nota{font-size:14px;color:var(--gris);margin:6px 0 0}
+.elegir{background:#fff;border:1px solid var(--borde);padding:12px 14px;margin:10px 0 4px}
+.elegir label{font-weight:600;display:block;margin-bottom:6px}
+.elegir select{width:100%;font:16px S,Georgia,serif;padding:8px;border:1px solid var(--borde);background:#fdfaf4}
+.elegir .dia{display:inline-block;margin-top:8px;font-size:13px;color:#fff;background:var(--granate);padding:2px 8px}
 footer{text-align:center;font-size:13px;color:var(--gris);padding:20px}
 
 </style>
@@ -47,6 +51,13 @@ footer{text-align:center;font-size:13px;color:var(--gris);padding:20px}
 </header>
 <div class="aviso">🔒 Página interna del equipo. No la compartáis fuera: solo se entra con este enlace.</div>
 <main>
+
+
+<h2>Noticia para enviar</h2>
+<p class="enlace">Elige una sola noticia del boletín y copia su texto con su imagen. Arriba sale la noticia del día.</p>
+<div class="elegir"><label for="selNoticia">Noticia</label><select id="selNoticia"></select><span class="dia" id="esDia" hidden>★ Noticia del día</span></div>
+<p class="enlace" id="nEnlace"></p>
+<div id="nPosts"></div>
 
 <h2>Boletín «Lo que hay que saber: con criterio»</h2>
 <p class="enlace">Enlace: <a href="https://boletin.movimientopatriam.es" target="_blank" rel="noopener">https://boletin.movimientopatriam.es</a></p>
@@ -129,6 +140,42 @@ Guárdalo en favoritos y pásalo a quien le interese.
 #EspañaAlDía #PATRIAM #política #economía #España #noticias</pre></div>
 
 </main>
+<script src="/importar.js?v=20261111aa"></script>
+<script>
+(function(){
+  var L=(window.PATRIAM_IMPORTAR||[]).filter(function(x){return x.titulo&&x.texto&&x.imagen});
+  L.sort(function(a,b){return (Number(b.numero)||0)-(Number(a.numero)||0)||String(b.alta||'').localeCompare(String(a.alta||''))});
+  var dia=window.PATRIAM_REDES_DIA, sel=document.getElementById('selNoticia');
+  L.sort(function(a,b){return (b.id===dia)-(a.id===dia)});
+  L.forEach(function(x){var o=document.createElement('option');o.value=x.id;o.textContent=(x.id===dia?'★ ':'')+'Nº '+(x.numero||'')+' · '+x.titulo+' · '+(x.autor||'');sel.appendChild(o)});
+  function plano(t){return String(t||'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\*\*|\*/g,'')}
+  function tag(t){return '#'+String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]/g,'')}
+  function pinta(){
+    var x=L.filter(function(y){return y.id===sel.value})[0]; if(!x)return;
+    document.getElementById('esDia').hidden=x.id!==dia;
+    var url='https://boletin.movimientopatriam.es/articulo/'+encodeURIComponent(x.id), ent=plano(x.entradilla), firma=x.autor||'PATRIAM';
+    var tags='#PATRIAM '+(x.tema?tag(x.tema)+' ':'')+'#ConCriterio';
+    document.getElementById('nEnlace').innerHTML='Enlace (sale con su imagen al compartirlo): <a target="_blank" rel="noopener" href="'+url+'">'+url+'</a>';
+    var P=[
+      ['WhatsApp','','*'+x.titulo+'*\n\n'+ent+'\n\n✍️ '+firma+' · Boletín «Lo que hay que saber: con criterio»\n👉 '+url],
+      ['X','',x.titulo+'\n\n'+(ent.length>150?ent.slice(0,147).replace(/\s+\S*$/,'')+'…':ent)+'\n\n✍️ '+firma+' en el boletín de @patriam_es\n👉 '+url+'\n\n'+tags],
+      ['Instagram','El enlace va en la bio o en una historia con el sticker de enlace','📰 '+x.titulo.toUpperCase()+'\n\n'+ent+'\n\n✍️ '+firma+'\n\nLéelo entero en el boletín de PATRIAM.\n🔗 Enlace en la bio → boletin.movimientopatriam.es\n\nDios, Patria, Justicia 🇪🇸\n\n'+tags+' #España #actualidad'],
+      ['LinkedIn','',x.titulo+'\n\n'+ent+'\n\nArtículo de '+firma+' en «Lo que hay que saber: con criterio», el boletín de PATRIAM.\n\n👉 '+url+'\n\n'+tags],
+      ['Facebook','',x.titulo+'\n\n'+ent+'\n\n✍️ '+firma+'\n👉 '+url]
+    ];
+    var h='';
+    P.forEach(function(p,i){
+      h+='<div class="post"><div class="cab"><div class="red">'+p[0]+(p[1]?'<small>'+p[1]+'</small>':'')+'</div><button class="todo" data-c="n-'+i+'">Copiar todo</button></div>'+
+        '<div class="foto"><img src="'+x.imagen+'" alt="" crossorigin="anonymous"><a href="'+x.imagen+'" download>⬇ Descargar imagen</a></div>'+
+        '<pre id="n-'+i+'"></pre></div>';
+    });
+    var c=document.getElementById('nPosts'); c.innerHTML=h;
+    P.forEach(function(p,i){document.getElementById('n-'+i).textContent=p[2]});
+    c.querySelectorAll('button[data-c]').forEach(conectar);
+  }
+  sel.onchange=pinta; window.__pintaNoticia=pinta;
+})();
+</script>
 <footer>Asociación PATRIAM · uso interno</footer>
 <script>
 function aPng(img){return new Promise(function(ok,mal){
@@ -138,7 +185,7 @@ function aPng(img){return new Promise(function(ok,mal){
 function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function viejo(t){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()}
 function aviso(b,txt,ok){b.textContent=txt;b.classList.toggle('ok',ok);setTimeout(function(){b.textContent='Copiar todo';b.classList.remove('ok')},2500)}
-document.querySelectorAll('button[data-c]').forEach(function(b){
+function conectar(b){
   b.addEventListener('click',function(){
     var pre=document.getElementById(b.dataset.c), t=pre.innerText, img=pre.parentNode.querySelector('.foto img');
     var html='<img src="'+img.src+'"><br><br>'+esc(t).replace(/\n/g,'<br>');
@@ -154,7 +201,9 @@ document.querySelectorAll('button[data-c]').forEach(function(b){
       });
     }else{viejo(t);aviso(b,'✓ Texto copiado',true)}
   });
-});
+}
+document.querySelectorAll('button[data-c]').forEach(conectar);
+if(window.__pintaNoticia)window.__pintaNoticia();
 </script>
 </body>
 </html>

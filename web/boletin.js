@@ -558,7 +558,7 @@ function lateral(b, cfg, ls) {
 const ORDEN_LECTURA = ["actualidad", "analisis", "historia", "sociedad"];
 const pesoLectura = clave => { const k = ORDEN_LECTURA.indexOf(clave); return k < 0 ? ORDEN_LECTURA.length : k; };
 function claveTexto(s) { return String(s || "actualidad").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
-function ordenarFirmas(cols) { return cols.map((c, k) => ({ c, k })).sort((a, b) => pesoLectura(claveTexto(a.c.seccion)) - pesoLectura(claveTexto(b.c.seccion)) || a.k - b.k).map(x => x.c); }
+function ordenarFirmas(cols) { return cols.map((c, k) => ({ c, k })).sort((a, b) => (b.c.apertura ? 1 : 0) - (a.c.apertura ? 1 : 0) || pesoLectura(claveTexto(a.c.seccion)) - pesoLectura(claveTexto(b.c.seccion)) || a.k - b.k).map(x => x.c); }
 function gruposNoticias(ns) {
   let i = 0;
   return SECCIONES.slice().sort((a, b) => pesoLectura(a.clave) - pesoLectura(b.clave)).map(sec => ({ sec, items: ns.filter(n => claveSeccion(n) === sec.clave) })).filter(g => g.items.length)
@@ -612,7 +612,7 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
 
   // Apertura: la firma más reciente con imagen, a lo grande; el resto de firmas, al lado/debajo
   // Apertura: la primera firma en orden de lectura que tenga imagen
-  const ap = cols.find(c => urlSegura(c.imagen)) || cols[0];
+  const ap = cols.find(c => c.apertura && urlSegura(c.imagen)) || cols.find(c => urlSegura(c.imagen)) || cols[0];
   const otras = cols.filter(c => c !== ap);
   if (ap) {
     const enl = ' href="' + enlaceColaboracion(ap) + '"';
