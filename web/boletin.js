@@ -620,13 +620,13 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
     const enl = ' href="' + enlaceColaboracion(ap) + '"';
     h += '<article class="pt-apertura' + (/\.gif(\?|$)/i.test(ap.imagen || "") ? " gif" : "") + '">' + foto(urlSegura(ap.imagen), enl, "", "colaboraciones") +
       '<div class="pt-ap-txt"><span class="pt-kicker">' + esc(ap.seccion || "Firma invitada") + (ap.tema ? " · " + esc(ap.tema) : "") + "</span>" +
-      "<h2><a" + enl + ">" + esc(ap.titulo) + "</a></h2>" + extracto(ap.entradilla || primerParrafo(ap.texto), 240) + firma(ap.autor, ap.cargo) + "</div></article>";
+      "<h2><a" + enl + ">" + esc(ap.titulo) + "</a></h2>" + extracto(ap.entradilla || primerParrafo(ap.texto), 240) + "</div></article>";
   }
   if (otras.length) h += '<div class="pt-firmas">' + otras.map(c => {
     const enl = ' href="' + enlaceColaboracion(c) + '"', img = urlSegura(c.imagen);
     return '<article class="pt-firma' + (img ? "" : " sin-foto") + '">' + (img ? foto(img, enl, "", "colaboraciones") : "") +
       '<div><span class="pt-kicker">' + esc(c.seccion || "Firma invitada") + "</span><h3><a" + enl + ">" + esc(c.titulo) + "</a></h3>" +
-      extracto(c.entradilla || primerParrafo(c.texto), img ? 120 : 200) + firma(c.autor, c.cargo) + "</div></article>";
+      extracto(c.entradilla || primerParrafo(c.texto), img ? 120 : 200) + "</div></article>";
   }).join("") + "</div>";
 
   // Lo que hay que saber: una columna por sección, con su noticia principal y los demás titulares
