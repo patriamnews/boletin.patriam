@@ -33,6 +33,7 @@
 <body>
 <div id="app"></div>
 <script src="boletines.js"></script>
+<script>document.write('<script src="espana-al-dia.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
 <script src="importar.js?v=20261031a"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
@@ -93,11 +94,11 @@
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
      Los enlaces que llegan con #/... (por ejemplo, el de un colaborador) se abren y la dirección se limpia. */
   const CFG = window.PATRIAM_CONFIG || {};
-  const TITULOS = { criterio: "Criterio", peliculas: "Películas", noticias: "Actualidad", historia: "Historia", sociedad: "Sociedad", podcasts: "Podcasts y vídeos", libros: "Libros", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
+  const TITULOS = { "espana-al-dia": "España al día", criterio: "Criterio", peliculas: "Películas", noticias: "Actualidad", historia: "Historia", sociedad: "Sociedad", podcasts: "Podcasts y vídeos", libros: "Libros", analisis: "Análisis", editoriales: "Editorial", editorial: "Editorial", colaboraciones: "Colaboraciones", colaboracion: "Colaboraciones", iniciativas: "Iniciativas", boletines: "Boletines anteriores", buscar: "Buscar", legal: "Textos legales", suscribirse: "Suscríbete", al: "Al momento", baja: "Darse de baja" };
   /* Cada boletín tiene su dirección: /boletin/2. El resto de páginas se ven sin cambiar la dirección. */
   const LISTA = (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado");
   /* Páginas con dirección propia (boletin.movimientopatriam.es/historia, /colaboracion/…): se pueden compartir y Google las encuentra */
-  const CON_DIRECCION = /^(noticias|historia|sociedad|criterio|analisis|podcasts|libros|peliculas|colaboraciones|colaboracion\/[^/]+|editoriales|editorial\/[^/]+|iniciativas|boletines|ver\/[^/]+(\/[^/]+)?|suscribirse|legal\/[^/]+)$/;
+  const CON_DIRECCION = /^(noticias|historia|sociedad|criterio|analisis|podcasts|libros|peliculas|colaboraciones|colaboracion\/[^/]+|editoriales|editorial\/[^/]+|iniciativas|boletines|ver\/[^/]+(\/[^/]+)?|suscribirse|espana-al-dia(\/(politica|economia))?|legal\/[^/]+)$/;
   const conDireccion = r => CON_DIRECCION.test(String(r || "").replace(/^#\//, ""));
   function direccionDe(r) {
     if (conDireccion(r)) return "/" + r.replace(/^#\//, "");

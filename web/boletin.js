@@ -96,6 +96,7 @@ const ICONOS = {
   whatsapp: '<path d="M4 20l1.3-4A8 8 0 1 1 8.4 19z"/><path d="M9.2 8.6c.2 2.6 2.6 5 5.2 5.2l1.1-1.2-1.6-.9-.8.7c-.9-.4-1.9-1.4-2.3-2.3l.7-.8-.9-1.6z"/>',
   sociedad: '<path d="M3.5 20V10l8.5-6 8.5 6v10"/><path d="M9.5 20v-5.5h5V20M3 20h18"/>',
   podcasts: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>',
+  espana: '<path d="M4 6h16v12H4z"/><path d="M4 10h16M4 14h16"/>',
   tienda: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
   libros: '<path d="M4 4h4v16H4zM9.5 4h4v16h-4z"/><path d="m15 5.2 3.8-1 3.2 15.6-3.8 1z"/>',
   colaboraciones: '<path d="M4 20l1.2-4.6L15.8 4.8a2 2 0 0 1 2.9 0l.5.5a2 2 0 0 1 0 2.9L8.6 18.8z"/><path d="M13.8 6.8l3.4 3.4M4 20h7"/>'
@@ -263,7 +264,7 @@ function cabecera(cfg, b, activo) {
 
   // Menú
   const op = [["inicio", "#/", "Este boletín"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
-              ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"],
+              ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"], ["espana", "#/espana-al-dia", "España al día"],
               ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"],
               ["tienda", (cfg && cfg.tienda) || "https://movimientopatriam.es/tienda", "Tienda"]];
   h += '<nav class="bol-menu" aria-label="Secciones del boletín"><div class="bol-menu-in">';
@@ -437,6 +438,48 @@ function miniCalendario(eventos, ref) {
   for (let d = 1; d <= total; d++) h += '<span class="' + (dias[d] ? "con" : "") + (esHoy(d) ? " hoy" : "") + '"' + (dias[d] ? ' title="' + esc(dias[d]) + '"' : "") + ">" + d + "</span>";
   return h + "</div></div>";
 }
+/* ---------- «España al día»: titulares de la semana (se actualiza solo, scripts/espana-al-dia.mjs) ---------- */
+function espanaGrupos() { const d = typeof window !== "undefined" && window.ESPANA_AL_DIA; return (d && Array.isArray(d.grupos)) ? d.grupos : []; }
+function espanaHora(f) { try { return new Date(f).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }); } catch { return ""; } }
+function espanaDia(f) {
+  const d = new Date(f), hoy = new Date(), ayer = new Date(Date.now() - 864e5), mismo = (a, b) => a.toDateString() === b.toDateString();
+  return mismo(d, hoy) ? "Hoy" : mismo(d, ayer) ? "Ayer" : d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+}
+function espanaBotones(g) {
+  return '<div class="esp-medios">' + g.medios.map(m => '<a class="esp-medio" href="' + esc(urlSegura(m.url)) + '" target="_blank" rel="noopener" title="' + esc(m.titulo || g.titulo) + '">' + esc(m.medio) + " " + icono("flecha") + "</a>").join("") + "</div>";
+}
+function espanaFicha(g, mini) {
+  const img = urlSegura(g.imagen);
+  return '<article class="esp-ficha' + (mini ? " mini" : "") + (img ? "" : " sin-img") + '">' +
+    (img ? '<img class="esp-img" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add(\'sin-img\');this.remove()">' : "") +
+    '<div class="esp-txt"><span class="esp-tema">' + esc(g.tema || "Política") + " · " + esc(espanaDia(g.fecha)) + (mini ? "" : " · " + esc(espanaHora(g.fecha))) + "</span>" +
+    "<h3>" + esc(g.titulo) + "</h3>" + (!mini && g.resumen ? "<p>" + esc(recortar(g.resumen, 260)) + "</p>" : "") + espanaBotones(g) + "</div></article>";
+}
+function espanaLateral() {
+  const gs = espanaGrupos().slice(0, 10);
+  if (!gs.length) return "";
+  return '<section class="lat-esp"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2><a href="#/espana-al-dia">La semana</a></div>' +
+    '<div class="lat-esp-lista">' + gs.map(g => espanaFicha(g, true)).join("") + "</div>" + '<a class="bol-btn lat-esp-mas" href="#/espana-al-dia">Ver toda la semana ' + icono("flecha") + "</a></section>";
+}
+function espanaBloque() {
+  const gs = espanaGrupos();
+  if (!gs.length) return "";
+  const dest = gs.filter(g => g.medios.length > 1).concat(gs.filter(g => g.medios.length < 2)).slice(0, 6);
+  return '<section class="bol-espana"><div class="bol-sec-cab"><h2 class="bol-tit-sec">España al día</h2><a href="#/espana-al-dia">Toda la semana ' + icono("flecha") + "</a></div>" +
+    '<p class="esp-intro">Lo que publican estos días The Objective, El Debate, La Gaceta y El Español sobre política y economía. Si varios medios cuentan lo mismo, tienes un botón para cada uno.</p>' +
+    '<div class="esp-rejilla">' + dest.map(g => espanaFicha(g, false)).join("") + "</div></section>";
+}
+function paginaEspana(filtro) {
+  const d = (typeof window !== "undefined" && window.ESPANA_AL_DIA) || {};
+  const gs = espanaGrupos().filter(g => !filtro || (g.tema || "").toLowerCase() === filtro);
+  let h = '<div class="bol-pagina">' + cabPagina("España al día", "Política y economía de los últimos siete días en The Objective, El Debate, La Gaceta y El Español. Se actualiza sola cada día" + (d.actualizado ? " (última vez: " + espanaDia(d.actualizado).toLowerCase() + " a las " + espanaHora(d.actualizado) + ")" : "") + ".", gs.length);
+  h += '<nav class="crit-tabs">' + [["", "Todo"], ["politica", "Política"], ["economia", "Economía"]].map(([k, t]) => '<a href="#/espana-al-dia' + (k ? "/" + k : "") + '"' + ((filtro || "") === (k ? (k === "politica" ? "política" : "economía") : "") ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>";
+  if (!gs.length) return h + '<p class="bol-vacio">Todavía no hay titulares. Se cargan solos varias veces al día.</p></div>';
+  let dia = "";
+  gs.forEach(g => { const x = espanaDia(g.fecha); if (x !== dia) { if (dia) h += "</div>"; dia = x; h += '<h2 class="esp-dia">' + esc(x.charAt(0).toUpperCase() + x.slice(1)) + '</h2><div class="esp-rejilla">'; } h += espanaFicha(g, false); });
+  return h + "</div></div>";
+}
+
 function lateral(b, cfg, ls) {
   const ed = (b && b.editorial) || {};
   let h = '<aside class="bol-lateral"><div class="bol-lateral-in">';
@@ -449,6 +492,7 @@ function lateral(b, cfg, ls) {
     h += '<div class="lat-ed-pie"><span class="bol-firma-mini"><span class="bol-avatar">' + esc((ed.firma || cfg.editor || "L").charAt(0).toUpperCase()) + "</span>" + esc(ed.firma || cfg.editor || "LODLC") + "</span>";
     h += '<a class="bol-btn" href="#/editorial/' + encodeURIComponent(b.id) + '">Leer ' + icono("flecha") + "</a></div></div></article>";
   }
+  h += espanaLateral();
   const evs = todosEventos(ls && ls.length ? ls : (b ? [b] : [])).proximos;
   h += '<section class="lat-cal"><div class="bol-sec-cab claro"><h2 class="bol-tit-sec">Calendario</h2><a href="#/iniciativas">Todo</a></div>';
   h += miniCalendario(evs, (evs.find(e => e.fecha) || {}).fecha);
@@ -554,7 +598,8 @@ function sumarioBoletin(b, cfg, grupos, cols, recs, evs) {
     '<span><span class="pt-kicker">' + esc(g.clave === "recomendado" ? "Recomendado" : g.t + " de la semana" + (x.tipo && x.tipo !== g.t ? " · " + x.tipo : "")) + "</span><b>" + esc(x.titulo) + "</b>" +
     (x.medio ? "<small>" + esc(x.medio) + "</small>" : "") + "</span></a>").join("")).join("") + "</div>";
 
-  h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Leer el boletín completo ' + icono("flecha") + "</a></div></section>";
+  h += '<div class="sum-entrar"><a class="bol-btn grande" href="#completo" onclick="return entrarBoletin()">Leer el boletín completo ' + icono("flecha") + "</a></div>";
+  h += espanaBloque() + "</section>";
   return h;
 }
 /* En cada sección, la pieza principal (la primera con imagen) va en grande y el resto en pequeño, a dos columnas */
@@ -593,6 +638,7 @@ function centroInicio(b, cfg, todos) {
          (g.ruta ? '<a href="' + g.ruta + '">Ver todos ' + icono("flecha") + "</a>" : "") + "</div>" +
          '<div class="bib-lista">' + g.xs.map(x => tarjetaBib(x, cfg, true)).join("") + "</div></section>";
   });
+  h += espanaBloque();
   h += bloqueRedes(cfg);
   h += '<div class="bol-unete"><span class="bol-unete-ico">' + icono("correo") + "</span>" +
        '<div><b>' + esc(cfg.uneteTitulo || "Únete a PATRIAM") + "</b><p>" + esc(cfg.uneteTexto || "Recibe cada semana nuestro boletín y forma parte del cambio.") + "</p></div>" +
@@ -1094,6 +1140,16 @@ function renderCorreo(b, cfg, opciones) {
       '<td valign="top" style="padding-left:14px"><p style="margin:0;font:700 16px ' + F + ";color:" + T + '">' + (urlSegura(e.url) ? '<a href="' + esc(e.url) + '" style="color:' + T + '">' + esc(e.titulo) + "</a>" : esc(e.titulo)) + "</p>" +
       '<p style="margin:2px 0 0;font:400 14px/1.5 ' + F + ';color:#5b4f49">' + [e.hora, e.lugar].filter(Boolean).map(esc).join(" · ") + (e.descripcion ? "<br>" + esc(e.descripcion) : "") + "</p></td></tr></table>";
   }).join(""), "#faf6ef");
+  // España al día (lo más reciente de la semana)
+  const esp = espanaGrupos().slice(0, 8);
+  if (esp.length) h += bloque(etiqueta("España al día") +
+    '<p style="margin:0 0 16px;font:400 14px/1.5 ' + F + ';color:#6b5f58">Política y economía de estos días en The Objective, El Debate, La Gaceta y El Español.</p>' +
+    esp.map(g => '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 16px;border-top:1px solid #eadfcd"><tr>' +
+      (urlSegura(g.imagen) ? '<td width="96" valign="top" style="width:96px;padding-top:12px"><img src="' + esc(g.imagen) + '" alt="" width="96" style="display:block;width:96px;height:auto;border:0;border-radius:3px"></td>' : "") +
+      '<td valign="top" style="padding:12px 0 0 ' + (urlSegura(g.imagen) ? "14px" : "0") + '"><p style="margin:0 0 4px;font:600 10px ' + F + ';letter-spacing:2px;text-transform:uppercase;color:' + G + '">' + esc(g.tema || "Política") + '</p>' +
+      '<p style="margin:0 0 6px;font:700 16px/1.3 ' + F + ";color:" + T + '">' + esc(g.titulo) + "</p>" +
+      '<p style="margin:0">' + g.medios.map(m => '<a href="' + esc(m.url) + '" style="display:inline-block;margin:0 6px 6px 0;background:' + G + ';color:#fff;text-decoration:none;font:600 11px ' + F + ';padding:5px 11px;border-radius:999px">' + esc(m.medio) + " &rarr;</a>").join("") + "</p></td></tr></table>").join("") +
+    boton(ir("#/espana-al-dia"), "Toda la semana"), "#ffffff");
   // llamada final
   h += bloque('<div style="text-align:center"><p style="margin:0 0 14px;font:italic 400 18px ' + F + ";color:" + G + '">Todo el boletín, con vídeos, podcasts y la biblioteca, en la web</p>' + boton(base, "Ver el boletín completo") + "</div>");
   // pie
@@ -1135,6 +1191,7 @@ function renderApp(ruta, lista, cfg) {
       return m(k === "actualidad" ? "noticias" : k === "analisis" ? "criterio" : k, paginaColaboracion(ls, p[1], cfg)); }
     case "iniciativas": case "eventos": return m("iniciativas", paginaIniciativas(ls));
     case "boletines": return m("boletines", paginaBoletines(ls));
+    case "espana-al-dia": return m("espana", paginaEspana(p[1] === "politica" ? "política" : p[1] === "economia" ? "economía" : ""));
     case "al": return m("", p[1] ? paginaAlMomento(cfg, p[1]) : paginaAlMomentoLista(cfg));
     case "buscar": return m("", paginaBuscar(ls, cfg, p[1] || ""));
     case "legal": return m("", paginaLegal(p[1] || "aviso-legal", cfg));

@@ -19,7 +19,7 @@ $bols = array_values(array_filter($bols, fn($b) => empty($b['estado']) || $b['es
 $hoy = gmdate('Y-m-d');
 $numeros = array_map(fn($b) => (int)($b['numero'] ?? 0), $bols);
 $urls = [['/', $hoy, 'weekly', '1.0', '']];
-foreach (['noticias', 'historia', 'sociedad', 'criterio', 'podcasts', 'libros', 'peliculas', 'boletines', 'colaboraciones', 'iniciativas'] as $s) $urls[] = ['/' . $s, $hoy, 'weekly', '0.7', ''];
+foreach (['noticias', 'historia', 'sociedad', 'criterio', 'podcasts', 'libros', 'peliculas', 'boletines', 'colaboraciones', 'iniciativas', 'espana-al-dia'] as $s) $urls[] = ['/' . $s, $hoy, 'weekly', '0.7', ''];
 $vistos = [];
 foreach ($bols as $b) {
   $f = substr($b['fecha'] ?? $hoy, 0, 10);

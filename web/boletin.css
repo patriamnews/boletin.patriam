@@ -886,3 +886,40 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
   .bol-menu::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 34px; pointer-events: none;
     background: linear-gradient(90deg, rgba(123,28,44,0), var(--acento) 85%); }
 }
+
+/* ---------- España al día ---------- */
+.esp-ficha { display: grid; grid-template-columns: 150px 1fr; gap: 0; background: var(--papel); border: 1px solid var(--linea); border-radius: 4px; overflow: hidden; }
+.esp-ficha.sin-img { grid-template-columns: 1fr; }
+.esp-img { width: 100%; height: 100%; min-height: 120px; object-fit: cover; background: var(--crema-2); }
+.esp-txt { padding: .8rem 1rem .9rem; display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.esp-tema { font-size: .66rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--acento); }
+.esp-txt h3 { margin: 0; font-size: 1.02rem; line-height: 1.25; }
+.esp-txt p { margin: 0; font-size: .9rem; line-height: 1.45; color: #4a3f3a; }
+.esp-medios { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .3rem; }
+.esp-medio { display: inline-flex; align-items: center; gap: .3rem; padding: .28rem .7rem; border-radius: 999px; background: var(--acento); color: #fff; font-size: .74rem; font-weight: 700; text-decoration: none; letter-spacing: .02em; }
+.esp-medio:hover { filter: brightness(1.15); }
+.esp-medio .ico { width: 12px; height: 12px; }
+.esp-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1.4rem; }
+.esp-intro { margin: -.4rem 0 1rem; color: #6b5f58; font-size: .92rem; }
+.esp-dia { margin: 1.4rem 0 .7rem; font-size: 1rem; letter-spacing: .12em; text-transform: uppercase; color: var(--acento); }
+.bol-espana { margin: 2rem 0; }
+/* en la columna lateral */
+.lat-esp { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; background: var(--papel); border: 1px solid var(--linea); border-top: 4px solid var(--acento); border-radius: 4px; padding: .8rem .8rem .7rem; }
+.lat-esp .bol-sec-cab { margin-bottom: .6rem; padding-bottom: .4rem; }
+.lat-esp-lista { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding-right: 2px; }
+.lat-cal { flex: none; }
+.lat-esp .esp-ficha.mini { grid-template-columns: 64px 1fr; margin-bottom: .55rem; }
+.lat-esp .esp-ficha.mini.sin-img { grid-template-columns: 1fr; }
+.lat-esp .esp-ficha.mini .esp-img { min-height: 64px; height: 100%; }
+.lat-esp .esp-txt { padding: .5rem .65rem .6rem; gap: .2rem; }
+.lat-esp .esp-txt h3 { font-size: .86rem; }
+.lat-esp .esp-medio { padding: .18rem .5rem; font-size: .66rem; }
+.lat-esp-mas { width: 100%; justify-content: center; margin-top: .2rem; }
+@media (max-width: 700px) { .esp-ficha { grid-template-columns: 110px 1fr; } .esp-rejilla { grid-template-columns: 1fr; } }
+
+/* Móvil y tablet: «España al día» en carrusel, justo debajo de la editorial */
+@media (max-width: 980px) {
+  .lat-esp { order: 1; min-height: 0; margin: 0; }
+  .lat-esp-lista { display: flex; gap: .6rem; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x proximity; padding-bottom: .3rem; }
+  .lat-esp .esp-ficha.mini { flex: 0 0 82%; max-width: 320px; margin: 0; scroll-snap-align: start; }
+}
