@@ -12,6 +12,8 @@ Todo lo que funciona solo, en un sitio. Cada cosa dice qué hace, cuándo y dón
 | **Comunicaciones de Carlos** (semanal y mensual) | Cron de Hostinger, cada hora | `php revisar.php` → `web/carlos.php` | Página propia de Carlos (`/carlos/<clave>`; el enlace lo da el editor › Comunicaciones), contactos en `com.json` |
 | **Aviso a colaboradores** (una semana antes de cada boletín) | Cron de Hostinger, cada hora | `php revisar.php` → `web/calendario.php` | Calendario en Gestión y en Publicar; datos en `calendario.json` |
 
+| **Artículo del día en redes** (X, Facebook, Instagram) | Cron de Hostinger, cada hora (a los :05); publica una vez al día a la hora elegida | `php public_html/api/rrss-publicar.php diario` (repo patriam-web) | Se activa y se elige en publicar.movimientopatriam.es › RRSS › Artículo del día, con las cuentas conectadas de quien la activa |
+
 Hostinger publica solo cada `push` a `main`.
 
 ## España al día
