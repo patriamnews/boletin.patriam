@@ -34,7 +34,7 @@
 <div id="app"></div>
 <script src="boletines.js"></script>
 <script>document.write('<script src="espana-al-dia.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
-<script src="importar.js?v=20261031a"></script>
+<script src="importar.js?v=20261111b"></script>
 <script>
 /* Lo que se sube en importar.js se publica directamente en el boletín que todavía no ha salido (el nº 1 sale el 30 de octubre).
    Si el editor ya lo ha metido, no se repite. El lema va siempre sin «Familia». */
@@ -51,7 +51,7 @@
       var ya = null; L.forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c.id === it.id) ya = c; }); });
       if (ya) { var nuevo = JSON.parse(JSON.stringify(it)); delete nuevo.numero; Object.assign(ya, nuevo); return; }
       var d = it.numero ? L.filter(function(b){ return Number(b.numero) === Number(it.numero); })[0] : destino;   // «numero»: para un boletín concreto
-      if (!d) return;
+      if (!d) { (window.PATRIAM_IMPORTAR_ESPERA = window.PATRIAM_IMPORTAR_ESPERA || []).push(it); return; }   // su boletín puede abrirse desde Publicar
       d.colaboraciones = d.colaboraciones || [];
       d.colaboraciones.push(JSON.parse(JSON.stringify(it)));
     });
@@ -90,6 +90,15 @@
 <script>document.write('<script src="aportaciones.js?m=' + Date.now().toString(36).slice(0, -4) + '"><\/script>');</script>
 <script src="aportaciones-unir.js?v=20261111a"></script>
 <script>unirAportaciones(window.BOLETINES || [], window.PATRIAM_CONFIG, { lectores: true });</script>
+<script>
+/* Lo de importar.js para un boletín que se ha abierto desde Publicar (llega en aportaciones.js) */
+(window.PATRIAM_IMPORTAR_ESPERA || []).forEach(function(it){
+  var L = window.BOLETINES || [];
+  if (L.some(function(b){ return (b.colaboraciones || []).some(function(c){ return c.id === it.id; }); })) return;
+  var d = L.filter(function(b){ return Number(b.numero) === Number(it.numero); })[0];
+  if (d) { d.colaboraciones = d.colaboraciones || []; d.colaboraciones.push(JSON.parse(JSON.stringify(it))); }
+});
+</script>
 <script src="legales.js?v=20261031a"></script>
 <script src="boletin.js?v=20261111c"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
