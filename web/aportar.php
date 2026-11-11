@@ -139,6 +139,20 @@ function preparados($d, $num) {
   }
   return $res;
 }
+/* Recámara preparada en _recamara.js (artículos, libros y películas que aún no van a ningún número).
+   Se ve en la recámara con el mismo formato que lo guardado desde Publicar; al usarlo pasa al boletín abierto como pendiente. */
+function piezasRecamara($d) {
+  $t = @file_get_contents(__DIR__ . '/_recamara.js') ?: '';
+  $L = preg_match('/window\.PATRIAM_RECAMARA\s*=\s*(\[.*\n\]);/s', $t, $m) ? (json_decode($m[1], true) ?: []) : [];
+  $res = [];
+  foreach ($L as $x) {
+    $id = 'pre-' . ($x['id'] ?? ''); $c = $d['cambios'][$id] ?? [];
+    if (!empty($c['quitado']) || !empty($c['usado'])) continue;
+    $res[] = ['id' => $id, 'tipo' => $x['tipo'] ?? 'firma', 'numero' => null, 'datos' => $c['datos'] ?? ($x['datos'] ?? []), 'estado' => 'recamara',
+      'origen' => 'preparado', 'autor' => $x['autor'] ?? '', 'autor_id' => '', 'creado' => $x['creado'] ?? '', 'aprobado_por' => ''];
+  }
+  return $res;
+}
 function esPreparado($id) { return (bool)preg_match('/^(imp|rec)-/', (string)$id); }
 function piezaPreparada($id) { foreach (piezasImportar() as $x) if ($x['id'] === $id) return $x; return null; }
 /* Los datos de un formulario de Publicar, limpios según el tipo (igual que al subir) */
@@ -287,6 +301,12 @@ switch ($acc) {
 
   case 'editar': {   // cambiar algo ya subido (de Publicar o preparado): si no lo cambia quien aprueba, espera visto bueno
     $id = $cuerpo['id'] ?? ''; $x = $cuerpo['datos'] ?? [];
+    if (str_starts_with((string)$id, 'pre-')) {   // recámara preparada: se guarda el cambio; se aprueba cuando pase al boletín
+      $p = null; foreach (piezasRecamara($d) as $q) if ($q['id'] === $id) $p = $q;
+      if (!$p) salir(['error' => 'No se encuentra.'], 404);
+      $c = $d['cambios'][$id] ?? []; $c['datos'] = datosLimpios($p['tipo'], $x, $p['datos']); $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
+      guardarAp($FICHERO, $d); salir(estado($d, $hoy, $yo) + ['ok' => true]);
+    }
     if (esPreparado($id)) {
       $p = piezaPreparada($id); if (!$p) salir(['error' => 'No se encuentra.'], 404);
       $c = $d['cambios'][$id] ?? [];
@@ -335,6 +355,7 @@ switch ($acc) {
   /* ---------- Recámara: lo preparado que todavía no va a ningún número ---------- */
   case 'recamara': {
     $r = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'recamara'));
+    $r = array_merge($r, piezasRecamara($d));
     $r = array_map(fn($x) => array_merge($x, ['datos' => array_diff_key($x['datos'] ?? [], ['cv' => 1])]), $r);
     usort($r, fn($a, $b) => strcmp($b['creado'] ?? '', $a['creado'] ?? ''));
     // y lo que ya está preparado para un número que todavía no ha salido (importar.js)
@@ -346,6 +367,11 @@ switch ($acc) {
     $e = estado($d, $hoy, $yo);
     if (!$e['abierto']) salir(['error' => 'Primero hay que abrir el boletín de esta semana.'], 409);
     $ok = false;
+    foreach (piezasRecamara($d) as $p) if ($p['id'] === ($cuerpo['id'] ?? '')) {   // preparada en _recamara.js: entra como pendiente
+      $d['items'][] = ['id' => 'ap-' . bin2hex(random_bytes(5)), 'tipo' => $p['tipo'], 'numero' => $e['abierto']['numero'], 'datos' => $p['datos'], 'estado' => 'pendiente',
+        'autor' => $p['autor'], 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => '', 'de_recamara' => $p['id']];
+      $c = $d['cambios'][$p['id']] ?? []; $c['usado'] = true; $c['cambiado'] = gmdate('c'); $d['cambios'][$p['id']] = $c; $ok = true;
+    }
     foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['estado'] ?? '') === 'recamara') {
       $x['numero'] = $e['abierto']['numero']; $x['estado'] = 'pendiente';
       $x['aprobado_por'] = ''; $x['cambiado'] = gmdate('c'); $ok = true;
@@ -382,6 +408,11 @@ switch ($acc) {
     salir(['ok' => true]);
   }
   case 'quitar-recamara': {
+    if (str_starts_with((string)($cuerpo['id'] ?? ''), 'pre-')) {
+      if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden quitarlo Carlos e Isabel.'], 403);
+      $c = $d['cambios'][$cuerpo['id']] ?? []; $c['quitado'] = true; $c['cambiado'] = gmdate('c'); $d['cambios'][$cuerpo['id']] = $c;
+      guardarAp($FICHERO, $d); salir(['ok' => true]);
+    }
     foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['estado'] ?? '') === 'recamara') {
       if (!$yo['puedeAprobar'] && ($x['autor_id'] ?? '') !== $yo['id']) salir(['error' => 'Solo puede quitarlo quien lo subió o quien aprueba.'], 403);
       $x['estado'] = 'borrado'; $x['cambiado'] = gmdate('c');
