@@ -126,7 +126,10 @@ if ($accion === 'guardar') {
   $d['ajustes'] = array_merge($d['ajustes'], array_intersect_key($n['ajustes'] ?? [], $d['ajustes']));
   foreach (array_slice($n['contactos'] ?? [], 0, 5000) as $c) {
     $d['contactos'][] = ['id' => substr((string)($c['id'] ?? ''), 0, 40), 'nombre' => substr((string)($c['nombre'] ?? ''), 0, 120),
-      'email' => strtolower(trim(substr((string)($c['email'] ?? ''), 0, 160))), 'movil' => substr((string)($c['movil'] ?? ''), 0, 40)];
+      'email' => strtolower(trim(substr((string)($c['email'] ?? ''), 0, 160))), 'movil' => substr((string)($c['movil'] ?? ''), 0, 40)]
+      // lo que añade Carlos desde su página lleva su marca (y así sigue en sus comunicaciones)
+      + array_filter(['nota' => substr((string)($c['nota'] ?? ''), 0, 60), 'origen' => ($c['origen'] ?? '') === 'carlos' ? 'carlos' : '',
+        'alta' => substr((string)($c['alta'] ?? ''), 0, 40), 'saludoNombre' => substr((string)($c['saludoNombre'] ?? ''), 0, 80)]);
   }
   // Lo ya enviado no se puede cambiar desde el editor: se conserva lo del servidor
   $antes = [];
@@ -141,6 +144,14 @@ if ($accion === 'guardar') {
   $mapa = [];
   sacarImagenes($d, $mapa);
   salir(['etag' => escribir($d), 'mapa' => (object)$mapa]);
+}
+
+/* Enlace de la página de Carlos (?nuevo=1 lo cambia: el anterior deja de valer) */
+if ($accion === 'enlace-carlos') {
+  require_once __DIR__ . '/carlos.php';
+  $c = carlosLeer();
+  if (!empty($cuerpo['nuevo'])) { $c['version'] = (int)$c['version'] + 1; carlosGuardar($c); }
+  salir(['enlace' => carlosEnlace($c)]);
 }
 
 if ($accion === 'claves') {

@@ -9,6 +9,8 @@ Todo lo que funciona solo, en un sitio. Cada cosa dice qué hace, cuándo y dón
 | **Ilustraciones del boletín + App PATRIAM** | Cada día a las 07:59 (Madrid) | Tarea programada de Claude («Ilustraciones boletín PATRIAM»). Copia de sus instrucciones: [`tarea-ilustraciones.md`](tarea-ilustraciones.md) | `web/imagenes/auto/`, `web/imagenes-auto.js`, `web/importar.js` y los datos de la App |
 | **Copia desde Netlify** | A mano | `.github/workflows/copia-netlify.yml` | `datos/boletines.js`, `web/img/` |
 | **Correo diario de España al día** | Cron de Hostinger | `php mipatria.php enviar` | Suscriptores (en la carpeta privada del servidor) |
+| **Comunicaciones de Carlos** (semanal y mensual) | Cron de Hostinger, cada hora | `php revisar.php` → `web/carlos.php` | Página propia de Carlos (`/carlos/<clave>`; el enlace lo da el editor › Comunicaciones), contactos en `com.json` |
+| **Aviso a colaboradores** (una semana antes de cada boletín) | Cron de Hostinger, cada hora | `php revisar.php` → `web/calendario.php` | Calendario en Gestión y en Publicar; datos en `calendario.json` |
 
 Hostinger publica solo cada `push` a `main`.
 

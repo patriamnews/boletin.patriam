@@ -260,6 +260,11 @@
       <section class="paso paso-bib"><h2><b>✉</b>Comunicaciones <small>un mensaje personal a cada uno, por correo y por WhatsApp</small></h2><div class="paso-in">
         <p class="nota" style="margin-top:8px">Cada persona lo recibe a su nombre: <b>«Buenos días, Nombre:»</b>, después el texto que escribas y al final la firma. Solo lo ven y lo mandan los administradores. Se guarda solo, como el boletín, y nunca sale en la web.</p>
         <div id="comServicios"></div>
+        <div class="com-carlos" style="margin:10px 0;padding:10px 12px;border:1px solid var(--linea);border-radius:8px;background:var(--papel)">
+          <b>Página de Carlos</b> <span class="nota">· sus contactos (nombre y móvil) y su comunicación semanal y mensual, que salen solas. No necesita usuario: entra con este enlace.</span>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><input type="text" id="comCarlosEnlace" readonly placeholder="Pulsa «Ver enlace»" style="flex:1 1 260px">
+            <button class="btn" id="btnComCarlos">Ver enlace</button><button class="btn" id="btnComCarlosCopiar">Copiar</button><button class="btn" id="btnComCarlosNuevo" title="El enlace anterior deja de funcionar">Cambiar enlace</button></div>
+        </div>
         <button class="btn btn-add" id="btnComNueva">+ Nueva comunicación</button>
         <div id="comLista"></div>
       </div></section>
@@ -1456,6 +1461,13 @@ function pintarComContactos() {
   if (!(COM.contactos || []).length) cont.innerHTML = '<p class="nota">Todavía no hay nadie más.</p>';
 }
 $("btnComContacto").onclick = () => { COM.contactos.push({ id: nuevoId("p"), nombre: "", email: "", movil: "" }); pintarComContactos(); const u = $("comContactos").lastElementChild; if (u) u.querySelector("input").focus(); };
+async function comCarlos(nuevo) {
+  try { const d = await api("com-enlace-carlos", nuevo ? { nuevo: 1 } : {}); $("comCarlosEnlace").value = d.enlace; }
+  catch (err) { if (err.status !== 401) alert("No se ha podido sacar el enlace: " + err.message); }
+}
+$("btnComCarlos").onclick = () => comCarlos(false);
+$("btnComCarlosNuevo").onclick = () => { if (confirm("¿Cambiar el enlace de Carlos? El que tiene ahora dejará de funcionar y tendrás que mandarle el nuevo.")) comCarlos(true); };
+$("btnComCarlosCopiar").onclick = async () => { if (!$("comCarlosEnlace").value) await comCarlos(false); const v = $("comCarlosEnlace").value; if (v) (navigator.clipboard ? navigator.clipboard.writeText(v) : Promise.reject()).then(() => alert("Enlace copiado"), () => prompt("Copia el enlace:", v)); };
 $("btnComPegar").onclick = () => { $("comPegar").hidden = !$("comPegar").hidden; };
 $("btnComPegarOk").onclick = () => {
   let n = 0;
