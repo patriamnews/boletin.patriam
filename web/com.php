@@ -82,7 +82,7 @@ function escribir($d) {
 function claves() { $f = privado() . '/claves.json'; return is_file($f) ? (json_decode(file_get_contents($f), true) ?: []) : []; }
 function servicios() {
   $k = claves();
-  return ['correo' => !empty($k['brevo']), 'whatsapp' => !empty($k['waToken']) && !empty($k['waPhone']),
+  return ['correo' => !empty($k['brevo']), 'whatsapp' => waHay($k),
     'plantilla' => $k['waPlantilla'] ?? 'comunicacion_patriam', 'idioma' => $k['waIdioma'] ?? 'es',
     'brevo' => !empty($k['brevo']) ? '…' . substr($k['brevo'], -4) : '', 'waToken' => !empty($k['waToken']) ? '…' . substr($k['waToken'], -4) : '',
     'waPhone' => $k['waPhone'] ?? '', 'stripe' => !empty($k['stripe']) ? (strpos($k['stripe'], '_test_') !== false ? 'prueba ' : 'real ') . '…' . substr($k['stripe'], -4) : '',
@@ -156,7 +156,7 @@ if ($accion === 'enlace-carlos') {
 
 if ($accion === 'claves') {
   $k = claves();
-  foreach (['brevo', 'waToken', 'waPhone', 'waPlantilla', 'waIdioma', 'stripe', 'stripeWebhook', 'gelato'] as $c) {
+  foreach (['brevo', 'waToken', 'waPhone', 'waInterno', 'waPlantilla', 'waIdioma', 'stripe', 'stripeWebhook', 'gelato'] as $c) {
     if (!isset($cuerpo[$c])) continue;
     $v = trim((string)$cuerpo[$c]);
     if ($v === '-') unset($k[$c]); elseif ($v !== '') $k[$c] = $v;
@@ -215,14 +215,8 @@ if ($accion === 'enviar') {
       // WhatsApp no deja saltos de línea dentro de un hueco de la plantilla: los párrafos se unen con «—»
       $parr = array_filter(array_map(fn($x) => trim(preg_replace('/\s*\n\s*/', ' ', $x)), preg_split('/\n\s*\n/', str_replace("\r", '', (string)($cuerpo['textoWa'] ?? '')))));
       $txt = mb_substr(seguirEnlacesTexto(preg_replace('/ {4,}/', '   ', str_replace("\t", ' ', implode(' — ', $parr))), $pc, $com['id']), 0, 1000) ?: '.';
-      $msg = ['messaging_product' => 'whatsapp', 'to' => $m, 'type' => 'template', 'template' => [
-        'name' => $sv['plantilla'], 'language' => ['code' => $sv['idioma']],
-        'components' => [['type' => 'body', 'parameters' => [['type' => 'text', 'text' => $nombre ?: 'amigo'], ['type' => 'text', 'text' => $txt]]]]]];
-      [$c, $r, $e] = pedir($GLOBALS['API_META'] . '/v21.0/' . rawurlencode($k['waPhone']) . '/messages',
-        ['Authorization: Bearer ' . $k['waToken'], 'Content-Type: application/json'], json_encode($msg, JSON_UNESCAPED_UNICODE));
-      $ok = $c >= 200 && $c < 300;
-      $er = json_decode($r, true)['error'] ?? [];
-      $res[] = ['id' => $id, 'clave' => $m, 'ok' => $ok, 'motivo' => $ok ? '' : (($er['error_data']['details'] ?? '') ?: ($er['message'] ?? '') ?: ($e ?: 'WhatsApp respondió ' . $c))];
+      [$ok, $motivoWa] = waPlantilla($k + ['waPlantilla' => $sv['plantilla'], 'waIdioma' => $sv['idioma']], $m, [$nombre ?: 'amigo', $txt]);
+      $res[] = ['id' => $id, 'clave' => $m, 'ok' => $ok, 'motivo' => $motivoWa];
     }
   }
   guardarPersonas($pers);

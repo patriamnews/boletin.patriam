@@ -38,6 +38,32 @@ if (!function_exists('pedir')) {
     return [$c, $r === false ? '' : $r, $e];
   }
 }
+/* WhatsApp con plantilla aprobada por Meta. Dos maneras de mandarlo, según lo que haya en las claves:
+   - «waInterno»: a través de la función de Supabase «send-whatsapp-template» (el token de Meta vive solo en Supabase).
+   - «waToken» + «waPhone»: directamente a Meta desde aquí.
+   Devuelve [ok, motivo del error]. */
+function waHay($k) { return !empty($k['waInterno']) || (!empty($k['waToken']) && !empty($k['waPhone'])); }
+function waPlantilla($k, $movil, $parametros) {
+  $plantilla = $k['waPlantilla'] ?? 'comunicacion_patriam'; $idioma = $k['waIdioma'] ?? 'es';
+  $movil = preg_replace('/\D/', '', (string)$movil);
+  if (!empty($k['waInterno'])) {
+    [$c, $r, $e] = pedir('https://igrjdsfcecbwnawwgdop.supabase.co/functions/v1/send-whatsapp-template',
+      ['x-internal-secret: ' . $k['waInterno'], 'Content-Type: application/json'],
+      json_encode(['to' => '+' . $movil, 'template' => $plantilla, 'language' => $idioma, 'parameters' => array_values($parametros)], JSON_UNESCAPED_UNICODE));
+    $j = json_decode((string)$r, true) ?: [];
+    $er = $j['result']['error'] ?? [];
+    $ok = $c >= 200 && $c < 300 && !empty($j['ok']);
+    $motivo = ($er['error_data']['details'] ?? '') ?: ($er['message'] ?? '') ?: ($c === 401 ? 'Supabase no acepta la clave interna de WhatsApp' : ($c === 503 ? 'Falta el token o el número de WhatsApp en Supabase' : ($e ?: trim(mb_substr((string)$r, 0, 120)) ?: 'WhatsApp ' . $c)));
+    return [$ok, $ok ? '' : $motivo];
+  }
+  $msg = ['messaging_product' => 'whatsapp', 'to' => $movil, 'type' => 'template', 'template' => [
+    'name' => $plantilla, 'language' => ['code' => $idioma],
+    'components' => [['type' => 'body', 'parameters' => array_map(fn($t) => ['type' => 'text', 'text' => (string)$t], array_values($parametros))]]]];
+  [$c, $r, $e] = pedir('https://graph.facebook.com/v21.0/' . rawurlencode($k['waPhone']) . '/messages', ['Authorization: Bearer ' . $k['waToken'], 'Content-Type: application/json'], json_encode($msg, JSON_UNESCAPED_UNICODE));
+  $er = json_decode((string)$r, true)['error'] ?? [];
+  $ok = $c >= 200 && $c < 300;
+  return [$ok, $ok ? '' : (($er['error_data']['details'] ?? '') ?: ($er['message'] ?? '') ?: ($e ?: 'WhatsApp ' . $c))];
+}
 function origenBoletin() { return getenv('BOLETIN_ORIGEN') ?: 'https://boletinpatriam.netlify.app'; }
 function webBoletin() { return 'https://boletin.movimientopatriam.es'; }
 

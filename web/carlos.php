@@ -84,15 +84,10 @@ function cBrevo($para, $nombre, $asunto, $html, $texto, $etiqueta = 'comunicacio
   [$c, $r, $err] = pedir('https://api.brevo.com/v3/smtp/email', ['api-key: ' . $k['brevo'], 'Content-Type: application/json', 'Accept: application/json'], json_encode($msg, JSON_UNESCAPED_UNICODE));
   return [$c >= 200 && $c < 300, $c >= 200 && $c < 300 ? '' : ((json_decode($r, true)['message'] ?? '') ?: ($err ?: 'Brevo ' . $c))];
 }
-function cWhatsappApi() { $k = cClaves(); return !empty($k['waToken']) && !empty($k['waPhone']) ? $k : null; }
+function cWhatsappApi() { $k = cClaves(); return waHay($k) ? $k : null; }
 function cWhatsapp($k, $movil, $nombre, $texto) {
   $parr = array_filter(array_map(fn($x) => trim(preg_replace('/\s*\n\s*/', ' ', $x)), preg_split('/\n\s*\n/', str_replace("\r", '', $texto))));
-  $msg = ['messaging_product' => 'whatsapp', 'to' => $movil, 'type' => 'template', 'template' => [
-    'name' => $k['waPlantilla'] ?? 'comunicacion_patriam', 'language' => ['code' => $k['waIdioma'] ?? 'es'],
-    'components' => [['type' => 'body', 'parameters' => [['type' => 'text', 'text' => $nombre ?: 'amigo'], ['type' => 'text', 'text' => mb_substr(implode(' — ', $parr), 0, 1000) ?: '.']]]]]];
-  [$c, $r, $err] = pedir('https://graph.facebook.com/v21.0/' . rawurlencode($k['waPhone']) . '/messages', ['Authorization: Bearer ' . $k['waToken'], 'Content-Type: application/json'], json_encode($msg, JSON_UNESCAPED_UNICODE));
-  $er = json_decode($r, true)['error'] ?? [];
-  return [$c >= 200 && $c < 300, ($er['error_data']['details'] ?? '') ?: ($er['message'] ?? '') ?: ($err ?: 'WhatsApp ' . $c)];
+  return waPlantilla($k, $movil, [$nombre ?: 'amigo', mb_substr(implode(' — ', $parr), 0, 1000) ?: '.']);
 }
 
 /* ---------- tandas: cada envío (una semana, un mes, o «enviar ahora») ---------- */
