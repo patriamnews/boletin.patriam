@@ -1,0 +1,138 @@
+// «España al día»: recopila cada día los titulares de política y economía española de
+// The Objective, El Debate, La Gaceta y El Español; agrupa los que cuentan lo mismo (un botón por medio)
+// y guarda la última semana en web/espana-al-dia.js, que leen el boletín y su columna lateral.
+// Lo ejecuta GitHub tres veces al día (.github/workflows/espana-al-dia.yml). Sin dependencias.
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
+
+const DIAS = 7
+const MEDIOS = [
+  { medio: 'The Objective', dominio: 'theobjective.com', fuentes: [
+    ['https://theobjective.com/espana/feed/', 'Política'], ['https://theobjective.com/espana/politica/feed/', 'Política'],
+    ['https://theobjective.com/economia/feed/', 'Economía'], ['https://theobjective.com/feed/', ''] ] },
+  { medio: 'El Debate', dominio: 'eldebate.com', fuentes: [
+    ['https://www.eldebate.com/rss/espana.xml', 'Política'], ['https://www.eldebate.com/rss/economia.xml', 'Economía'],
+    ['https://www.eldebate.com/rss/portada.xml', ''], ['https://www.eldebate.com/rss/', ''],
+    ['https://www.eldebate.com/sitemap_google_news.xml', ''], ['https://www.eldebate.com/sitemap-news.xml', ''], ['https://www.eldebate.com/news-sitemap.xml', ''] ] },
+  { medio: 'La Gaceta', dominio: 'gaceta.es', fuentes: [
+    ['https://gaceta.es/espana/feed/', 'Política'], ['https://gaceta.es/economia/feed/', 'Economía'], ['https://gaceta.es/feed/', ''] ] },
+  { medio: 'El Español', dominio: 'elespanol.com', fuentes: [
+    ['https://www.elespanol.com/rss/espana/', 'Política'], ['https://www.elespanol.com/rss/espana/politica/', 'Política'],
+    ['https://www.elespanol.com/rss/invertia/', 'Economía'], ['https://www.elespanol.com/rss/economia/', 'Economía'], ['https://www.elespanol.com/rss/', ''] ] },
+]
+// Si la fuente es general, solo entra lo que por su dirección es de política o economía de España
+const SI = /\/(espana|nacional|politica|economia|invertia|empresas|mercados|macroeconomia|vivienda|trabajo|fiscal|hacienda|tribunales|justicia|elecciones|gobierno|congreso)\b/i
+const NO = /\/(internacional|mundo|america|europa|deportes|cultura|gente|television|tv|ocio|gastronomia|viajes|salud|ciencia|tecnologia|motor|loterias|horoscopo|tiempo|sociedad|religion|opinion|blogs|corazon|famosos|estilo|series|cine|libros|toros|virales)\b/i
+
+const UA = 'Mozilla/5.0 (compatible; PatriamBoletin/1.0; +https://boletin.movimientopatriam.es)'
+async function bajar(url, ms = 15000) {
+  try {
+    const r = await fetch(url, { headers: { 'User-Agent': UA, Accept: 'application/rss+xml, application/xml, text/xml, text/html;q=0.8, */*;q=0.5' }, signal: AbortSignal.timeout(ms), redirect: 'follow' })
+    if (!r.ok) return null
+    return await r.text()
+  } catch { return null }
+}
+const ent = (s) => String(s || '').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+  .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(+n)).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+  .replace(/&quot;/g, '"').replace(/&apos;|&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+const sinEtiquetas = (s) => ent(ent(s)).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+const etiqueta = (x, n) => { const m = x.match(new RegExp(`<${n}\\b[^>]*>([\\s\\S]*?)</${n}>`, 'i')); return m ? m[1] : '' }
+const atributo = (x, n, a) => { const m = x.match(new RegExp(`<${n}\\b[^>]*\\b${a}=["']([^"']+)["']`, 'i')); return m ? ent(m[1]) : '' }
+const resumir = (t, n = 240) => { const s = sinEtiquetas(t); return s.length > n ? s.slice(0, n).replace(/\s+\S*$/, '') + '…' : s }
+
+function leerFeed(xml, medio, tema) {
+  const out = []
+  // RSS / Atom
+  for (const it of xml.match(/<item\b[\s\S]*?<\/item>|<entry\b[\s\S]*?<\/entry>/gi) || []) {
+    const titulo = sinEtiquetas(etiqueta(it, 'title'))
+    let url = sinEtiquetas(etiqueta(it, 'link')) || atributo(it, 'link', 'href')
+    const fecha = sinEtiquetas(etiqueta(it, 'pubDate') || etiqueta(it, 'published') || etiqueta(it, 'updated') || etiqueta(it, 'dc:date'))
+    const desc = etiqueta(it, 'description') || etiqueta(it, 'summary') || etiqueta(it, 'content:encoded')
+    const img = atributo(it, 'media:content', 'url') || atributo(it, 'media:thumbnail', 'url') || atributo(it, 'enclosure', 'url') || (ent(desc).match(/<img[^>]+src=["']([^"']+)/i) || [])[1] || ''
+    const cats = (it.match(/<category\b[^>]*>([\s\S]*?)<\/category>/gi) || []).map(sinEtiquetas).join(' ')
+    if (titulo && url) out.push({ medio, url: url.trim(), titulo, fecha, resumen: resumir(desc), imagen: /^https?:/.test(img) ? img : '', tema, cats })
+  }
+  // Sitemap de Google News
+  for (const u of xml.match(/<url>[\s\S]*?<\/url>/gi) || []) {
+    const titulo = sinEtiquetas(etiqueta(u, 'news:title')); const url = sinEtiquetas(etiqueta(u, 'loc'))
+    if (!titulo || !url) continue
+    out.push({ medio, url, titulo, fecha: sinEtiquetas(etiqueta(u, 'news:publication_date') || etiqueta(u, 'lastmod')), resumen: '', imagen: sinEtiquetas(etiqueta(u, 'image:loc')), tema, cats: sinEtiquetas(etiqueta(u, 'news:keywords')) })
+  }
+  return out
+}
+
+const temaDe = (n) => {
+  if (n.tema) return n.tema
+  const t = (n.url + ' ' + n.cats).toLowerCase()
+  return /econom|invertia|empresa|mercado|vivienda|fiscal|hacienda|impuesto|empleo|paro|inflaci|banco|bolsa/.test(t) ? 'Economía' : 'Política'
+}
+const valeGeneral = (n) => SI.test(new URL(n.url).pathname) && !NO.test(new URL(n.url).pathname)
+
+// ---------- agrupar lo que cuenta lo mismo ----------
+const VACIAS = new Set('el la los las un una unos unas de del al a ante bajo con contra desde en entre hacia hasta para por segun sin sobre tras y e o u ni que se su sus lo le les es son ser fue han ha hay mas muy ya no si como cuando donde quien porque pero tambien este esta estos estas ese esa eso ese aqui asi tras sus nos os mi tu te me sera esta estan tiene tienen hace hacen dice dicen va van'.split(' '))
+const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9ñ ]+/g, ' ')
+const claves = (t) => new Set(norm(t).split(/\s+/).filter((w) => w.length > 3 && !VACIAS.has(w)).map((w) => w.slice(0, 7)))
+function parecidas(a, b) {
+  let c = 0; for (const w of a) if (b.has(w)) c++
+  return c >= 3 && c / Math.min(a.size, b.size) >= 0.45
+}
+
+// ---------- imagen y resumen de la propia noticia, si el feed no los trae ----------
+async function completar(n) {
+  const html = await bajar(n.url, 12000)
+  if (!html) return
+  const meta = (p) => (html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${p}["'][^>]*content=["']([^"']+)`, 'i')) || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${p}["']`, 'i')) || [])[1]
+  if (!n.imagen) { const i = meta('og:image') || meta('twitter:image'); if (i && /^https?:/.test(ent(i))) n.imagen = ent(i) }
+  if (!n.resumen) { const d = meta('og:description') || meta('description'); if (d) n.resumen = resumir(d) }
+}
+
+// ---------- principal ----------
+const RUTA_DATOS = new URL('../datos/espana-al-dia.json', import.meta.url).pathname
+const RUTA_WEB = new URL('../web/espana-al-dia.js', import.meta.url).pathname
+const antes = existsSync(RUTA_DATOS) ? JSON.parse(readFileSync(RUTA_DATOS, 'utf8')) : { noticias: [] }
+const limite = Date.now() - DIAS * 86400e3
+const nuevas = []
+for (const m of MEDIOS) {
+  let n0 = 0
+  for (const [url, tema] of m.fuentes) {
+    const xml = await bajar(url)
+    if (!xml || !/<(rss|feed|urlset|rdf)/i.test(xml.slice(0, 3000))) { console.log(`  ✗ ${url}`); continue }
+    const items = leerFeed(xml, m.medio, tema).filter((n) => { try { return new URL(n.url).hostname.endsWith(m.dominio) } catch { return false } })
+      .filter((n) => tema || valeGeneral(n))
+    console.log(`  ✓ ${url}: ${items.length}`)
+    nuevas.push(...items); n0 += items.length
+  }
+  console.log(`${m.medio}: ${n0}`)
+}
+// juntar con lo que ya había (para tener la semana entera aunque los feeds solo den lo último)
+const porUrl = new Map()
+for (const n of [...antes.noticias, ...nuevas]) {
+  const t = Date.parse(n.fecha) || Date.now()
+  if (t < limite || t > Date.now() + 36e5) continue
+  const u = n.url.split('#')[0].split('?')[0]
+  const ya = porUrl.get(u)
+  porUrl.set(u, { ...(ya || {}), ...n, url: u, fecha: new Date(t).toISOString(), tema: temaDe(n), imagen: n.imagen || ya?.imagen || '', resumen: n.resumen || ya?.resumen || '' })
+}
+const todas = [...porUrl.values()].sort((a, b) => b.fecha.localeCompare(a.fecha))
+// completar imagen/resumen de las que no lo traen (como mucho 60 por pasada)
+let k = 0
+for (const n of todas) { if ((n.imagen && n.resumen) || n.mirada || k >= 60) continue; await completar(n); n.mirada = 1; k++ }
+// agrupar
+const grupos = []
+for (const n of todas) {
+  const cl = claves(n.titulo)
+  const g = grupos.find((x) => Math.abs(Date.parse(x.fecha) - Date.parse(n.fecha)) < 2.5 * 86400e3 && parecidas(x.cl, cl))
+  if (g) {
+    if (!g.medios.some((x) => x.medio === n.medio)) g.medios.push({ medio: n.medio, url: n.url, titulo: n.titulo })
+    if (!g.imagen && n.imagen) g.imagen = n.imagen
+    if (!g.resumen && n.resumen) g.resumen = n.resumen
+    for (const w of cl) g.cl.add(w)
+  } else grupos.push({ titulo: n.titulo, resumen: n.resumen, imagen: n.imagen, fecha: n.fecha, tema: n.tema, medios: [{ medio: n.medio, url: n.url, titulo: n.titulo }], cl })
+}
+const salida = grupos.map(({ cl, ...g }) => g)
+  .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
+  .slice(0, 400)
+mkdirSync(new URL('../datos/', import.meta.url).pathname, { recursive: true })
+writeFileSync(RUTA_DATOS, JSON.stringify({ actualizado: new Date().toISOString(), noticias: todas }, null, 0))
+writeFileSync(RUTA_WEB, '/* España al día — se genera solo (scripts/espana-al-dia.mjs). No editar a mano. */\nwindow.ESPANA_AL_DIA = ' +
+  JSON.stringify({ actualizado: new Date().toISOString(), dias: DIAS, grupos: salida }) + ';\n')
+console.log(`Noticias: ${todas.length} · grupos: ${salida.length} · con varios medios: ${salida.filter((g) => g.medios.length > 1).length}`)
