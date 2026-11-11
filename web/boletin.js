@@ -139,9 +139,9 @@ function paginaColaboraciones(lista, cfg) {
   const canon = a => { a = (a || "").trim(); const f = fichas.find(x => (x.alias || []).includes(a)); return f ? f.firma : a; };
   const autores = [...new Set(cs.map(({ c }) => canon(c.autor)).filter(Boolean))];
   fichas.forEach(f => { if (f.firma && !autores.includes(f.firma)) autores.push(f.firma); });
-  let h = '<div class="bol-pagina">' + cabPagina("Colaboraciones y quién es quién", "Quiénes escriben en el boletín y todo lo que han firmado.", cs.length) + notaColab(cfg);
+  let h = '<div class="bol-pagina">' + cabPagina("Colaboradores", "Quiénes escriben en el boletín y todo lo que han firmado.", cs.length) + notaColab(cfg);
   if (autores.length) {
-    h += '<div class="pt-rotulo"><span>Quién es quién</span></div><div class="qeq">';
+    h += '<div class="pt-rotulo"><span>Colaboradores</span></div><div class="qeq">';
     autores.forEach(a => {
       const f = fichas.find(x => x.firma === a) || {};
       const suyos = cs.filter(({ c }) => canon(c.autor) === a);
@@ -1213,7 +1213,7 @@ function pie(cfg) {
   h += '<img src="' + esc(cfg.logoClaro || "logo-claro.png") + '" alt="PATRIAM">';
   h += '<div class="bol-pie-lema">' + esc(lema) + "</div><p>Acción ciudadana, cultural y social.</p></div>";
   h += '<nav class="bol-pie-menu"><a href="#/">Este boletín</a><a href="#/editoriales">Editorial</a><a href="#/noticias">Actualidad</a><a href="#/historia">Historia</a>' +
-       '<a href="#/sociedad">Sociedad</a><a href="#/criterio">Criterio</a><a href="#/colaboraciones">Colaboraciones y quién es quién</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="' + esc((cfg && cfg.tienda) || "https://movimientopatriam.es/tienda") + '" target="_blank" rel="noopener">Tienda</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
+       '<a href="#/sociedad">Sociedad</a><a href="#/criterio">Criterio</a><a href="#/colaboraciones">Colaboradores</a><a href="#/iniciativas">Iniciativas</a><a href="#/boletines">Boletines anteriores</a><a href="#/al">Al momento</a><a href="' + esc((cfg && cfg.tienda) || "https://movimientopatriam.es/tienda") + '" target="_blank" rel="noopener">Tienda</a><a href="#/suscribirse">Suscríbete</a><a href="#/baja">Darse de baja</a></nav>';
   const rs = REDES.filter(r => urlSegura(perfil(cfg, r[0])));
   h += '<div class="bol-pie-der">';
   if (rs.length) h += '<div class="bol-pie-redes">' + rs.map(([k, n]) => '<a href="' + esc(perfil(cfg, k)) + '" target="_blank" rel="noopener" aria-label="' + n + '">' + icono(k) + "</a>").join("") + "</div>";
