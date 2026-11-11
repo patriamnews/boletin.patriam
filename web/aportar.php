@@ -493,6 +493,31 @@ switch ($acc) {
   }
 
   /* ---------- Recámara: lo preparado que todavía no va a ningún número ---------- */
+  /* ---------- Revisión del autor: un enlace y una clave SOLO de su artículo, para que dé el visto bueno antes de publicarlo.
+     Solo para los colaboradores de fuera (no para Laura/LOC, Consuelo Arnau, Isabel ni Carlos). ---------- */
+  case 'revisiones': {
+    $e = estado($d, $hoy, $yo);
+    $casa = fn($a) => (bool)preg_match('/\b(loc|laura|consuelo|arnau|isabel|carlos)\b/u', mb_strtolower(strtr((string)$a, ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','Á'=>'a','É'=>'e','Í'=>'i','Ó'=>'o','Ú'=>'u'])));
+    $d['revisiones'] = $d['revisiones'] ?? []; $res = []; $cambio = false;
+    foreach ($e['items'] as $x) {
+      if (($x['tipo'] ?? '') !== 'firma') continue;
+      $dt = $x['datos'] ?? []; $autor = $dt['autor'] ?? ($dt['firma'] ?? '');
+      if (!trim($autor) || $casa($autor)) continue;
+      $id = $x['id']; $r = $d['revisiones'][$id] ?? null;
+      if (!$r) {
+        $alf = 'abcdefghjkmnpqrstuvwxyz23456789'; $clave = '';
+        for ($i = 0; $i < 8; $i++) $clave .= $alf[random_int(0, strlen($alf) - 1)];
+        $r = ['token' => bin2hex(random_bytes(12)), 'clave' => $clave, 'creada' => gmdate('c'), 'creada_por' => $yo['nombre'] ?? ''];
+      }
+      $snap = ['titulo' => $dt['titulo'] ?? '', 'entradilla' => $dt['entradilla'] ?? '', 'texto' => $dt['texto'] ?? '', 'imagen' => $dt['imagen'] ?? '', 'autor' => $autor, 'cargo' => $dt['cargo'] ?? ''];
+      if (($r['datos'] ?? null) !== $snap) { $r['datos'] = $snap; $cambio = true; }
+      if (empty($d['revisiones'][$id])) $cambio = true;
+      $d['revisiones'][$id] = $r;
+      $res[$id] = ['url' => origenPrevia() . '/revision/' . $r['token'], 'clave' => $r['clave'], 'respuesta' => $r['respuesta'] ?? '', 'comentario' => $r['comentario'] ?? '', 'respondido' => $r['respondido'] ?? ''];
+    }
+    if ($cambio) guardarAp($FICHERO, $d);
+    salir(['revisiones' => (object)$res]);
+  }
   /* ---------- Vista previa del equipo: enlace temporal con clave (vale hasta el día siguiente a la salida) ---------- */
   case 'previa': {
     $e = estado($d, $hoy, $yo);

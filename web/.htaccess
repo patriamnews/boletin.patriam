@@ -18,6 +18,8 @@ RewriteRule ^sitemap\.xml$ sitemap.php [L]
 RewriteRule ^aportaciones\.js$ aportar.php?accion=js [L,QSA]
 # Vista previa del equipo (enlace temporal con clave)
 RewriteRule ^previa/([0-9a-f]{24})/?$ previa.php?t=$1 [L,QSA]
+# Revisión del autor: su artículo, con su clave, para dar el visto bueno
+RewriteRule ^revision/([0-9a-f]{24})/?$ revision.php?t=$1 [L,QSA]
 # Pasa la cabecera Authorization a PHP
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 # Comunicaciones personales: en Hostinger (com.php), sin pasar por Netlify
