@@ -177,7 +177,7 @@ for (const g of ordenGrupos) {
 }
 const salida = grupos.map(({ cl, imgs, ...g }) => g)
   .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
-  .slice(0, 400)
+  .slice(0, 1200)   // con siete medios, la semana entera cabe holgada
 mkdirSync(new URL('../datos/', import.meta.url).pathname, { recursive: true })
 writeFileSync(RUTA_DATOS, JSON.stringify({ actualizado: new Date().toISOString(), noticias: todas }, null, 0))
 writeFileSync(RUTA_WEB, '/* España al día — se genera solo (scripts/espana-al-dia.mjs). No editar a mano. */\nwindow.ESPANA_AL_DIA = ' +

@@ -22,12 +22,12 @@ Hostinger publica solo cada `push` a `main`.
 
 ## App PATRIAM
 
-Panel privado en claude.ai que reúne lo que hacen las automatizaciones: España al día (con panel de asuntos y fotos originales en pequeño), ilustraciones del boletín, estado de las tareas y accesos.
+Panel privado en claude.ai que reúne lo que hacen las automatizaciones: España al día (solo las de hoy, con panel de asuntos y fotos originales en pequeño), ilustraciones del boletín, estado de las tareas y accesos.
 No puede leer de GitHub ni de la web por sí sola: la tarea diaria de Claude le pasa los datos con `node scripts/app-patriam-datos.mjs <miniaturas.json> <carpeta>`, que deja listos `espana.json` y los trozos de fotos `img-N.json`.
 
 Datos de la App (colecciones):
 
-- `espana/actual` → `{actualizado, total, grupos:[{t, r, f, tema, a, k, m:[{n, u}]}]}` (últimas 48 h)
+- `espana/actual` → `{actualizado, total, grupos:[{t, r, f, tema, a, k, m:[{n, u}]}]}` (solo las de hoy)
 - `espana-img/<n>` → `{fotos:{k: data URI}}`
 - `ilustraciones/<id del artículo>` → `{titulo, autor, seccion, fecha, imagen, miniatura, escena}`
 - `tareas/<id>` → `{orden, nombre, horario, ultima, estado: ok|aviso|error, resumen, que}`
