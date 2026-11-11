@@ -1515,7 +1515,7 @@ function renderComunicacion(c, aj, cfg, opciones) {
     '<div style="display:none;max-height:0;overflow:hidden">' + esc(recortar(textoPlano(primerParrafo(c.texto)), 110)) + "</div>" +
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4ede2"><tr><td align="center" style="padding:20px 10px">' +
     '<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:#ffffff;border-top:5px solid ' + G + '">' +
-    '<tr><td style="padding:22px 32px 6px"><img src="' + esc(abs(cfg.logo || "logo.png")) + '" alt="PATRIAM" width="120" style="display:block;width:120px;height:auto;border:0"></td></tr>' +
+    '<tr><td style="padding:0"><img src="' + esc(abs(cfg.cabeceraComunicacion || "comunicacion-cabecera.jpg")) + '" alt="PATRIAM · Dios · Patria · Justicia" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0"></td></tr>' +
     '<tr><td style="padding:16px 32px 26px">' + saludo + estilo(maquetar(c.texto)) +
     (firma ? '<div style="margin-top:22px">' + firma + "</div>" : "") + "</td></tr>" +
     '<tr><td style="padding:14px 32px;background:#faf6ef;border-top:1px solid #e4d9c7;font:400 12px/1.5 ' + F + ';color:#6b5f58">' +
@@ -1527,6 +1527,10 @@ function renderComunicacion(c, aj, cfg, opciones) {
 function textoComunicacion(c, aj, nombre) {
   const plano = t => String(t || "").replace(/^##\s+|^>\s?|^-\s+/gm, "").replace(/\*\*|\*/g, "").replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)").trim();
   return [saludoComunicacion(c, aj, nombre), plano(c.texto), plano(aj.firmaTexto)].filter(Boolean).join("\n\n");
+}
+/* WhatsApp uno a uno: el enlace de arriba hace que salga la cabecera con el logo (como la tarjeta de un enlace) y debajo el texto */
+function textoComunicacionWa(c, aj, nombre) {
+  return "https://boletin.movimientopatriam.es/comunicacion.html\n\n" + textoComunicacion(c, aj, nombre);
 }
 
 /* Tarjetas de noticias: «Seguir leyendo» solo cuando el texto no cabe junto a la imagen */
