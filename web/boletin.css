@@ -988,9 +988,9 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
 }
 
 /* Apertura con GIF (p. ej. carteles animados): la imagen entera, del mismo alto que título, subtítulo y resumen */
-.pt-apertura.gif { grid-template-columns: 280px 1fr; align-items: center; }
+.pt-apertura.gif { grid-template-columns: 200px 1fr; align-items: center; }
 .pt-apertura.gif .pt-foto { aspect-ratio: 311 / 307; background: #fff; }
 .pt-apertura.gif .pt-foto img { object-fit: contain; }
 article.pt-apertura.gif:hover .pt-foto img { transform: none; }
-.bol-articulo-img[src*=".gif"] { display: block; max-width: 311px; width: 100%; margin-left: auto; margin-right: auto; }
-@media (max-width: 760px) { .pt-apertura.gif { grid-template-columns: 1fr; } .pt-apertura.gif .pt-foto { max-width: 280px; width: 100%; margin: 0 auto; } }
+.bol-articulo-img[src*=".gif"] { display: block; max-width: 240px; width: 100%; margin-left: auto; margin-right: auto; }
+@media (max-width: 760px) { .pt-apertura.gif { grid-template-columns: 1fr; } .pt-apertura.gif .pt-foto { max-width: 200px; width: 100%; margin: 0 auto; } }
