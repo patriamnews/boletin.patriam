@@ -1,14 +1,13 @@
-# «España al día»: titulares de política y economía (The Objective, El Debate, La Gaceta, El Español)
-# de la última semana, agrupados por noticia. Se actualiza solo tres veces al día.
+# «España al día»: titulares de política y economía (The Objective, El Debate, La Gaceta, El Español, ABC, El Mundo, Adelante España)
+# de la última semana, agrupados por noticia. Se actualiza solo cada 3 horas.
 name: España al día
 on:
   schedule:
-    - cron: '7 5 * * *'
-    - cron: '7 11 * * *'
-    - cron: '7 17 * * *'
+    # cada 3 horas (en UTC: 0:07, 3:07, 6:07… → en Madrid 1:07, 4:07, 7:07… en invierno)
+    - cron: '7 */3 * * *'
   workflow_dispatch:
   push:
-    paths: ["scripts/espana-al-dia.mjs", ".github/workflows/espana-al-dia.yml"]
+    paths: ["scripts/espana-al-dia.mjs", "scripts/espana-miniaturas.mjs", "web/espana-asuntos.json", "datos/espana-fuera.txt", ".github/workflows/espana-al-dia.yml"]
 permissions:
   contents: write
 concurrency: { group: espana-al-dia, cancel-in-progress: false }
@@ -28,3 +27,15 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "España al día: actualización automática"
           git pull --rebase -q origin main && git push
+      # Fotos originales de cada noticia, en pequeño, para la App PATRIAM (que no puede cargar fotos de otras webs).
+      # Van a la rama «app-miniaturas», que se rehace entera cada vez (no engorda el historial de main).
+      - name: Miniaturas para la App
+        continue-on-error: true
+        run: |
+          npm i --no-save --no-audit --no-fund sharp@0.33.5
+          node scripts/espana-miniaturas.mjs
+          mkdir -p /tmp/mini && cp datos/espana-miniaturas.json /tmp/mini/
+          cd /tmp/mini && git init -q -b app-miniaturas
+          git config user.name "patriamnews" && git config user.email "patriamnews@users.noreply.github.com"
+          git add espana-miniaturas.json && git commit -q -m "Miniaturas de España al día para la App"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" app-miniaturas

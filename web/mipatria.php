@@ -182,7 +182,7 @@ function tarjeta($x, &$primera) {
   return $h;
 }
 $titulo = 'España al día · Clipping de noticias políticas y económicas de España';
-$desc = 'Clipping diario de noticias políticas y económicas de España, con toda la semana. Se actualiza tres veces al día. Por PATRIAM.';
+$desc = 'Clipping diario de noticias políticas y económicas de España, con toda la semana. Se actualiza cada 3 horas. Por PATRIAM.';
 $img = WEB_MP . '/espana-al-dia-og.jpg?v=2';
 $wa = 'https://wa.me/?text=' . rawurlencode("*España al día* · Clipping diario de noticias políticas y económicas de España, con toda la semana.\n👉 " . URL_MP);
 header('Content-Type: text/html; charset=utf-8');
@@ -296,7 +296,7 @@ footer a{color:var(--g);font-weight:600}
   </section>
 <?php endif; ?>
 <?php
-if (!$g) echo '<p>Todavía no hay noticias. Se cargan solas tres veces al día.</p>';
+if (!$g) echo '<p>Todavía no hay noticias. Se cargan solas cada 3 horas.</p>';
 $primera = true;
 if ($asunto !== '') {
   // Un asunto: todas sus noticias, por días y, dentro de cada día, Economía y luego Política

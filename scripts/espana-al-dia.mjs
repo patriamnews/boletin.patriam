@@ -1,7 +1,7 @@
 // «España al día»: recopila cada día los titulares de política y economía española de
-// The Objective, El Debate, La Gaceta y El Español; agrupa los que cuentan lo mismo (un botón por medio)
+// The Objective, El Debate, La Gaceta, El Español, ABC, El Mundo y Adelante España; agrupa los que cuentan lo mismo (un botón por medio)
 // y guarda la última semana en web/espana-al-dia.js, que leen el boletín y su columna lateral.
-// Lo ejecuta GitHub tres veces al día (.github/workflows/espana-al-dia.yml). Sin dependencias.
+// Lo ejecuta GitHub cada 3 horas (.github/workflows/espana-al-dia.yml). Sin dependencias.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 
 const DIAS = 7
@@ -18,18 +18,31 @@ const MEDIOS = [
   { medio: 'El Español', dominio: 'elespanol.com', fuentes: [
     ['https://www.elespanol.com/rss/espana/', 'Política'], ['https://www.elespanol.com/rss/espana/politica/', 'Política'],
     ['https://www.elespanol.com/rss/invertia/', 'Economía'], ['https://www.elespanol.com/rss/economia/', 'Economía'], ['https://www.elespanol.com/rss/', ''] ] },
+  { medio: 'ABC', dominio: 'abc.es', fuentes: [
+    ['https://www.abc.es/rss/2.0/espana/', 'Política'], ['https://www.abc.es/rss/feeds/abc_EspanaEspana.xml', 'Política'],
+    ['https://www.abc.es/rss/2.0/economia/', 'Economía'], ['https://www.abc.es/rss/feeds/abc_Economia.xml', 'Economía'],
+    ['https://www.abc.es/rss/2.0/portada/', ''], ['https://www.abc.es/sitemap-news.xml', ''] ] },
+  { medio: 'El Mundo', dominio: 'elmundo.es', fuentes: [
+    ['https://e00-elmundo.uecdn.es/elmundo/rss/espana.xml', 'Política'], ['https://e00-elmundo.uecdn.es/elmundo/rss/economia.xml', 'Economía'],
+    ['https://e00-elmundo.uecdn.es/elmundo/rss/portada.xml', ''], ['https://www.elmundo.es/sitemaps/sitemap-news.xml', ''] ] },
+  { medio: 'Adelante España', dominio: 'adelanteespana.com', todo: true, fuentes: [
+    ['https://adelanteespana.com/category/espana/feed/', 'Política'], ['https://adelanteespana.com/category/politica/feed/', 'Política'],
+    ['https://adelanteespana.com/category/economia/feed/', 'Economía'], ['https://adelanteespana.com/feed/', ''], ['https://www.adelanteespana.com/feed/', ''] ] },
 ]
 // Si la fuente es general, solo entra lo que por su dirección es de política o economía de España
 const SI = /\/(espana|nacional|politica|economia|invertia|empresas|mercados|macroeconomia|vivienda|trabajo|fiscal|hacienda|tribunales|justicia|elecciones|gobierno|congreso)\b/i
 const NO = /\/(internacional|mundo|america|europa|deportes|cultura|gente|television|tv|ocio|gastronomia|viajes|salud|ciencia|tecnologia|motor|loterias|horoscopo|tiempo|sociedad|religion|opinion|blogs|corazon|famosos|estilo|series|cine|libros|toros|virales)\b/i
 // Secciones que nunca son política ni economía, venga del feed que venga (se mira la carpeta entera: /deportes/, no «/deportes-…»)
-const NUNCA = /\/(deportes|cultura|gente|television|tv|ocio|gastronomia|viajes|motor|loterias|horoscopo|tiempo|religion|religion-y-cofradias|cofradias|corazon|famosos|estilo|series|cine|libros|toros|virales|obituarios|necrologicas|esquelas|espectaculos|teatro|musica)(?=\/)/i
+const NUNCA = /\/(deportes|sucesos|cultura|gente|television|tv|ocio|gastronomia|viajes|motor|loterias|horoscopo|tiempo|religion|religion-y-cofradias|cofradias|corazon|famosos|estilo|series|cine|libros|toros|virales|obituarios|necrologicas|esquelas|espectaculos|teatro|musica)(?=\/)/i
 // Aunque venga de un feed de España, fuera lo que por el titular es espectáculo, famosos o deporte (esquelas de actores, series, galas…)
 const NO_TITULO = /\b(actriz|actor|actores|cantante|cantautor[a]?|futbolista|torero|presentador[a]?|influencer|reality|telenovela|estudio 1|pel[ií]cula|concierto|festival|gala de|premios goya|eurovisi[oó]n|loter[ií]a|hor[oó]scopo|famos[oa]s?|euromillones|bonoloto|gran hermano|exposici[oó]n|fiesta del|career fair)\b/i
 // Noticias quitadas a mano: una dirección por línea en datos/espana-fuera.txt (las líneas con # no cuentan)
 const FUERA = new Set((() => { try { return readFileSync(new URL('../datos/espana-fuera.txt', import.meta.url).pathname, 'utf8') } catch { return '' } })()
   .split('\n').map((l) => l.trim().split('#')[0].split('?')[0]).filter(Boolean))
-const sobra = (n) => { try { return FUERA.has(n.url.split('#')[0].split('?')[0]) || NUNCA.test(new URL(n.url).pathname) || NO_TITULO.test(n.titulo || '') } catch { return true } }
+// Sucesos (crímenes, detenciones, juicios a particulares…): fuera, salvo que toquen a la política (ETA, Interior, un partido, el Gobierno…)
+const SUCESO = /(asesin|apu[ñn]al|machete|coca[ií]na|narco|hach[ií]s|detenid|secuestr|violaci[oó]n|violad|agresi[oó]n sexual|abuso sexual|retener|retuvo|retenida|espos[oó]|atropell|homicid|cad[aá]ver|beb[eé]|congelador|su novio|su pareja|expareja|maltrat|apu[ñn]ala|tiroteo|\brobo\b|ladr[oó]n|estafa a|incendio en una vivienda)/i
+const POLITICO = /(psoe|\bpp\b|\bvox\b|sumar|podemos|s[aá]nchez|feij[oó]o|abascal|gobierno|ministr|marlaska|interior|koldo|[aá]balos|cerd[aá]n|\beta\b|etarra|terroris|bildu|congreso|senado|fiscal general|guardia civil|polic[ií]a nacional|frontex|inmigra|huelga|piquete|sindic|ccoo|\bugt\b|alta velocidad|adif|renfe)/i
+const sobra = (n) => { try { const t = (n.titulo || '') + ' ' + (n.resumen || ''); return FUERA.has(n.url.split('#')[0].split('?')[0]) || NUNCA.test(new URL(n.url).pathname) || NO_TITULO.test(n.titulo || '') || (SUCESO.test(t) && !POLITICO.test(t)) } catch { return true } }
 
 const UA = 'Mozilla/5.0 (compatible; PatriamBoletin/1.0; +https://boletin.movimientopatriam.es)'
 async function bajar(url, ms = 15000) {
@@ -108,7 +121,7 @@ for (const m of MEDIOS) {
     const xml = await bajar(url)
     if (!xml || !/<(rss|feed|urlset|rdf)/i.test(xml.slice(0, 3000))) { console.log(`  ✗ ${url}`); continue }
     const items = leerFeed(xml, m.medio, tema).filter((n) => { try { return new URL(n.url).hostname.endsWith(m.dominio) } catch { return false } })
-      .filter((n) => tema || valeGeneral(n))
+      .filter((n) => tema || m.todo || valeGeneral(n))
     console.log(`  ✓ ${url}: ${items.length}`)
     nuevas.push(...items); n0 += items.length
   }

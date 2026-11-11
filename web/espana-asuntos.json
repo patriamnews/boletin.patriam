@@ -22,8 +22,8 @@
    "patron": "urda"
   },
   {
-   "nombre": "Sucesos y seguridad",
-   "patron": "policia|guardia civil|asesin|detenid|explosi|el ruso|cocaina|narco|etarra|\\beta\\b|machete|crimen|homicid|agente muerto|terroris"
+   "nombre": "Seguridad e Interior",
+   "patron": "policia|guardia civil|marlaska|interior|etarra|\\beta\\b|terroris|frontex|crimen organizado|narcotrafic|agente muerto|seguridad ciudadana"
   },
   {
    "nombre": "Cataluña y amnistía",
@@ -35,7 +35,7 @@
   },
   {
    "nombre": "Vivienda",
-   "patron": "vivienda|alquiler|inquilin|hipotec|okupa|desahucio"
+   "patron": "vivienda(s)? (publica|protegida|asequible|social)|precio de la vivienda|acceso a la vivienda|ley de (la )?vivienda|ministerio de vivienda|inmobiliari|alquiler|inquilin|hipotec|okupa|desahucio"
   },
   {
    "nombre": "Presupuestos e impuestos",
