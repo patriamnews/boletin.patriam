@@ -118,6 +118,18 @@ function estado($d, $hoy, $yo) {
 
 $cuerpo = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];
 
+/* Lo preparado en importar.js (artículos y recomendaciones), en el mismo formato que lo subido desde Publicar */
+function piezasImportar() {
+  $t = @file_get_contents(__DIR__ . '/importar.js') ?: ''; $res = [];
+  $lee = function ($nombre) use ($t) { return preg_match('/window\.' . $nombre . '\s*=\s*(\[.*?\n\]);/s', $t, $m) ? (json_decode($m[1], true) ?: []) : []; };
+  foreach ($lee('PATRIAM_IMPORTAR') as $x) $res[] = ['id' => 'imp-' . ($x['id'] ?? ''), 'tipo' => 'firma', 'numero' => $x['numero'] ?? null,
+    'datos' => ['titulo' => $x['titulo'] ?? '', 'entradilla' => $x['entradilla'] ?? '', 'texto' => $x['texto'] ?? '', 'imagen' => $x['imagen'] ?? '', 'autor' => $x['autor'] ?? '', 'cargo' => $x['cargo'] ?? '', 'seccion' => $x['seccion'] ?? '', 'tema' => $x['tema'] ?? '']];
+  foreach ($lee('PATRIAM_RECOMENDAR') as $x) $res[] = ['id' => 'rec-' . ($x['id'] ?? ''), 'tipo' => 'recomendacion', 'numero' => $x['numero'] ?? 1,
+    'datos' => ['tipo' => $x['tipo'] ?? '', 'titulo' => $x['titulo'] ?? '', 'url' => $x['url'] ?? '', 'imagen' => $x['imagen'] ?? '', 'medio' => $x['medio'] ?? '', 'descripcion' => $x['descripcion'] ?? '',
+      'comentario' => $x['comentario'] ?? '', 'critica' => $x['critica'] ?? '', 'comenta' => $x['comenta'] ?? '', 'seccion' => $x['seccion'] ?? '', 'tema' => $x['tema'] ?? 'Cine']];
+  return $res;
+}
+
 switch ($acc) {
   case 'estado':
     salir(estado($d, $hoy, $yo));
@@ -133,7 +145,8 @@ switch ($acc) {
 
   case 'subir': {
     $e = estado($d, $hoy, $yo);
-    if (!$e['abierto']) salir(['error' => 'Primero hay que abrir el boletín de esta semana.'], 409);
+    $aRecamara = ($cuerpo['destino'] ?? '') === 'recamara' && in_array($cuerpo['tipo'] ?? '', ['noticia', 'firma', 'recomendacion', 'editorial'], true);
+    if (!$e['abierto'] && !$aRecamara) salir(['error' => 'Primero hay que abrir el boletín de esta semana (o guárdalo en la recámara).'], 409);
     $tipo = $cuerpo['tipo'] ?? '';
     $x = $cuerpo['datos'] ?? [];
     $sec = in_array($x['seccion'] ?? '', ['Actualidad', 'Historia', 'Sociedad', 'Análisis'], true) ? $x['seccion'] : 'Actualidad';
@@ -163,6 +176,11 @@ switch ($acc) {
       if (!$datos['titulo'] || !$datos['texto']) salir(['error' => 'Faltan el título o el texto de la editorial.'], 400);
     } else salir(['error' => 'Tipo desconocido.'], 400);
     $id = 'ap-' . bin2hex(random_bytes(5));
+    if ($aRecamara) {   // a la recámara: no va a ningún número todavía; se aprueba al usarlo
+      $d['items'][] = ['id' => $id, 'tipo' => $tipo, 'numero' => null, 'datos' => $datos, 'estado' => 'recamara', 'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];
+      guardarAp($FICHERO, $d);
+      salir(estado($d, $hoy, $yo) + ['nuevo' => $id, 'recamara' => true]);
+    }
     $d['items'][] = ['id' => $id, 'tipo' => $tipo, 'numero' => $e['abierto']['numero'], 'datos' => $datos, 'estado' => $yo['puedeAprobar'] ? 'aprobado' : 'pendiente',
       'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => $yo['puedeAprobar'] ? ($yo['nombre'] ?? '') : ''];
     guardarAp($FICHERO, $d);
@@ -243,6 +261,85 @@ switch ($acc) {
     unset($x);
     guardarAp($FICHERO, $d);
     salir(estado($d, $hoy, $yo));
+  }
+
+  /* ---------- Recámara: lo preparado que todavía no va a ningún número ---------- */
+  case 'recamara': {
+    $r = array_values(array_filter($d['items'], fn($x) => ($x['estado'] ?? '') === 'recamara'));
+    $r = array_map(fn($x) => array_merge($x, ['datos' => array_diff_key($x['datos'] ?? [], ['cv' => 1])]), $r);
+    usort($r, fn($a, $b) => strcmp($b['creado'] ?? '', $a['creado'] ?? ''));
+    // y lo que ya está preparado para un número que todavía no ha salido (importar.js)
+    $ab = estado($d, $hoy, $yo)['abierto']; $prog = [];
+    foreach (piezasImportar() as $x) if (($x['numero'] ?? 0) && (int)$x['numero'] > (int)($ab['numero'] ?? 0)) $prog[] = $x;
+    salir(['items' => $r, 'programado' => $prog, 'abierto' => $ab]);
+  }
+  case 'usar': {   // de la recámara al boletín abierto
+    $e = estado($d, $hoy, $yo);
+    if (!$e['abierto']) salir(['error' => 'Primero hay que abrir el boletín de esta semana.'], 409);
+    $ok = false;
+    foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['estado'] ?? '') === 'recamara') {
+      $x['numero'] = $e['abierto']['numero']; $x['estado'] = $yo['puedeAprobar'] ? 'aprobado' : 'pendiente';
+      $x['aprobado_por'] = $yo['puedeAprobar'] ? ($yo['nombre'] ?? '') : ''; $x['cambiado'] = gmdate('c'); $ok = true;
+    }
+    unset($x);
+    if (!$ok) salir(['error' => 'No está en la recámara.'], 404);
+    guardarAp($FICHERO, $d);
+    salir(estado($d, $hoy, $yo) + ['ok' => true]);
+  }
+  case 'a-recamara': {   // devolver a la recámara algo del boletín abierto (si no ha salido) o recuperar algo antiguo (copia)
+    $id = $cuerpo['id'] ?? ''; $hecho = false;
+    $abierto = estado($d, $hoy, $yo)['abierto']['numero'] ?? null;
+    foreach ($d['items'] as &$x) if ($x['id'] === $id) {
+      if ($x['numero'] !== null && (int)$x['numero'] === (int)$abierto && ($x['estado'] ?? '') !== 'borrado') {
+        $x['numero'] = null; $x['estado'] = 'recamara'; $x['cambiado'] = gmdate('c'); $hecho = true;
+      }
+    }
+    unset($x);
+    if (!$hecho) {   // algo ya publicado: se copia a la recámara, marcado con el número en que salió
+      $p = $cuerpo['pieza'] ?? null;
+      if (!$p) foreach ($d['items'] as $x) if ($x['id'] === $id) $p = ['tipo' => $x['tipo'], 'datos' => $x['datos'], 'numero' => $x['numero']];
+      if (!$p || !in_array($p['tipo'] ?? '', ['noticia', 'firma', 'recomendacion', 'editorial'], true)) salir(['error' => 'No se encuentra.'], 404);
+      $datos = array_map(fn($v) => is_string($v) ? limpio($v, 60000) : $v, (array)($p['datos'] ?? []));
+      $d['items'][] = ['id' => 'ap-' . bin2hex(random_bytes(5)), 'tipo' => $p['tipo'], 'numero' => null, 'datos' => $datos, 'estado' => 'recamara',
+        'ya_en' => (int)($p['numero'] ?? 0) ?: null, 'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => ''];
+    }
+    guardarAp($FICHERO, $d);
+    salir(['ok' => true]);
+  }
+  case 'quitar-recamara': {
+    foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '') && ($x['estado'] ?? '') === 'recamara') {
+      if (!$yo['puedeAprobar'] && ($x['autor_id'] ?? '') !== $yo['id']) salir(['error' => 'Solo puede quitarlo quien lo subió o quien aprueba.'], 403);
+      $x['estado'] = 'borrado'; $x['cambiado'] = gmdate('c');
+    }
+    unset($x);
+    guardarAp($FICHERO, $d);
+    salir(['ok' => true]);
+  }
+  /* ---------- Archivo: todo lo ya publicado, para buscar por sección o tema y recuperarlo ---------- */
+  case 'archivo': {
+    $e = estado($d, $hoy, $yo); $abierto = (int)($e['abierto']['numero'] ?? 0);
+    $res = []; $vistos = [];
+    $mete = function ($tipo, $numero, $datos, $id, $origen) use (&$res, &$vistos) {
+      $t = trim((string)($datos['titulo'] ?? ($datos['titular'] ?? '')));
+      if ($t === '' || isset($vistos[mb_strtolower($t)])) return; $vistos[mb_strtolower($t)] = 1;
+      $res[] = ['id' => $id, 'origen' => $origen, 'tipo' => $tipo, 'numero' => $numero, 'titulo' => $t,
+        'firma' => $datos['autor'] ?? ($datos['comenta'] ?? ($datos['firma'] ?? '')), 'seccion' => $datos['seccion'] ?? '', 'tema' => $datos['tema'] ?? ($datos['tipo'] ?? ''),
+        'imagen' => $datos['imagen'] ?? '', 'pieza' => ['tipo' => $tipo, 'numero' => $numero, 'datos' => $datos]];
+    };
+    foreach ($d['items'] as $x) if (($x['estado'] ?? '') === 'aprobado' && $x['numero'] !== null && in_array($x['tipo'], ['noticia', 'firma', 'recomendacion', 'editorial'], true))
+      $mete($x['tipo'], (int)$x['numero'], array_diff_key($x['datos'], ['cv' => 1]), $x['id'], 'publicar');
+    foreach (piezasImportar() as $x) if (($x['numero'] ?? 0) && (int)$x['numero'] <= max($abierto, 1)) $mete($x['tipo'], (int)$x['numero'], $x['datos'], $x['id'], 'preparado');
+    boletinesTodos($d);
+    foreach ($GLOBALS['BOLETIN_EDITOR'] ?? [] as $num => $b) {
+      foreach ((array)($b['noticias'] ?? []) as $k => $n) if (!preg_match('/ejemplo\.com/i', (string)($n['url'] ?? '')))
+        $mete('noticia', $num, ['titular' => $n['titular'] ?? '', 'url' => $n['url'] ?? '', 'medio' => $n['medio'] ?? '', 'imagen' => $n['imagen'] ?? '', 'resumen' => $n['resumen'] ?? '', 'comentario' => $n['comentario'] ?? '', 'firma' => $n['comenta'] ?? '', 'seccion' => $n['seccion'] ?? 'Actualidad', 'tema' => $n['tema'] ?? ''], "ed-$num-n$k", 'editor');
+      foreach ((array)($b['colaboraciones'] ?? []) as $k => $c)
+        $mete('firma', $num, ['titulo' => $c['titulo'] ?? '', 'entradilla' => $c['entradilla'] ?? '', 'texto' => $c['texto'] ?? '', 'imagen' => $c['imagen'] ?? '', 'autor' => $c['autor'] ?? '', 'cargo' => $c['cargo'] ?? '', 'seccion' => $c['seccion'] ?? '', 'tema' => $c['tema'] ?? ''], "ed-$num-c$k", 'editor');
+      if (is_array($b['editorial'] ?? null) && trim($b['editorial']['titulo'] ?? '') !== '')
+        $mete('editorial', $num, ['titulo' => $b['editorial']['titulo'], 'texto' => $b['editorial']['texto'] ?? '', 'firma' => $b['editorial']['firma'] ?? '', 'imagen' => $b['editorial']['imagen'] ?? '', 'seccion' => 'Editorial'], "ed-$num-e", 'editor');
+    }
+    usort($res, fn($a, $b) => ($b['numero'] <=> $a['numero']) ?: strcmp($a['titulo'], $b['titulo']));
+    salir(['items' => $res]);
   }
 
   case 'sugerencias': {
