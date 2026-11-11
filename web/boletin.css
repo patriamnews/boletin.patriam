@@ -964,3 +964,25 @@ article:hover .pt-foto img, .pt-rec:hover .pt-foto img { transform: scale(1.04);
   .bol-noticias .bol-tarjeta .bol-foto { min-height: 260px; }
 }
 @media (max-width: 760px) { .bol-vertodo { display: none !important; } }
+
+/* ---------- Todas las piezas de cada sección iguales y alargadas (imagen a la izquierda, texto a la derecha) ---------- */
+.piezas-menores { grid-template-columns: 1fr !important; gap: 1.1rem; margin-top: 1.1rem; }
+.pieza-principal .bol-tarjeta, .pieza-principal .bol-colab { box-shadow: none; }
+.bol-noticias .bol-tarjeta, .bol-noticias .pieza-principal .bol-tarjeta, .bol-noticias .piezas-menores .bol-tarjeta,
+.bib-lista .bol-tarjeta, .piezas-menores .bol-tarjeta,
+.bol-firmas .bol-colab, .bol-firmas .piezas-menores .bol-colab, .piezas-menores .bol-colab, .bib-lista .bol-colab-sec .bol-colab {
+  grid-template-columns: 34% 1fr; border-top: 3px solid var(--acento); }
+.bol-noticias .bol-tarjeta .bol-foto, .piezas-menores .bol-foto, .bib-lista .bol-tarjeta .bol-foto,
+.bol-firmas .bol-colab-img, .piezas-menores .bol-colab-img, .bib-lista .bol-colab-sec .bol-colab-img {
+  min-height: 230px !important; height: 100%; aspect-ratio: auto; }
+.piezas-menores .bol-tarjeta h3, .piezas-menores .bol-colab h3, .pieza-principal .bol-tarjeta h3, .pieza-principal .bol-colab h3,
+.bib-lista .bol-colab-sec .bol-colab-txt h3 { font-size: 1.3rem; line-height: 1.2; }
+.piezas-menores .bol-tarjeta-in { padding: 1.1rem 1.3rem 1.2rem; gap: .5rem; }
+.piezas-menores .bol-resumen, .piezas-menores .bol-comentario p { -webkit-line-clamp: unset; display: block; }
+@media (max-width: 760px) {
+  .bol-noticias .bol-tarjeta, .bol-noticias .pieza-principal .bol-tarjeta, .bol-noticias .piezas-menores .bol-tarjeta,
+  .bib-lista .bol-tarjeta, .piezas-menores .bol-tarjeta,
+  .bol-firmas .bol-colab, .bol-firmas .piezas-menores .bol-colab, .piezas-menores .bol-colab, .bib-lista .bol-colab-sec .bol-colab { grid-template-columns: 1fr; }
+  .bol-noticias .bol-tarjeta .bol-foto, .piezas-menores .bol-foto, .bib-lista .bol-tarjeta .bol-foto,
+  .bol-firmas .bol-colab-img, .piezas-menores .bol-colab-img, .bib-lista .bol-colab-sec .bol-colab-img { min-height: 0 !important; aspect-ratio: 16 / 9; }
+}
