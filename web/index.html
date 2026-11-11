@@ -129,6 +129,13 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
 });
 </script>
 <script>try { aplicarCambiosPreparados(window.BOLETINES || [], window.PATRIAM_CONFIG); } catch (e) {}</script>
+<script>
+/* La pieza principal elegida en Publicar abre la portada del boletín (si no hay, la que ya iba) */
+(function(){ var P = (window.PATRIAM_APORTACIONES || {}).principal || {};
+  (window.BOLETINES || []).forEach(function(b){ var id = P[String(b.numero)]; if (!id) return; id = String(id).replace(/^imp-/, "");
+    var cs = b.colaboraciones || []; if (!cs.some(function(c){ return c && c.id === id; })) return;
+    cs.forEach(function(c){ if (c) c.apertura = c.id === id; }); }); })();
+</script>
 <script>document.write('<script src="imagenes-auto.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
 <script>
 /* Los artículos sin imagen propia llevan la ilustración que se ha creado para ellos */

@@ -19,6 +19,7 @@ function url_ok($u) { $u = trim((string)$u); return preg_match('#^https?://#i', 
 
 /* ---------- público: lo aprobado y los boletines abiertos, para el boletín ---------- */
 require_once __DIR__ . '/_previa.php';
+require_once __DIR__ . '/boletin-envio.php';   // beViralidad, bePrincipal, boletinEnviarYa, boletinEstadoEnvio
 if ($acc === 'js') {
   header('Content-Type: application/javascript; charset=utf-8');
   header('Cache-Control: no-cache, max-age=0');
@@ -36,7 +37,11 @@ if ($acc === 'js') {
   // Lo preparado para un boletín que todavía no ha salido no se ve hasta que alguien lo aprueba
   foreach ($d['boletines'] as $b) if (($b['fecha'] ?? '') >= $hoy) foreach (piezasImportar() as $x)
     if ((int)($x['numero'] ?? 0) === (int)$b['numero'] && (int)$b['numero'] !== $pvNum && empty($d['cambios'][$x['id']]['aprobado'])) $cambios[$x['id']] = ['quitado' => true, 'sinAprobar' => true];
-  echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items, 'cambios' => (object)$cambios, 'previa' => $pvNum ?: null], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
+  // La pieza principal de cada número: la elegida en Publicar o la que propone el envío (el artículo con más tirón)
+  $principal = $d['principal'] ?? [];
+  foreach ($d['boletines'] as $b) { $n = (string)(int)$b['numero']; if (!empty($principal[$n])) continue;
+    $pz = bePiezas($n); $k = $pz ? bePrincipal($n, $pz) : null; if ($k !== null) $principal[$n] = $pz[$k][2] ?? ''; }
+  echo 'window.PATRIAM_APORTACIONES = ' . json_encode(['boletines' => $d['boletines'], 'items' => $items, 'cambios' => (object)$cambios, 'previa' => $pvNum ?: null, 'principal' => (object)array_filter($principal)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . ";\n";
   exit;
 }
 
@@ -142,7 +147,16 @@ function estado($d, $hoy, $yo) {
   $firmasAprob = count(array_filter($items, fn($x) => ($x['tipo'] ?? '') === 'firma' && ($x['estado'] ?? '') === 'aprobado' && (int)($x['numero'] ?? 0) === (int)$num))
     + count(array_filter($delEd['items'] ?? [], fn($x) => str_starts_with($x['tipo'] ?? '', 'Colaboración')));
   $firmasSel = count(array_filter($items, fn($x) => ($x['tipo'] ?? '') === 'firma' && ($x['estado'] ?? '') !== 'aprobado' && in_array($x['id'], $sel, true)));
-  return ['delEditor' => $delEd, 'seleccion' => $sel, 'maxArticulos' => MAX_ARTICULOS, 'articulosAprobados' => $firmasAprob, 'articulosElegidos' => $firmasSel, 'hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
+  // La pieza principal (la que abre el boletín y el envío): la elegida o, si no, el artículo de PATRIAM con más tirón
+  $princ = ''; $sug = ''; $max = -99;
+  if ($num) {
+    foreach ($items as $x) if (($x['tipo'] ?? '') === 'firma' && (int)($x['numero'] ?? 0) === (int)$num && ($v = beViralidad($x['datos'] ?? [])) > $max) { $max = $v; $sug = $x['id']; }
+    $princ = $d['principal'][(string)$num] ?? '';
+    if (!in_array($princ, array_column($items, 'id'), true)) $princ = '';
+  }
+  $activos = count(array_filter(susLeer(), fn($s) => ($s['estado'] ?? '') === 'activo'));
+  return ['principal' => $princ ?: $sug, 'principalElegida' => (bool)$princ, 'principalSugerida' => $sug, 'envio' => $num ? boletinEstadoEnvio($num) : null, 'suscriptores' => $activos,
+    'delEditor' => $delEd, 'seleccion' => $sel, 'maxArticulos' => MAX_ARTICULOS, 'articulosAprobados' => $firmasAprob, 'articulosElegidos' => $firmasSel, 'hoy' => $hoy, 'ultimo' => $ultimo, 'abierto' => $abierto, 'siguiente' => $siguiente, 'items' => $items, 'puedeAprobar' => $yo['puedeAprobar'], 'yo' => $yo['nombre'] ?? ''];
 }
 
 $cuerpo = json_decode(file_get_contents('php://input') ?: '{}', true) ?: [];
@@ -382,9 +396,11 @@ switch ($acc) {
       $c['propuesta'] = array_merge($base, ['imagen' => $url]); $c['propuestaDe'] = $yo['nombre'] ?? ''; $c['cambiado'] = gmdate('c'); $d['cambios'][$id] = $c;
     } else foreach ($d['items'] as &$x) if ($x['id'] === $id) {
       $x['datos']['imagen'] = $url; $x['cambiado'] = gmdate('c');
-      if (($x['estado'] ?? '') === 'aprobado') { $x['estado'] = 'pendiente'; $x['aprobado_por'] = ''; }
+      if (($x['estado'] ?? '') === 'aprobado' && !$yo['puedeAprobar']) { $x['estado'] = 'pendiente'; $x['aprobado_por'] = ''; }
     }
     unset($x);
+    // si lo cambia quien aprueba y la pieza ya estaba aprobada, sigue aprobada con la imagen nueva
+    if ($prep && $yo['puedeAprobar'] && ($p['estado'] ?? '') === 'aprobado') aprobarPieza($d, $id, $yo);
     guardarAp($FICHERO, $d); salir(estado($d, $hoy, $yo));
   }
   /* ---------- Elegir lo que sale: se marca de uno en uno y se aprueba todo junto al final ---------- */
@@ -412,6 +428,30 @@ switch ($acc) {
     foreach ($e['seleccion'] as $id) aprobarPieza($d, $id, $yo);
     $d['seleccion'][$num] = []; guardarAp($FICHERO, $d);
     salir(estado($d, $hoy, $yo) + ['aprobados' => count($e['seleccion'])]);
+  }
+  /* ---------- Pieza principal: la que abre el boletín, el correo y el WhatsApp ---------- */
+  case 'principal': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden elegirla Carlos e Isabel.'], 403);
+    $e = estado($d, $hoy, $yo); $num = (int)($e['abierto']['numero'] ?? 0);
+    if (!$num) salir(['error' => 'No hay ningún boletín abierto.'], 409);
+    $id = (string)($cuerpo['id'] ?? '');
+    if ($id && !in_array($id, array_column($e['items'], 'id'), true)) salir(['error' => 'No se encuentra.'], 404);
+    $d['principal'] = $d['principal'] ?? [];
+    if ($id) $d['principal'][(string)$num] = $id; else unset($d['principal'][(string)$num]);
+    guardarAp($FICHERO, $d); salir(estado($d, $hoy, $yo));
+  }
+  /* ---------- Enviar ya el boletín abierto: sale hoy en la web y se manda por correo (y WhatsApp si hay API) ---------- */
+  case 'enviar': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden enviarlo Carlos e Isabel.'], 403);
+    $e = estado($d, $hoy, $yo); $num = (int)($e['abierto']['numero'] ?? 0);
+    if (!$num) salir(['error' => 'No hay ningún boletín abierto.'], 409);
+    if (!bePiezas($num)) salir(['error' => 'No hay nada aprobado en el nº ' . $num . '. Aprueba primero lo que tiene que salir.'], 409);
+    // sale hoy: así el enlace del correo ya lleva al boletín publicado
+    foreach ($d['boletines'] as &$b) if ((int)$b['numero'] === $num && $b['fecha'] > $hoy) $b['fecha'] = $hoy;
+    unset($b);
+    guardarAp($FICHERO, $d);
+    $r = boletinEnviarYa($num) ?: [0, 0, 0];
+    salir(estado($d, $hoy, $yo) + ['enviados' => ['correos' => $r[0], 'whatsapp' => $r[1], 'errores' => $r[2]]]);
   }
   case 'aprobar': case 'rechazar': case 'borrar': {
     $id = $cuerpo['id'] ?? '';
