@@ -577,6 +577,8 @@
 <script src="boletin.js?v=20261031a"></script>
 <script>document.write('<script src="espana-al-dia.js?h=' + new Date().toISOString().slice(0, 13) + '"><\/script>');</script>
 <script src="importar.js?v=20261031a"></script>
+<script>document.write('<script src="aportaciones.js?m=' + Date.now().toString(36).slice(0, -4) + '"><\/script>');</script>
+<script src="aportaciones-unir.js?v=20261111a"></script>
 <script>
 const CFG = JSON.parse(JSON.stringify(window.PATRIAM_CONFIG || {}));
 let datos = JSON.parse(JSON.stringify(window.BOLETINES || []));
@@ -1712,6 +1714,7 @@ async function cargar() {
     if (!CFG.web || /netlify\.app/i.test(CFG.web)) CFG.web = "https://movimientopatriam.es/";   // la web ya no está en Netlify
     if (!CFG.direccion || /netlify\.app/i.test(CFG.direccion)) CFG.direccion = "https://boletin.movimientopatriam.es/";   // el lema ya no lleva «Familia»: se corrige y se guarda solo
     datos = d.boletines || [];
+    if (window.unirAportaciones) unirAportaciones(datos, CFG);   // lo subido desde Publicar («Boletín paso a paso»)
     if (window.prepararCriticas) prepararCriticas(datos, CFG);
     (window.PATRIAM_AJUSTES || []).forEach(a => datos.forEach(b => { if (Number(b.numero) === Number(a.numero)) (b.noticias || []).forEach(n => { if (String(n.titular || "").startsWith(a.titular) && a.seccion) n.seccion = a.seccion; }); }));
     datos.forEach(b => { if (Number(b.numero) === 1 && b.fecha === "2026-10-21") b.fecha = "2026-10-30"; });   // el nº 1 sale el 30 de octubre

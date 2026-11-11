@@ -69,10 +69,12 @@ function comprobarEquipoWeb() {
   [$c, $r] = pedir(SUPABASE_URL . '/auth/v1/user', $cab);
   $id = $c === 200 ? (json_decode($r, true)['id'] ?? '') : '';
   if (!preg_match('/^[0-9a-f-]{36}$/', $id)) salir(['error' => 'sesion'], 401);
-  [$c, $r] = pedir(SUPABASE_URL . '/rest/v1/perfiles?select=activo,rol&id=eq.' . $id, $cab);
+  [$c, $r] = pedir(SUPABASE_URL . '/rest/v1/perfiles?select=activo,rol,aprueba,nombre,email&id=eq.' . $id, $cab);
   $p = $c === 200 ? (json_decode($r, true)[0] ?? null) : null;
   if (!$p || empty($p['activo']) || in_array($p['rol'] ?? '', ['pendiente', 'cliente'], true)) salir(['error' => 'Solo para el equipo de PATRIAM.'], 403);
-  return true;
+  $p['id'] = $id;
+  $p['puedeAprobar'] = ($p['rol'] ?? '') === 'director' || !empty($p['aprueba']);
+  return $p;
 }
 /* Publicar está en otro subdominio: se le deja leer las estadísticas */
 function permitirPublicar() {
