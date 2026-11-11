@@ -91,6 +91,10 @@
 <script src="aportaciones-unir.js?v=20261111a"></script>
 <script>unirAportaciones(window.BOLETINES || [], window.PATRIAM_CONFIG, { lectores: true });</script>
 <script>
+/* Mira si han llegado artículos por correo (hola@movimientopatriam.com, asunto «ARTICULO Nombre»). Entran pendientes de aprobar; el servidor lo hace como mucho cada 5 minutos. */
+try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive: true }).catch(function(){}); }, 4000); } catch (e) {}
+</script>
+<script>
 /* Lo de importar.js para un boletín que se ha abierto desde Publicar (llega en aportaciones.js) */
 (window.PATRIAM_IMPORTAR_ESPERA || []).forEach(function(it){
   var L = window.BOLETINES || [];

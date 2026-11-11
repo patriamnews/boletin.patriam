@@ -28,7 +28,30 @@ if ($acc === 'js') {
   exit;
 }
 
+/* ---------- artículos que llegan por correo (hola@movimientopatriam.com, asunto «ARTICULO Nombre») ---------- */
+require __DIR__ . '/_correo.php';
+function numeroDestino($d, $hoy) {
+  $bs = boletinesTodos($d); $max = 0;
+  foreach ($bs as $b) { if ($b['fecha'] >= $hoy) return (int)$b['numero']; $max = max($max, (int)$b['numero']); }
+  return $max + 1;   // aún no está abierto: entra en el siguiente, y se ve en cuanto se abra
+}
+function revisarCorreo($FICHERO, $hoy, $forzar = false) {
+  return revisarCorreoArticulos(function ($datos, $info) use ($FICHERO, $hoy) {
+    $d = leerAp($FICHERO);
+    $id = 'ap-' . bin2hex(random_bytes(5));
+    $d['items'][] = ['id' => $id, 'tipo' => 'firma', 'numero' => numeroDestino($d, $hoy), 'datos' => $datos, 'estado' => 'pendiente',
+      'autor' => 'Correo · ' . ($datos['autor'] ?? ''), 'autor_id' => 'correo', 'origen' => 'correo', 'remite' => $info['remite'], 'asunto' => $info['asunto'],
+      'creado' => gmdate('c'), 'aprobado_por' => ''];
+    guardarAp($FICHERO, $d);
+    return $id;
+  }, $forzar);
+}
+// Lo llama el propio boletín al abrirse (y puede llamarlo una tarea programada de Hostinger): como mucho una vez cada 5 minutos
+if ($acc === 'correo-auto') { $r = revisarCorreo($FICHERO, $hoy); salir(['ok' => $r['ok'], 'nuevos' => count($r['nuevos'] ?? [])]); }
+
 $yo = comprobarEquipoWeb();
+if ($acc === 'estado') revisarCorreo($FICHERO, $hoy);
+if ($acc === 'correo') { if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden revisar el correo Carlos e Isabel.'], 403); salir(revisarCorreo($FICHERO, $hoy, true)); }
 $d = leerAp($FICHERO);
 
 /* boletines que ya existen en el boletín (Netlify) + los abiertos desde aquí */
@@ -102,6 +125,16 @@ switch ($acc) {
       'autor' => $yo['nombre'] ?? '', 'autor_id' => $yo['id'], 'creado' => gmdate('c'), 'aprobado_por' => $yo['puedeAprobar'] ? ($yo['nombre'] ?? '') : ''];
     guardarAp($FICHERO, $d);
     salir(estado($d, $hoy, $yo) + ['nuevo' => $id]);
+  }
+
+  case 'seccion': {
+    if (!$yo['puedeAprobar']) salir(['error' => 'Solo pueden cambiarlo Carlos e Isabel.'], 403);
+    $sec = in_array($cuerpo['seccion'] ?? '', ['Actualidad', 'Historia', 'Sociedad', 'Análisis'], true) ? $cuerpo['seccion'] : '';
+    if (!$sec) salir(['error' => 'Sección no válida.'], 400);
+    foreach ($d['items'] as &$x) if ($x['id'] === ($cuerpo['id'] ?? '')) { $x['datos']['seccion'] = $sec; $x['cambiado'] = gmdate('c'); }
+    unset($x);
+    guardarAp($FICHERO, $d);
+    salir(estado($d, $hoy, $yo));
   }
 
   case 'aprobar': case 'rechazar': case 'borrar': {
