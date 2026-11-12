@@ -18,7 +18,18 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
+      # Pantallazo de la portada de cada medio: es la foto de las noticias que no traen foto propia.
+      # Se parte de los anteriores: si un medio falla hoy, se queda el último bueno.
+      - name: Pantallazos de las portadas
+        continue-on-error: true
+        run: |
+          git clone -q --depth 1 -b portadas "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" /tmp/portadas || mkdir -p /tmp/portadas
+          rm -rf /tmp/portadas/.git
+          npm i --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+          node scripts/espana-pantallazos.mjs /tmp/portadas
       - run: node scripts/espana-al-dia.mjs
+        env: { PORTADAS_DIR: /tmp/portadas }
       - name: Guardar
         run: |
           git config user.name "patriamnews"
@@ -32,18 +43,11 @@ jobs:
             echo "Reintento $i…"; sleep $((i * 7))
           done
           exit 1
-      # Pantallazo de la portada de cada medio: es la foto de las noticias que no traen foto propia.
-      # Van a la rama «portadas», que se rehace entera cada vez (no engorda el historial de main).
-      - name: Pantallazos de las portadas
+      # Los pantallazos van a la rama «portadas», que se rehace entera cada vez (no engorda el historial de main).
+      - name: Subir pantallazos
         continue-on-error: true
         run: |
-          npm i --no-save --no-audit --no-fund playwright@1.48.2
-          npx playwright install --with-deps chromium
-          # se parte de los pantallazos anteriores: si un medio falla hoy, se queda el último bueno
-          git clone -q --depth 1 -b portadas "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" /tmp/portadas || mkdir -p /tmp/portadas
-          rm -rf /tmp/portadas/.git
-          node scripts/espana-pantallazos.mjs /tmp/portadas
-          cd /tmp/portadas && git init -q -b portadas
+          cd /tmp/portadas && ls *.jpg && git init -q -b portadas
           git config user.name "patriamnews" && git config user.email "patriamnews@users.noreply.github.com"
           git add . && git commit -q -m "Pantallazos de las portadas de los medios"
           git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" portadas

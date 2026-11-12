@@ -196,8 +196,11 @@ for (const g of ordenGrupos) {
 const PANTALLAZOS = 'https://raw.githubusercontent.com/patriamnews/boletin.patriam/portadas/'
 const slugMedio = (m) => m.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 const vez = new Date().toISOString().slice(0, 13).replace(/\D/g, '')
+// Solo si hay pantallazo de ese medio (si el medio no deja hacerlo, la noticia va sin foto, con el recuadro de color)
+const DIR_PANTALLAZOS = process.env.PORTADAS_DIR
+const hayPantallazo = (m) => !!DIR_PANTALLAZOS && existsSync(`${DIR_PANTALLAZOS}/${slugMedio(m)}.jpg`)
 let conPantallazo = 0
-for (const g of grupos) if (!g.imagen) { g.imagen = `${PANTALLAZOS}${slugMedio(g.medios[0].medio)}.jpg?v=${vez}`; g.pantallazo = true; conPantallazo++ }
+for (const g of grupos) if (!g.imagen && hayPantallazo(g.medios[0].medio)) { g.imagen = `${PANTALLAZOS}${slugMedio(g.medios[0].medio)}.jpg?v=${vez}`; g.pantallazo = true; conPantallazo++ }
 console.log(`Con pantallazo de la portada del medio: ${conPantallazo}`)
 const salida = grupos.map(({ cl, imgs, ...g }) => g)
   .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
