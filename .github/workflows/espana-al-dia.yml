@@ -39,6 +39,9 @@ jobs:
         run: |
           npm i --no-save --no-audit --no-fund playwright@1.48.2
           npx playwright install --with-deps chromium
+          # se parte de los pantallazos anteriores: si un medio falla hoy, se queda el último bueno
+          git clone -q --depth 1 -b portadas "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" /tmp/portadas || mkdir -p /tmp/portadas
+          rm -rf /tmp/portadas/.git
           node scripts/espana-pantallazos.mjs /tmp/portadas
           cd /tmp/portadas && git init -q -b portadas
           git config user.name "patriamnews" && git config user.email "patriamnews@users.noreply.github.com"

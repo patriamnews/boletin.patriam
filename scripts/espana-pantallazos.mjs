@@ -10,7 +10,6 @@ const slugMedio = (m) => m.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(
 const dir = process.argv[2] || '/tmp/portadas'
 mkdirSync(dir, { recursive: true })
 // Botones del aviso de cookies: se acepta para que no tape la portada
-const ACEPTAR = /^(aceptar( y (continuar|cerrar))?|acepto|aceptar todo|aceptar todas|de acuerdo|entendido|accept( all)?|agree|consentir|continuar)$/i
 
 const nav = await chromium.launch()
 const ctx = await nav.newContext({ viewport: { width: 1200, height: 675 }, locale: 'es-ES', deviceScaleFactor: 1,
@@ -25,9 +24,20 @@ for (const [medio, url] of Object.entries(HOME)) {
   try {
     await p.goto(url, { waitUntil: 'domcontentloaded', timeout: 45000 })
     await p.waitForTimeout(4000)
-    for (const f of p.frames()) {   // el aviso de cookies suele ir en un iframe
-      const b = f.getByRole('button', { name: ACEPTAR }).first()
-      if (await b.isVisible().catch(() => false)) { await b.click({ timeout: 3000 }).catch(() => {}); break }
+    // aviso de cookies (a veces en un iframe, a veces con enlaces en vez de botones): se acepta
+    for (let i = 0; i < 2; i++) for (const f of p.frames()) {
+      const b = f.locator('button, a, [role="button"], input[type="button"]').filter({ hasText: /^\s*(acept|acepto|de acuerdo|entendido|accept|agree|consent)/i }).first()
+      if (await b.isVisible().catch(() => false)) { await b.click({ timeout: 3000 }).catch(() => {}); await p.waitForTimeout(1500) }
+    }
+    // si el medio bloquea al navegador automático, se carga su portada bajada aparte y se fotografía igual
+    const txt = (await p.locator('body').innerText().catch(() => '')).slice(0, 600)
+    if (/have been blocked|access denied|just a moment|attention required|verify you are human|acceso denegado/i.test(txt)) {
+      const r = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PatriamBoletin/1.0; +https://boletin.movimientopatriam.es)' } }).catch(() => null)
+      const html = r && r.ok ? await r.text() : ''
+      if (!html) throw new Error('bloqueado')
+      await p.setContent(html.replace(/<head([^>]*)>/i, `<head$1><base href="${url}">`), { waitUntil: 'load', timeout: 45000 }).catch(() => {})
+      await p.waitForTimeout(3000)
+      console.log(`  · ${medio}: bloqueaba al navegador, se usa su portada bajada aparte`)
     }
     await p.addStyleTag({ content: CSS }).catch(() => {})
     await p.waitForTimeout(2500)
