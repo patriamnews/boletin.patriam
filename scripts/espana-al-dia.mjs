@@ -182,7 +182,7 @@ const ASUNTOS = (() => { try { return JSON.parse(readFileSync(new URL('../web/es
 const sinTildes = (s) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 for (const g of grupos) { const t = sinTildes(g.titulo + ' ' + (g.resumen || '')); g.asunto = (ASUNTOS.find((a) => a.re.test(t)) || {}).nombre || 'Otros' }
 // La misma foto no se repite: si ya la lleva otra noticia (los periódicos reutilizan la de agencia),
-// se usa la de otro medio del grupo; si no hay otra, va sin foto (sale el recuadro de color)
+// se usa la de otro medio del grupo; si no hay otra, va el pantallazo de la portada del medio
 const ordenGrupos = grupos.slice().sort((a, b) => b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
 const usadas = new Set()
 for (const g of ordenGrupos) {
@@ -191,57 +191,14 @@ for (const g of ordenGrupos) {
   g.imagen = libre || ''
   if (libre) usadas.add(base(libre))
 }
-// Noticias que siguen sin foto: se coge una de la portada (home) del medio.
-// Primero la que la portada pone junto a esa misma noticia; si la noticia ya no está en portada, otra foto de la portada
-// que no lleve ninguna otra noticia. La foto elegida se guarda con la noticia, para que no cambie en cada pasada.
-const HOME = { 'The Objective': 'https://theobjective.com/', 'El Debate': 'https://www.eldebate.com/', 'La Gaceta': 'https://gaceta.es/',
-  'El Español': 'https://www.elespanol.com/', 'ABC': 'https://www.abc.es/', 'El Mundo': 'https://www.elmundo.es/', 'Adelante España': 'https://adelanteespana.com/' }
-const NO_FOTO = /\.(svg|gif)(\?|$)|logo|icon|avatar|autor|author|firma|sprite|pixel|placeholder|blank|default|lazy|1x1|banner|publicidad|\/ads?\//i
-const ruta = (u) => { try { return new URL(u).pathname.replace(/\/+$/, '') } catch { return '' } }
-const portadas = new Map()
-async function portada(medio) {
-  if (portadas.has(medio)) return portadas.get(medio)
-  const p = { porNoticia: new Map(), fotos: [] }
-  portadas.set(medio, p)
-  const html = HOME[medio] && await bajar(HOME[medio], 20000)
-  if (!html) { console.log(`  ✗ portada ${medio}`); return p }
-  const re = /<(?:img|source)\b[^>]*>/gi; let m
-  while ((m = re.exec(html))) {
-    const tag = m[0]
-    const src = ['data-src', 'data-lazy-src', 'data-original', 'data-srcset', 'srcset', 'src'].map((a) => (tag.match(new RegExp(`\\s${a}=["']([^"']+)`, 'i')) || [])[1]).find(Boolean)
-    if (!src) continue
-    let foto; try { foto = new URL(ent(src).trim().split(/\s+/)[0].split(',')[0], HOME[medio]).href } catch { continue }
-    if (!/^https?:/.test(foto) || NO_FOTO.test(foto) || GENERICA.test(foto) || !/\.(jpe?g|webp|png|avif)(\?|$)|\/(image|images|imagenes|fotos|uploads|wp-content|multimedia)\//i.test(foto)) continue
-    if (!p.fotos.includes(foto)) p.fotos.push(foto)
-    // enlaces a noticias justo antes y justo después de la foto (la portada pone foto y titular juntos)
-    const antesTxt = html.slice(Math.max(0, m.index - 2500), m.index), despuesTxt = html.slice(m.index, m.index + 2500)
-    const hrefs = [(antesTxt.match(/href=["']([^"'#]+)["'][^>]*>(?![\s\S]*href=)/i) || [])[1], (despuesTxt.match(/href=["']([^"'#]+)["']/i) || [])[1]]
-    for (const h of hrefs) { const r = h && ruta(new URL(ent(h), HOME[medio]).href); if (r && r.length > 20 && !p.porNoticia.has(r)) p.porNoticia.set(r, foto) }
-  }
-  console.log(`  ✓ portada ${medio}: ${p.fotos.length} fotos`)
-  return p
-}
-const noticiaDe = (url) => porUrl.get(url.split('#')[0].split('?')[0])
-const base2 = (u) => u.split('?')[0].replace(/-\d+x\d+(?=\.\w+$)/, '')
-let deHome = 0
-for (const g of ordenGrupos) {
-  if (g.imagen) continue
-  const guardada = g.medios.map((x) => noticiaDe(x.url)?.imagenHome).find(Boolean)
-  if (guardada) { g.imagen = guardada; usadas.add(base2(guardada)); deHome++; continue }
-  let foto = ''
-  for (const x of g.medios) {   // la foto que la portada pone con esta misma noticia
-    const f = (await portada(x.medio)).porNoticia.get(ruta(x.url))
-    if (f && !usadas.has(base2(f))) { foto = f; break }
-  }
-  if (!foto) for (const x of g.medios) {   // si no, otra foto de la portada de ese medio que no esté ya usada
-    foto = (await portada(x.medio)).fotos.find((f) => !usadas.has(base2(f))) || ''
-    if (foto) break
-  }
-  if (!foto) continue
-  g.imagen = foto; usadas.add(base2(foto)); deHome++
-  const n = noticiaDe(g.medios[0].url); if (n) n.imagenHome = foto
-}
-console.log(`Fotos tomadas de la portada del medio: ${deHome}`)
+// Noticias sin foto propia: va un pantallazo de la portada (home) del medio.
+// Los pantallazos los hace scripts/espana-pantallazos.mjs en cada pasada y se guardan en la rama «portadas».
+const PANTALLAZOS = 'https://raw.githubusercontent.com/patriamnews/boletin.patriam/portadas/'
+const slugMedio = (m) => m.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+const vez = new Date().toISOString().slice(0, 13).replace(/\D/g, '')
+let conPantallazo = 0
+for (const g of grupos) if (!g.imagen) { g.imagen = `${PANTALLAZOS}${slugMedio(g.medios[0].medio)}.jpg?v=${vez}`; g.pantallazo = true; conPantallazo++ }
+console.log(`Con pantallazo de la portada del medio: ${conPantallazo}`)
 const salida = grupos.map(({ cl, imgs, ...g }) => g)
   .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
   .slice(0, 1200)   // con siete medios, la semana entera cabe holgada

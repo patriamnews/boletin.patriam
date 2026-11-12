@@ -7,7 +7,7 @@ on:
     - cron: '7 */3 * * *'
   workflow_dispatch:
   push:
-    paths: ["scripts/espana-al-dia.mjs", "scripts/espana-miniaturas.mjs", "web/espana-asuntos.json", "datos/espana-fuera.txt", ".github/workflows/espana-al-dia.yml"]
+    paths: ["scripts/espana-al-dia.mjs", "scripts/espana-miniaturas.mjs", "scripts/espana-pantallazos.mjs", "web/espana-asuntos.json", "datos/espana-fuera.txt", ".github/workflows/espana-al-dia.yml"]
 permissions:
   contents: write
 concurrency: { group: espana-al-dia, cancel-in-progress: false }
@@ -32,6 +32,18 @@ jobs:
             echo "Reintento $i…"; sleep $((i * 7))
           done
           exit 1
+      # Pantallazo de la portada de cada medio: es la foto de las noticias que no traen foto propia.
+      # Van a la rama «portadas», que se rehace entera cada vez (no engorda el historial de main).
+      - name: Pantallazos de las portadas
+        continue-on-error: true
+        run: |
+          npm i --no-save --no-audit --no-fund playwright@1.48.2
+          npx playwright install --with-deps chromium
+          node scripts/espana-pantallazos.mjs /tmp/portadas
+          cd /tmp/portadas && git init -q -b portadas
+          git config user.name "patriamnews" && git config user.email "patriamnews@users.noreply.github.com"
+          git add . && git commit -q -m "Pantallazos de las portadas de los medios"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" portadas
       # Fotos originales de cada noticia, en pequeño, para la App PATRIAM (que no puede cargar fotos de otras webs).
       # Van a la rama «app-miniaturas», que se rehace entera cada vez (no engorda el historial de main).
       - name: Miniaturas para la App
