@@ -1642,12 +1642,14 @@ function textoComunicacionWa(c, aj, nombre) {
       const x = itemBib(C, ficha.dataset.id); if (!x) return;
       e.preventDefault(); e.stopPropagation();
       abrir('<div class="bib-lista">' + tarjetaBib(x, C, true) + "</div>");
+      if (window.__medir) window.__medir({ t: "visita", r: "#/ver/" + x.id });
       return;
     }
     if (ficha.dataset.tipo === "c") {
       const id = ficha.dataset.id;
       e.preventDefault(); e.stopPropagation();
       abrir(paginaColaboracion(L, id, C));
+      if (window.__medir) window.__medir({ t: "visita", r: "#/colaboracion/" + id });
       return;
     }
     if (!b) return;
@@ -1659,6 +1661,7 @@ function textoComunicacionWa(c, aj, nombre) {
     const n = lista[k]; if (!n) return;
     e.preventDefault(); e.stopPropagation();
     abrir(htmlNoticia(n, C, b));
+    if (window.__medir) window.__medir({ t: "visita", r: enlaceNoticia(b, n) });
   }, true);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && caja) cerrar(); if (e.key === "Enter" && e.target.classList && e.target.classList.contains("fb")) e.target.click(); });
   window.addEventListener("popstate", e => { if (caja) { e.stopImmediatePropagation(); cerrar(true); } });

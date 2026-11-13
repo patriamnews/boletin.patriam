@@ -145,7 +145,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   (window.BOLETINES || []).forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c && !c.imagen && A[c.id]) c.imagen = A[c.id]; }); }); })();
 </script>
 <script src="legales.js?v=20261031a"></script>
-<script src="boletin.js?v=20261114og"></script>
+<script src="boletin.js?v=20261114lec"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
@@ -178,6 +178,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
       else fetch("/est.php", { method: "POST", body: b, keepalive: true });
     } catch (e) {}
   }
+  window.__medir = medir;   // el lector de encima («Leer más») también cuenta cada artículo que se abre
   let ruta = "#/";
   const viejo = new URLSearchParams(location.search).get("n");
   const porDireccion = location.pathname.match(/^\/boletin\/([^/]+)/), porMomento = location.pathname.match(/^\/a\/([^/.]+)/);
