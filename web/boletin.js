@@ -170,7 +170,8 @@ function paginaColaboraciones(lista, cfg) {
 function enlaceParaCompartir(cfg, destino) {
   const base = typeof location !== "undefined" && /^https?:$/.test(location.protocol) ? location.origin + "/" : String(cfg.direccion || "").replace(/\/?$/, "/");
   const am = ((cfg && cfg.alMomento) || []).find(x => x.estado === "aprobado" && x.destino === destino && x.slug);
-  return am ? base + "a/" + encodeURIComponent(am.slug) : base + destino;   // el de «Al momento» lleva su propia imagen
+  // dirección propia de cada pieza (/editorial/…, /colaboracion/…, /leer/…): el servidor le pone su tarjeta (pagina.php)
+  return am ? base + "a/" + encodeURIComponent(am.slug) : base + String(destino || "").replace(/^#\//, "");
 }
 /* Estadísticas: lo que comparte un lector lleva su código (?c=…), para saber cuánta gente entra por cada reenvío.
    Solo en la web publicada (en el editor no hay código y el enlace queda igual). */
@@ -723,8 +724,13 @@ function centroInicio(b, cfg, todos) {
 }
 
 /* ---------- noticia de otra web, dentro de la nuestra ---------- */
+/* Dirección propia de cada noticia del boletín: /leer/<boletín>/<id o nº de orden> (sale con su foto al compartirla) */
+function enlaceNoticia(b, n) {
+  const k = n.id ? n.id : (b.noticias || []).indexOf(n);
+  return "#/leer/" + encodeURIComponent(b.id) + "/" + encodeURIComponent(k);
+}
 function paginaLeer(ls, cfg, bid, k) {
-  const b = ls.find(x => x.id === bid), n = b && (b.noticias || [])[+k];
+  const b = ls.find(x => x.id === bid || String(x.numero) === String(bid)), n = b && ((b.noticias || []).find(x => x && x.id && x.id === k) || (/^\d+$/.test(String(k)) ? (b.noticias || [])[+k] : null));
   const url = n && urlSegura(n.url);
   if (!url) return '<div class="bol-pagina"><p class="bol-vacio">No se encuentra esta noticia. <a href="#/">Volver al boletín</a></p></div>';
   const yt = idYoutube(url);
@@ -746,6 +752,7 @@ function paginaLeer(ls, cfg, bid, k) {
     h += '<div class="leer-marco"><iframe src="' + esc(url) + '" title="' + esc(n.titular || "Noticia") + '" loading="lazy" referrerpolicy="no-referrer"></iframe></div>';
     h += '<p class="leer-nota">Algunos periódicos no dejan mostrar sus noticias dentro de otras webs. Si aquí no se ve, pulsa «Abrir en ' + esc(n.medio || "su web") + '».</p>';
   }
+  h += barraLector("Compártela en tus redes", (n.titular || "") + " — PATRIAM", enlaceParaCompartir(cfg, enlaceNoticia(b, n)));
   return h + "</div>";
 }
 
@@ -1597,17 +1604,17 @@ function textoComunicacionWa(c, aj, nombre) {
       '<div class="lector-in">' + html + '</div><div class="lector-pie"><button type="button" class="bol-btn lector-volver">← Volver al boletín</button></div></div>';
     document.body.appendChild(caja);
     document.documentElement.classList.add("lector-abierto");
-    caja.querySelectorAll(".bol-volver, .bol-articulo-pie, .bol-compartir-lector").forEach(e => e.remove());
+    caja.querySelectorAll(".bol-volver, .bol-articulo-pie").forEach(e => e.remove());
     // los enlaces de fuera se abren en otra pestaña; los de dentro del boletín no se siguen
     caja.querySelectorAll(".lector-in a[href]").forEach(a => {
       const h = a.getAttribute("href") || "";
-      if (/^https?:/i.test(h)) { a.target = "_blank"; a.rel = "noopener"; } else a.addEventListener("click", e => e.preventDefault());
+      if (/^https?:/i.test(h)) { a.target = "_blank"; a.rel = "noopener"; } else if (!a.closest(".bol-compartir-lector")) a.addEventListener("click", e => e.preventDefault());
     });
     const st = Object.assign({}, history.state || {}, { lector: 1 });
     try { history.pushState(st, "", location.href); } catch (e) {}
     caja.querySelector(".lector-caja").focus && caja.querySelector(".lector-cerrar").focus();
   }
-  function htmlNoticia(n, cfg) {
+  function htmlNoticia(n, cfg, b) {
     const url = urlSegura(n.url), yt = idYoutube(url), img = urlSegura(n.imagen), sec = seccionDe(n);
     let h = '<article class="bol-articulo"><div class="bol-etiqueta"><span>' + esc(sec.nombre) + "</span></div>";
     if (n.medio) h += '<div class="bol-medio-linea grande">' + logoMedio(n, cfg) + "<span>" + esc(n.medio) + "</span></div>";
@@ -1619,6 +1626,7 @@ function textoComunicacionWa(c, aj, nombre) {
     const enl = (n.enlaces || []).filter(e => urlSegura(e.url));
     if (enl.length > 1) h += '<p class="lector-fuente">' + enl.map(e => '<a class="bol-btn claro" href="' + esc(urlSegura(e.url)) + '">Leer en ' + esc(e.medio || "su web") + " ↗</a>").join(" ") + "</p>";
     else if (url) h += '<p class="lector-fuente"><a class="bol-btn claro" href="' + esc(url) + '">' + (yt ? "Ver en YouTube" : "Leer la noticia en " + esc(n.medio || "su web")) + " ↗</a></p>";
+    if (b) h += barraLector("Compártela en tus redes", (n.titular || "") + " — PATRIAM", enlaceParaCompartir(cfg, enlaceNoticia(b, n)));
     return h + "</article>";
   }
   document.addEventListener("click", function (e) {
@@ -1650,7 +1658,7 @@ function textoComunicacionWa(c, aj, nombre) {
     gruposNoticias(ns).forEach(g => g.items.forEach(x => { lista[x.i] = x.n; }));
     const n = lista[k]; if (!n) return;
     e.preventDefault(); e.stopPropagation();
-    abrir(htmlNoticia(n, C));
+    abrir(htmlNoticia(n, C, b));
   }, true);
   document.addEventListener("keydown", e => { if (e.key === "Escape" && caja) cerrar(); if (e.key === "Enter" && e.target.classList && e.target.classList.contains("fb")) e.target.click(); });
   window.addEventListener("popstate", e => { if (caja) { e.stopImmediatePropagation(); cerrar(true); } });

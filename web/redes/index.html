@@ -141,9 +141,14 @@ Guárdalo en favoritos y pásalo a quien le interese.
 
 </main>
 <script src="/importar.js?v=20261111com"></script>
+<script src="/aportaciones.js?m=redes"></script>
 <script>
 (function(){
-  var L=(window.PATRIAM_IMPORTAR||[]).filter(function(x){return x.titulo&&x.texto&&x.imagen});
+  // los artículos preparados y los subidos desde Publicar (ya aprobados): cada uno con su dirección y su tarjeta
+  var A=window.PATRIAM_APORTACIONES||{}, M=A.cambios||{};
+  var L=(window.PATRIAM_IMPORTAR||[]).filter(function(x){var c=M['imp-'+x.id]||{};return !c.quitado}).map(function(x){var c=M['imp-'+x.id]||{};return c.datos?Object.assign({},x,c.datos):x});
+  (A.items||[]).forEach(function(it){if(it.tipo==='firma'&&(!it.estado||it.estado==='aprobado'))L.push(Object.assign({},it.datos||{},{id:it.id,numero:it.numero,alta:it.creado||''}))});
+  L=L.filter(function(x){return x.titulo&&x.texto&&x.imagen});
   L.sort(function(a,b){return (Number(b.numero)||0)-(Number(a.numero)||0)||String(b.alta||'').localeCompare(String(a.alta||''))});
   var dia=window.PATRIAM_REDES_DIA, sel=document.getElementById('selNoticia');
   L.sort(function(a,b){return (b.id===dia)-(a.id===dia)});

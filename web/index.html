@@ -145,7 +145,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   (window.BOLETINES || []).forEach(function(b){ (b.colaboraciones || []).forEach(function(c){ if (c && !c.imagen && A[c.id]) c.imagen = A[c.id]; }); }); })();
 </script>
 <script src="legales.js?v=20261031a"></script>
-<script src="boletin.js?v=20261111w"></script>
+<script src="boletin.js?v=20261114og"></script>
 <script>prepararCriticas(window.BOLETINES || [], window.PATRIAM_CONFIG || {});</script>
 <script>
   /* Navegación sin cambiar la dirección: la barra muestra siempre solo la dirección del boletín.
@@ -155,7 +155,7 @@ try { setTimeout(function(){ fetch("aportar.php?accion=correo-auto", { keepalive
   /* Cada boletín tiene su dirección: /boletin/2. El resto de páginas se ven sin cambiar la dirección. */
   const LISTA = (window.BOLETINES || []).filter(b => !b.estado || b.estado === "aprobado");
   /* Páginas con dirección propia (boletin.movimientopatriam.es/historia, /colaboracion/…): se pueden compartir y Google las encuentra */
-  const CON_DIRECCION = /^(noticias|historia|sociedad|criterio|analisis|podcasts|libros|peliculas|colaboraciones|colaboracion\/[^/]+|editoriales|editorial\/[^/]+|iniciativas|boletines|ver\/[^/]+(\/[^/]+)?|suscribirse|espana-al-dia(\/(politica|economia))?|legal\/[^/]+)$/;
+  const CON_DIRECCION = /^(noticias|historia|sociedad|criterio|analisis|podcasts|libros|peliculas|colaboraciones|colaboracion\/[^/]+|editoriales|editorial\/[^/]+|iniciativas|boletines|ver\/[^/]+(\/[^/]+)?|leer\/[^/]+\/[^/]+|suscribirse|espana-al-dia(\/(politica|economia))?|legal\/[^/]+)$/;
   const conDireccion = r => CON_DIRECCION.test(String(r || "").replace(/^#\//, ""));
   function direccionDe(r) {
     if (conDireccion(r)) return "/" + r.replace(/^#\//, "");

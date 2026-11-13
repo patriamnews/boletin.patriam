@@ -29,15 +29,17 @@ RewriteRule ^carlos/([0-9a-f]{24})/?$ carlos.php?k=$1 [QSA,L]
 RewriteRule ^img-com/([0-9a-f]{32}\.(png|jpg|gif|webp))$ com.php?img=$1 [L]
 # Funciones (provisionalmente en Netlify) a través del puente
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(api/[A-Za-z0-9_-]+|img/[^/]+|a/[^/]+|boletin/[^/]+|boletines\.js)$ proxy.php?__r=$1 [QSA,L]
+# Cada boletín (/boletin/N) se sirve aquí con su propia tarjeta para compartir
+RewriteRule ^boletin/[^/]+/?$ pagina.php [L,QSA]
+RewriteRule ^(api/[A-Za-z0-9_-]+|img/[^/]+|a/[^/]+|boletines\.js)$ proxy.php?__r=$1 [QSA,L]
 # «España al día» con su propia tarjeta para compartir (WhatsApp, X, Facebook)
 RewriteRule ^(mipatriaaldia|españaaldia|espanaaldia)/?$ mipatria.php [L,QSA]
 RewriteRule ^espana-al-dia(/(politica|economia))?/?$ /mipatriaaldia [R=301,L]
 # Enlace para compartir un artículo, con su propia tarjeta (título, entradilla e imagen)
-RewriteRule ^articulo/([A-Za-z0-9_-]+)/?$ art.php?id=$1 [L,QSA]
+RewriteRule ^articulo/([A-Za-z0-9_-]+)/?$ pagina.php [L,QSA]
 # Textos para redes (página interna del equipo)
 RewriteRule ^(post-redes-alvaro|redes-3a5d3ed620ba)/?$ /redes/ [R=301,L]
-# Todo lo demás: la página del boletín
+# Todo lo demás: la página del boletín, con la tarjeta de cada pieza (editorial, artículo, noticia…) para compartir
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.html [L]
+RewriteRule ^ pagina.php [L]
