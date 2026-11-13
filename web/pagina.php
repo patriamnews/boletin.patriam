@@ -10,6 +10,7 @@
    - /ver/<id>             → la recomendación (libro, película, podcast)
    El resto, la tarjeta general. Si algo falla, sale index.html tal cual. */
 require_once __DIR__ . '/_privado.php';
+require_once __DIR__ . '/og-img.php';   // og_firma()
 const WEB_OG = 'https://boletin.movimientopatriam.es';
 
 function og_e($x) { return htmlspecialchars((string)$x, ENT_QUOTES, 'UTF-8'); }
@@ -130,6 +131,8 @@ function og_tarjeta($ruta) {
     }
   }
   if ($t && empty($t['img'])) { $t['img'] = WEB_OG . '/compartir.jpg?v=2'; $t['ancho'] = 800; $t['alto'] = 800; }
+  // como un periódico: la foto de la pieza a 1200×630, con la banda de PATRIAM (og-img.php)
+  elseif ($t && empty($t['ancho'])) { $t['img'] = WEB_OG . '/og-img.php?u=' . rawurlencode($t['img']) . '&f=' . og_firma($t['img']); $t['ancho'] = 1200; $t['alto'] = 630; }
   return $t;
 }
 
@@ -163,6 +166,7 @@ $etiquetas = '<title>' . og_e($tit) . '</title>' . "\n" .
   '<meta property="og:image" content="' . og_e($t['img']) . '">' . "\n" .
   (!empty($t['ancho']) ? '<meta property="og:image:width" content="' . (int)$t['ancho'] . '">' . "\n" . '<meta property="og:image:height" content="' . (int)$t['alto'] . '">' . "\n" : '') .
   '<meta name="twitter:card" content="' . ($grande ? 'summary_large_image' : 'summary') . '">' . "\n" .
+  '<meta name="twitter:site" content="@patriam_es">' . "\n" .
   '<meta name="twitter:title" content="' . og_e($tit) . '">' . "\n" .
   '<meta name="twitter:description" content="' . og_e($desc) . '">' . "\n" .
   '<meta name="twitter:image" content="' . og_e($t['img']) . '">' . "\n";

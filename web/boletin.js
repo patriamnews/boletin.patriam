@@ -186,7 +186,7 @@ function barraLector(rotulo, titulo, url) {
   const t = String(titulo || ""), u = conCodigo(url);
   return '<div class="bol-compartir bol-compartir-lector"><span>' + esc(rotulo) + "</span><div>" +
     '<a class="bol-comp wa" href="https://wa.me/?text=' + encodeURIComponent(t + "\n" + u) + '" target="_blank" rel="noopener">' + icono("whatsapp") + "WhatsApp</a>" +
-    '<a class="bol-comp xx" href="https://x.com/intent/post?text=' + encodeURIComponent(t) + "&url=" + encodeURIComponent(u) + '" target="_blank" rel="noopener">' + icono("x") + "X</a>" +
+    '<a class="bol-comp xx" href="https://x.com/intent/post?text=' + encodeURIComponent(t) + "&url=" + encodeURIComponent(u) + "&via=patriam_es" + '" target="_blank" rel="noopener">' + icono("x") + "X</a>" +
     '<a class="bol-comp fb" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(u) + '" target="_blank" rel="noopener">' + icono("facebook") + "Facebook</a>" +
     '<button type="button" class="bol-comp ig" data-t="' + esc(t) + '" data-u="' + esc(u) + '" onclick="compartirInstagram(this)">' + icono("instagram") + "Instagram</button>" +
     '<button type="button" class="bol-comp en" onclick="copiarEnlace(this,\'' + esc(u) + '\')">' + icono("enlace") + "Copiar enlace</button></div></div>";
