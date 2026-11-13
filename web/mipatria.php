@@ -124,6 +124,7 @@ if ($acc === 'enviar') {
   $F = 'Georgia,serif'; $G = '#7b1c2c';
   $filas = '';
   foreach ($g as $x) {
+    if (!preg_match('#^https?://#', $x['imagen'] ?? '')) $x['imagen'] = WEB_MP . '/espana-al-dia-' . (($x['tema'] ?? '') === 'Economía' ? 'economia' : 'politica') . '.jpg';   // ninguna sin foto
     $img = preg_match('#^https?://#', $x['imagen'] ?? '') ? '<td width="110" valign="top" style="width:110px;padding:14px 14px 0 0"><img src="' . e($x['imagen']) . '" width="110" alt="" style="display:block;width:110px;height:auto;border-radius:3px"></td>' : '';
     $bot = implode('', array_map(fn($m) => '<a href="' . e($m['url']) . '" style="display:inline-block;margin:0 6px 6px 0;background:' . $G . ';color:#fff;text-decoration:none;font:600 12px ' . $F . ';padding:6px 12px;border-radius:999px">' . e($m['medio']) . ' →</a>', $x['medios']));
     $filas .= '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #eadfcd"><tr>' . $img . '<td valign="top" style="padding-top:14px">'
@@ -198,8 +199,10 @@ $asunto = '';
 foreach (array_unique(array_column($g, 'asunto')) as $a) if (slug($a) === ($_GET['a'] ?? '')) $asunto = $a;
 $enlaceMP = fn($t, $a) => URL_MP . (($q = http_build_query(array_filter(['t' => $t, 'a' => $a]))) ? '?' . $q : '');
 function tarjeta($x, &$primera) {
-  $im = preg_match('#^https?://#', $x['imagen'] ?? '') ? $x['imagen'] : '/espana-al-dia-' . ($x['tema'] === 'Economía' ? 'economia' : 'politica') . '.jpg';
-  $h = '<article class="f' . ($primera ? ' top' : '') . '"><div class="im" style="background-image:url(\'' . e($im) . '\')"></div><div class="tx"><span class="tm">' . e($x['tema']) . ' · ' . e(mb_strtolower(dia($x['fecha']))) . ' · ' . e(hora($x['fecha'])) . '</span><h3>' . e($x['titulo']) . '</h3>'
+  $res = '/espana-al-dia-' . ($x['tema'] === 'Economía' ? 'economia' : 'politica') . '.jpg';
+  $im = preg_match('#^https?://#', $x['imagen'] ?? '') ? $x['imagen'] : $res;
+  // debajo va la imagen de PATRIAM de su sección: si la foto del medio no carga, se ve esa (ninguna sin foto)
+  $h = '<article class="f' . ($primera ? ' top' : '') . '"><div class="im" style="background-image:url(\'' . e($im) . '\'),url(\'' . e($res) . '\')"></div><div class="tx"><span class="tm">' . e($x['tema']) . ' · ' . e(mb_strtolower(dia($x['fecha']))) . ' · ' . e(hora($x['fecha'])) . '</span><h3>' . e($x['titulo']) . '</h3>'
     . (!empty($x['resumen']) ? '<p>' . e($x['resumen']) . '</p>' : '')
     . '<div class="md">' . implode('', array_map(fn($m) => '<a href="' . e($m['url']) . '" target="_blank" rel="noopener">' . e($m['medio']) . ' →</a>', $x['medios'] ?? [])) . '</div></div></article>';
   $primera = false;

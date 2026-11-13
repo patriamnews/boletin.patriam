@@ -274,11 +274,11 @@ function cabecera(cfg, b, activo) {
 
   // Menú
   const op = [["inicio", "#/", "Este boletín"], ["noticias", "#/noticias", "Actualidad"], ["historia", "#/historia", "Historia"],
-              ["sociedad", "#/sociedad", "Sociedad"], ["criterio", "#/criterio", "Criterio"], ["espana", "#/espana-al-dia", "España semana a semana"],
+              ["sociedad", "#/sociedad", "Sociedad"], ["analisis", "#/analisis", "Análisis"], ["criterio", "#/criterio", "Podcasts, libros y cine"], ["espana", "#/espana-al-dia", "España semana a semana"],
               ["iniciativas", "#/iniciativas", "Iniciativas"], ["boletines", "#/boletines", "Boletines"],
               ["tienda", (cfg && cfg.tienda) || "https://movimientopatriam.es/tienda", "Tienda"]];
   h += '<nav class="bol-menu" aria-label="Secciones del boletín"><div class="bol-menu-in">';
-  const ICO_MENU = { criterio: "analisis" };
+  const ICO_MENU = { criterio: "libros" };
   op.forEach(o => h += '<a href="' + o[1] + '"' + (/^https?:/.test(o[1]) ? ' target="_blank" rel="noopener"' : "") + (o[0] === activo ? ' class="activo" aria-current="page"' : "") + ">" + icono(ICO_MENU[o[0]] || o[0]) + "<span>" + o[2] + "</span></a>");
   h += '<form class="bol-buscar" role="search" onsubmit="return buscarDesde(this.q)"><input name="q" type="search" placeholder="Buscar…" aria-label="Buscar en el boletín"><button aria-label="Buscar">' + icono("buscar") + "</button></form>";
   h += "</div></nav>";
@@ -503,10 +503,20 @@ function espanaDia(f) {
 function espanaBotones(g) {
   return '<div class="esp-medios">' + g.medios.map(m => '<a class="esp-medio" href="' + esc(urlSegura(m.url)) + '" target="_blank" rel="noopener" title="' + esc(m.titulo || g.titulo) + '">' + esc(m.medio) + " " + icono("flecha") + "</a>").join("") + "</div>";
 }
+/* Ninguna noticia sin foto: si la suya no carga, se prueban las de reserva (otras fotos, pantallazos de sus medios)
+   y, al final, la imagen de PATRIAM de su sección (política o economía) */
+function espanaReserva(g) { return /econom/i.test(g.tema || "") ? "espana-al-dia-economia.jpg" : "espana-al-dia-politica.jpg"; }
+function espanaSiguienteFoto(img) {
+  const L = (img.dataset.alt || "").split("|").filter(Boolean);
+  img.dataset.alt = L.slice(1).join("|");
+  img.src = L[0] || img.dataset.fin;
+  if (!L[0]) img.onerror = null;
+}
 function espanaFicha(g, mini) {
-  const img = urlSegura(g.imagen);
-  return '<article class="esp-ficha' + (mini ? " mini" : "") + (img ? "" : " sin-img") + '">' +
-    (img ? '<img class="esp-img" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add(\'sin-img\');this.remove()">' : "") +
+  const fotos = [g.imagen].concat(g.alt || []).map(urlSegura).filter(Boolean);
+  const img = fotos[0] || espanaReserva(g);
+  return '<article class="esp-ficha' + (mini ? " mini" : "") + '">' +
+    '<img class="esp-img" src="' + esc(img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" data-alt="' + esc(fotos.slice(1).join("|")) + '" data-fin="' + esc(espanaReserva(g)) + '" onerror="espanaSiguienteFoto(this)">' +
     '<div class="esp-txt"><span class="esp-tema">' + esc(g.tema || "Política") + " · " + esc(espanaDia(g.fecha)) + (mini ? "" : " · " + esc(espanaHora(g.fecha))) + "</span>" +
     "<h3>" + esc(g.titulo) + "</h3>" + (!mini && g.resumen ? "<p>" + esc(recortar(g.resumen, 260)) + "</p>" : "") + espanaBotones(g) + "</div></article>";
 }
@@ -951,11 +961,13 @@ function paginaSeccion(lista, cfg, s) {
   const colabs = todasColaboraciones(lista).filter(({ c }) => claveColab(c) === s.clave).map(({ c, b }) => ({
     tema: (c.tema || "").trim() || "Otros temas", tipo: "Artículo", texto: [c.titulo, c.autor, c.entradilla, c.tema, textoPlano(c.texto)].join(" "),
     html: '<div class="bol-colab-sec">' + tarjetaColaboracion(c, b) + "</div>" }));
-  return paginaListado(s.menu, s.texto, colabs.concat(itemsListado(lista, cfg, biblioteca(cfg, s.nombre).slice().reverse(), todasNoticias(lista, s.clave))));
+  // los podcasts, libros y películas no van aquí: van todos juntos en «Criterio»
+  const ns = todasNoticias(lista, s.clave).filter(({ n }) => !(ES_PODCAST(n.formato) || ES_LIBRO(n.formato) || idYoutube(urlSegura(n.url))));
+  return paginaListado(s.menu, s.texto, colabs.concat(itemsListado(lista, cfg, [], ns)));
 }
 /* Podcasts (y vídeos) y libros, de cualquier sección */
 /* «Criterio»: Análisis, Podcasts y vídeos, Libros y Películas juntos, con pestañas */
-const PESTANAS_CRITERIO = [["analisis", "Análisis"], ["podcasts", "Podcasts y vídeos"], ["libros", "Libros"], ["peliculas", "Películas"]];
+const PESTANAS_CRITERIO = [["podcasts", "Podcasts y vídeos"], ["libros", "Libros"], ["peliculas", "Películas"]];
 function conPestanas(cual, html) {
   return '<nav class="crit-tabs" aria-label="Criterio">' + PESTANAS_CRITERIO.map(([k, t]) => '<a href="#/' + k + '"' + (k === cual ? ' class="activo"' : "") + ">" + t + "</a>").join("") + "</nav>" + html;
 }
@@ -1254,7 +1266,7 @@ function renderApp(ruta, lista, cfg) {
   const p = ruta.replace(/^#\/?/, "").split("/").map(decodeURIComponent);
   const m = (activo, centro, b) => marco(cfg, b || ultimo, ls, activo, centro);
   const s = SECCIONES.find(x => x.ruta === p[0]);
-  if (s) return s.clave === "analisis" ? m("criterio", conPestanas("analisis", paginaSeccion(ls, cfg, s))) : m(s.clave === "actualidad" ? "noticias" : s.clave, paginaSeccion(ls, cfg, s));
+  if (s) return m(s.clave === "actualidad" ? "noticias" : s.clave, paginaSeccion(ls, cfg, s));
   switch (p[0]) {
     case "boletin": {
       const b = ls.find(x => x.id === p[1]) || ls.find(x => String(x.numero) === p[1]) || ultimo;
@@ -1263,7 +1275,7 @@ function renderApp(ruta, lista, cfg) {
     }
     case "leer": return m("noticias", paginaLeer(ls, cfg, p[1], p[2]));
     case "ver": { const x = itemBib(cfg, p[1]) || {}; return m(ES_LIBRO(x.tipo) ? "libros" : ES_PODCAST(x.tipo) ? "podcasts" : (SECCIONES.find(z => z.nombre === x.seccion) || SECCIONES[1]).clave, paginaVer(cfg, p[1], p[2])); }
-    case "criterio": return m("criterio", conPestanas("analisis", paginaSeccion(ls, cfg, SECCIONES.find(z => z.clave === "analisis"))));
+    case "criterio": return m("criterio", conPestanas("podcasts", paginaTipo(ls, cfg, "podcasts")));
     case "podcasts": return m("criterio", conPestanas("podcasts", paginaTipo(ls, cfg, "podcasts")));
     case "libros": return m("criterio", conPestanas("libros", paginaTipo(ls, cfg, "libros")));
     case "peliculas": return m("criterio", conPestanas("peliculas", paginaTipo(ls, cfg, "peliculas")));
@@ -1271,7 +1283,7 @@ function renderApp(ruta, lista, cfg) {
     case "editorial": return m("editorial", paginaEditorial(ls, cfg, p[1]));
     case "colaboraciones": return m("colaboraciones", paginaColaboraciones(ls, cfg));
     case "colaboracion": { const x = todasColaboraciones(ls).find(y => y.c.id === p[1]); const k = x ? claveColab(x.c) : "colaboraciones";
-      return m(k === "actualidad" ? "noticias" : k === "analisis" ? "criterio" : k, paginaColaboracion(ls, p[1], cfg)); }
+      return m(k === "actualidad" ? "noticias" : k, paginaColaboracion(ls, p[1], cfg)); }
     case "iniciativas": case "eventos": return m("iniciativas", paginaIniciativas(ls));
     case "boletines": return m("boletines", paginaBoletines(ls, p[1]));
     case "espana-al-dia": return m("espana", paginaEspana(p[1] === "politica" ? "política" : p[1] === "economia" ? "economía" : ""));

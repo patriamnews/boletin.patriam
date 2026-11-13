@@ -7,7 +7,7 @@ on:
     - cron: '7 */3 * * *'
   workflow_dispatch:
   push:
-    paths: ["scripts/espana-al-dia.mjs", "scripts/espana-miniaturas.mjs", "scripts/espana-pantallazos.mjs", "web/espana-asuntos.json", "datos/espana-fuera.txt", ".github/workflows/espana-al-dia.yml"]
+    paths: ["scripts/espana-al-dia.mjs", "scripts/espana-miniaturas.mjs", "scripts/espana-pantallazos.mjs", "web/espana-asuntos.json", "web/espana-imagenes.json", "datos/espana-fuera.txt", ".github/workflows/espana-al-dia.yml"]
 permissions:
   contents: write
 concurrency: { group: espana-al-dia, cancel-in-progress: false }

@@ -200,7 +200,16 @@ const vez = new Date().toISOString().slice(0, 13).replace(/\D/g, '')
 const DIR_PANTALLAZOS = process.env.PORTADAS_DIR
 const hayPantallazo = (m) => !!DIR_PANTALLAZOS && existsSync(`${DIR_PANTALLAZOS}/${slugMedio(m)}.jpg`)
 let conPantallazo = 0
-for (const g of grupos) if (!g.imagen && hayPantallazo(g.medios[0].medio)) { g.imagen = `${PANTALLAZOS}${slugMedio(g.medios[0].medio)}.jpg?v=${vez}`; g.pantallazo = true; conPantallazo++ }
+// el pantallazo de cualquiera de sus medios (no solo del primero)
+for (const g of grupos) if (!g.imagen) { const m = g.medios.find((x) => hayPantallazo(x.medio)); if (m) { g.imagen = `${PANTALLAZOS}${slugMedio(m.medio)}.jpg?v=${vez}`; g.pantallazo = true; conPantallazo++ } }
+// Fotos de reserva: si la principal no carga en el navegador, se prueban estas (otras fotos del grupo y los pantallazos de sus medios)
+for (const g of grupos) {
+  const alt = [...new Set([...(g.imgs || []), ...g.medios.filter((x) => hayPantallazo(x.medio)).map((x) => `${PANTALLAZOS}${slugMedio(x.medio)}.jpg?v=${vez}`)])].filter((u) => u && u !== g.imagen)
+  if (alt.length) g.alt = alt.slice(0, 4)
+}
+// Fotos puestas a mano (web/espana-imagenes.json): mandan sobre todo lo anterior
+const A_MANO = (() => { try { return JSON.parse(readFileSync(new URL('../web/espana-imagenes.json', import.meta.url).pathname, 'utf8')).imagenes || {} } catch { return {} } })()
+for (const g of grupos) { const m = g.medios.find((x) => A_MANO[x.url]); if (m) { if (g.imagen && g.imagen !== A_MANO[m.url]) g.alt = [g.imagen, ...(g.alt || [])].slice(0, 4); g.imagen = A_MANO[m.url]; g.pantallazo = false; g.aMano = true } }
 console.log(`Con pantallazo de la portada del medio: ${conPantallazo}`)
 const salida = grupos.map(({ cl, imgs, ...g }) => g)
   .sort((a, b) => b.fecha.slice(0, 10).localeCompare(a.fecha.slice(0, 10)) || b.medios.length - a.medios.length || b.fecha.localeCompare(a.fecha))
