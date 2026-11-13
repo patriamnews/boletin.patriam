@@ -63,6 +63,10 @@ function unirAportaciones(L, C, opciones) {
    se aplican los datos aprobados y se quitan las piezas quitadas o pasadas a la recámara. */
 function aplicarCambiosPreparados(L, C) {
   var M = (window.PATRIAM_APORTACIONES || {}).cambios || {};
+  var K = window.PATRIAM_CORRECCIONES || {};   // correcciones a piezas ya publicadas (sección, tema…)
+  (L || []).forEach(function (b) {
+    ["colaboraciones", "noticias"].forEach(function (k) { (b[k] || []).forEach(function (x) { if (x && x.id && K[x.id]) Object.assign(x, K[x.id]); }); });
+  });
   Object.keys(M).forEach(function (k) {
     var c = M[k], id = k.replace(/^(imp|rec)-/, "");
     if (/^imp-/.test(k)) (L || []).forEach(function (b) {

@@ -261,3 +261,8 @@ window.PATRIAM_FRASES = [
   "autor": "Hernán Cortés"
  }
 ];
+
+/* Correcciones a piezas de boletines ya publicados (por su id): p. ej., la sección de un artículo que salió sin clasificar */
+window.PATRIAM_CORRECCIONES = {
+  "cmvhez2g4tsr": { "seccion": "Actualidad", "tema": "Terrorismo" }
+};
