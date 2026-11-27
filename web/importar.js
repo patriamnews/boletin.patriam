@@ -131,7 +131,7 @@ window.PATRIAM_IMPORTAR = [
  {
   "id": "c-sanchez-riada-garaje",
   "numero": 3,
-  "autor": "Isabel O.C.",
+  "autor": "Consuelo Arnau",
   "cargo": "",
   "titulo": "No culpe a los muertos, señor Sánchez",
   "entradilla": "Dos años después de la riada de Valencia, Pedro Sánchez recuerda que hubo vecinos que bajaron al garaje a sacar el coche y dice que «hay cosas que no se pueden hacer». Tras unas 230 muertes, las familias merecen que el presidente les explique qué sabía su Gobierno mientras el agua entraba en los pueblos, qué podía haber hecho para salvar vidas y por qué no lo hizo.",
